@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ProductForm from "@/components/admin/ProductForm";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Editar Producto | Admin" };
 
 export default async function EditarProductoPage({
