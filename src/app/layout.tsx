@@ -25,6 +25,30 @@ export const metadata: Metadata = {
   },
   description:
     "Productos artesanales de corte láser y grabado personalizado. Regalos únicos, decoración y piezas a medida.",
+  metadataBase: new URL("https://diamylasercut.com.mx"),
+  openGraph: {
+    title: "Diamy — Corte Láser y Grabado Personalizado",
+    description:
+      "Productos artesanales de corte láser y grabado personalizado. Regalos únicos, decoración y piezas a medida.",
+    url: "https://diamylasercut.com.mx",
+    siteName: "Diamy Laser Cut",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Diamy Laser Cut",
+      },
+    ],
+    locale: "es_MX",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Diamy — Corte Láser y Grabado Personalizado",
+    description: "Productos artesanales de corte láser y grabado personalizado.",
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({
