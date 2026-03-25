@@ -1,26 +1,87 @@
+/* Note: Noto Serif + Manrope loaded via next/font/google in layout.tsx */
+/* Note: Material Symbols loaded via <link> in layout.tsx <head> */
+
 @import "tailwindcss";
 
+/* Diamy Design Tokens — Tailwind v4 @theme */
+@theme {
+  /* Brand colors */
+  --color-primary:           #5255a9;
+  --color-primary-dark:      #484b9e;
+  --color-on-primary:        #ffffff;
+  --color-primary-container: #e2e0ff;
+  --color-secondary:         #a85d00;
+  --color-secondary-dark:    #d87d01;
+  --color-on-secondary:      #ffffff;
+  --color-tertiary:          #006684;
+  --color-error:             #ba1a1a;
+
+  /* Surface & backgrounds */
+  --color-background:        #fbf8ff;
+  --color-surface:           #ffffff;
+  --color-surface-container: #f3f3fa;
+  --color-surface-variant:   #e4e1ec;
+  --color-on-surface:        #1b1b23;
+  --color-on-surface-muted:  #47464f;
+  --color-outline:           #787680;
+  --color-outline-variant:   #c8c5d0;
+
+  /* Typography */
+  --font-serif:  "Noto Serif", Georgia, serif;
+  --font-sans:   "Manrope", system-ui, sans-serif;
+  --font-body:   "Manrope", system-ui, sans-serif;
+
+  /* Border radius */
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   1rem;
+  --radius-xl:   1.5rem;
+  --radius-full: 9999px;
+}
+
+/* Base styles */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glass-morphism utility */
+.glass-card {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Material Symbols helper */
+.material-symbol {
+  font-family: "Material Symbols Outlined";
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  display: inline-block;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* Scrollbar hide */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
