@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get("host") ?? "";
 
-  // Protect /admin routes (except /admin/login)
+  // Si el acceso es desde admin.* redirigir a /admin
+  if (hostname.startsWith("admin.") && !pathname.startsWith("/admin") && !pathname.startsWith("/api")) {
+    return NextResponse.redirect(new URL("/admin" + pathname, request.url));
+  }
+
+  // Proteger rutas /admin (excepto /admin/login)
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
     const token = request.cookies.get("admin_session")?.value;
     if (!token) {
@@ -15,5 +21,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|uploads).*)"],
 };
