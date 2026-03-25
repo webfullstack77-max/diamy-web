@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400;1,700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#454B9E", // From logo deep blue/purple
+              "on-primary": "#ffffff",
+              "secondary": "#E87D21", // From logo orange
+              "tertiary": "#C8558A", // From logo magenta/pink
+              "background": "#F8F9FA",
+              "on-background": "#1A1C1E",
+              "surface": "#ffffff",
+              "on-surface": "#1A1C1E",
+              "surface-variant": "#F1F0F7",
+              "on-surface-variant": "#44474E",
+              "outline": "#74777F",
+              "outline-variant": "#C4C6D0",
+              "surface-container-low": "#F7F8FC",
+              "surface-container": "#F1F1F8",
+              "surface-container-high": "#EBECF2",
+              "primary-container": "#E1E0FF",
+              "on-primary-container": "#00006E"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #F8F9FA;
+        }
+        .serif-text { font-family: 'Noto Serif', serif; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+        }
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(69, 75, 158, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+        }
+        .laser-beam {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #E87D21, transparent);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar Shell -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-black/5">
+<div class="flex items-center w-full px-8 py-4 max-w-screen-2xl mx-auto">
+<div class="text-2xl font-serif italic text-primary flex-shrink-0">
+                Diamy Laser Cut
+            </div>
+<div class="flex-grow flex justify-center px-8">
+<div class="flex items-center bg-surface-container-low px-6 py-2.5 rounded-full border border-outline-variant/30 w-full max-w-2xl transition-all duration-300 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary/40">
+<span class="material-symbols-outlined text-outline text-xl" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full font-body ml-3 placeholder:text-outline" placeholder="Search for gifts, materials, or custom designs..." type="text"/>
+</div>
+</div>
+<div class="flex-shrink-0 w-[140px] flex justify-end">
+<!-- Removed original items to simplify as requested -->
+</div>
+</div>
+</nav>
+<main class="pt-32 pb-24 px-8 max-w-screen-2xl mx-auto">
+<!-- Header Section -->
+<header class="mb-16">
+<a class="inline-flex items-center text-secondary text-sm font-label tracking-widest uppercase mb-6 hover:translate-x-[-4px] transition-transform duration-300 group font-bold" href="#">
+<span class="material-symbols-outlined mr-2" data-icon="arrow_back">arrow_back</span>
+                Back to Categories
+            </a>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
+<div>
+<h1 class="serif-text text-5xl md:text-7xl font-bold text-on-background mb-4 leading-tight">Gifts</h1>
+<div class="laser-beam w-32 mb-6"></div>
+<p class="text-on-surface-variant max-w-lg font-body leading-relaxed text-lg">
+                        Thoughtfully crafted laser-cut treasures. From personalized wooden engravings to intricate acrylic keepsakes, each piece is a celebration of precision and sentiment.
+                    </p>
+</div>
+<div class="flex justify-start lg:justify-end gap-4 text-xs font-label uppercase tracking-widest text-outline font-bold">
+<span class="pt-1">Active Filters:</span>
+<span class="bg-white px-3 py-1 rounded-full text-primary border border-primary/20 shadow-sm">All Materials</span>
+<span class="bg-white px-3 py-1 rounded-full text-primary border border-primary/20 shadow-sm">Popularity</span>
+</div>
+</div>
+<div class="flex flex-col lg:flex-row gap-12 mt-12">
+<!-- Sidebar Filters -->
+<aside class="w-full lg:w-64 flex-shrink-0">
+<div class="sticky top-32 space-y-10">
+<div>
+<h3 class="font-label uppercase tracking-widest text-secondary text-xs mb-6 font-extrabold">Material</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm bg-white border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-on-surface-variant group-hover:text-primary transition-colors text-sm font-medium">Premium Plywood</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm bg-white border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-on-surface-variant group-hover:text-primary transition-colors text-sm font-medium">Frosted Acrylic</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="rounded-sm bg-white border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-on-surface font-semibold text-sm">Mirror Finish Steel</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm bg-white border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-on-surface-variant group-hover:text-primary transition-colors text-sm font-medium">Bamboo</span>
+</label>
+</div>
+</div>
+<div>
+<h3 class="font-label uppercase tracking-widest text-secondary text-xs mb-6 font-extrabold">Occasion</h3>
+<div class="space-y-3">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm bg-white border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-on-surface-variant group-hover:text-primary transition-colors text-sm font-medium">Weddings</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm bg-white border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-on-surface-variant group-hover:text-primary transition-colors text-sm font-medium">Corporate</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="rounded-sm bg-white border-outline-variant text-primary focus:ring-primary/20" type="checkbox"/>
+<span class="text-on-surface-variant group-hover:text-primary transition-colors text-sm font-medium">Memorials</span>
+</label>
+</div>
+</div>
+<div class="p-6 rounded-xl bg-primary-container/30 border border-primary/10 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors"></div>
+<p class="text-sm font-body mb-4 relative z-10 font-medium text-on-surface">Need something completely unique?</p>
+<button class="w-full py-2 bg-primary text-on-primary font-label uppercase text-xs tracking-tighter rounded-full hover:shadow-lg hover:shadow-primary/20 active:scale-95 transition-all font-bold">Custom Commission</button>
+</div>
+</div>
+</aside>
+<!-- Product Grid -->
+<section class="flex-grow">
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+<!-- Product Card 1 -->
+<div class="glass-card group rounded-xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
+<div class="aspect-[4/5] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Intricate laser cut wooden jewelry box with floral pattern" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBw0qKHWIsSaXenTEBV9Ipftp8lL6Op1UegakUvCOR52NTKomCfKMVDgjOsj8r7ZihzX-4Wig_1AhTKLIy0bxu9_tYiGeZFCKLftOyWpzA-6_D5Wlzzpd4Sjx5iXBu_YoaXkS3yx2rrDPZ4Iuv9gSF7Ckt05acd9jwB_kEwe1HnPhM0Oth6KZ4YHpXhgpQn1dMsP3iED3w0rchsFLM2TrP44tc9AaiYQGyJMts4UBMcb299C1UHi2_F4Unm4qzYG5-FykkpUtIE4nqe"/>
+<div class="absolute top-4 right-4 bg-secondary text-white px-3 py-1 rounded-full text-[10px] font-label uppercase tracking-widest font-bold">Handcrafted</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="serif-text text-xl font-bold group-hover:text-primary transition-colors">Geometric Keepsake Box</h3>
+<span class="text-primary font-bold">$124</span>
+</div>
+<p class="text-on-surface-variant text-sm line-clamp-2 font-body mb-6">Sustainable walnut wood with high-precision laser lattice top. Perfect for heirlooms.</p>
+<button class="w-full flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-full hover:bg-primary hover:text-white hover:border-primary transition-all font-label uppercase text-xs tracking-widest font-bold">
+<span class="material-symbols-outlined text-base" data-icon="add_shopping_cart">add_shopping_cart</span>
+                                    Add to Cart
+                                </button>
+</div>
+</div>
+<!-- Product Card 2 -->
+<div class="glass-card group rounded-xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
+<div class="aspect-[4/5] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Modern minimal laser cut metal wall clock" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXthgUamiu4g4Dn_ow-NAiYjHKjmAJvr_gBPNqbVvv1i0lU3htKbZRxanYizemC8dGbWT_9-yVR77G2FQp-RbZ6NQ1SdZAhxWwydejgkCEmVF7AJ5-kaPl_dqSsb-wOBT9cdTAZpPG8OYmHUh0rw7hSD0-WScrXcDkXqpFLonhkX2sF5iQgNJ0KnyDDqnyRrZ2cbWwcBphLQbdBEqgKM5m504sDE9sTCz1yA9Mj-h3PMGAgY-bd9qSmiw77wwo2ntYrWPhvuJBHJXN"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="serif-text text-xl font-bold group-hover:text-primary transition-colors">Eclipse Wall Clock</h3>
+<span class="text-primary font-bold">$89</span>
+</div>
+<p class="text-on-surface-variant text-sm line-clamp-2 font-body mb-6">Matte black aluminum with negative-space numerals and copper hands.</p>
+<button class="w-full flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-full hover:bg-primary hover:text-white hover:border-primary transition-all font-label uppercase text-xs tracking-widest font-bold">
+<span class="material-symbols-outlined text-base" data-icon="add_shopping_cart">add_shopping_cart</span>
+                                    Add to Cart
+                                </button>
+</div>
+</div>
+<!-- Product Card 3 -->
+<div class="glass-card group rounded-xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
+<div class="aspect-[4/5] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Personalized acrylic keychain with laser etched calligraphy" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ2fVJWMZjvYYcmfSPQ5hU4p2FAvTO5A-zcIs1eTT3VHdfOm1DTPmVJ8yBMlVQFwjfMcASTnrpblEPfq5d2lTSLQjJdiYMav4s_MDPQadYTH_gH865mtLgwMs8UtQt1t1pH9rDVfDdtF1_jhB2m27BxaXXV94b7dSC1bl5vF_krJJbSVt8tsk6H4-lFQ43w0V0z3rvW1nEkpo9l3Q8u6czWUG28PyIEYAqww7Fy4wQxKcFtsY4lSjDOI94bjWN_9Uzv21FquMFrf6P"/>
+<div class="absolute top-4 left-4 bg-tertiary text-white px-3 py-1 rounded-full text-[10px] font-label uppercase tracking-widest font-bold">New Arrival</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="serif-text text-xl font-bold group-hover:text-primary transition-colors">Lumina Name Tags</h3>
+<span class="text-primary font-bold">$22</span>
+</div>
+<p class="text-on-surface-variant text-sm line-clamp-2 font-body mb-6">Crystal clear acrylic with light-catching edge cuts and deep engraving.</p>
+<button class="w-full flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-full hover:bg-primary hover:text-white hover:border-primary transition-all font-label uppercase text-xs tracking-widest font-bold">
+<span class="material-symbols-outlined text-base" data-icon="add_shopping_cart">add_shopping_cart</span>
+                                    Add to Cart
+                                </button>
+</div>
+</div>
+<!-- Product Card 4 -->
+<div class="glass-card group rounded-xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
+<div class="aspect-[4/5] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Laser engraved wooden map of a city" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmiSm1PSR6RzDRkmF5i5FJiM1ck9_632xDAKOB3cCMHGkXQQvwdPJXx_A5uFbybHpCYGhVROk2mpDn4f1wN-7lZmyuToTMq2FWdl78A1g3gGJpu5fXN34H63LCBzbBgswFOXBz2vUblGDHT5gvivJHE__4QfymNzDRTFQRMWeYxUQfLDv1SD2i_FPwy6tbocQuXaHxGKRvYMjqNxC1732nDTqNZ2aixI5oI4LZBl7bG9JAQN6LxrGBhrivKdt2KbsURhoqxHtWWNx0"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="serif-text text-xl font-bold group-hover:text-primary transition-colors">Urban Topography Map</h3>
+<span class="text-primary font-bold">$165</span>
+</div>
+<p class="text-on-surface-variant text-sm line-clamp-2 font-body mb-6">Multi-layered wood representing street levels and waterfront elevations.</p>
+<button class="w-full flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-full hover:bg-primary hover:text-white hover:border-primary transition-all font-label uppercase text-xs tracking-widest font-bold">
+<span class="material-symbols-outlined text-base" data-icon="add_shopping_cart">add_shopping_cart</span>
+                                    Add to Cart
+                                </button>
+</div>
+</div>
+<!-- Product Card 5 -->
+<div class="glass-card group rounded-xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
+<div class="aspect-[4/5] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Ornate laser cut metal garden lantern" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHgaXI8laz2sYD10Xf7huO0qyxTgvDxA8ysdnorFPKmfzASHkRvrvyrIwGs_VQFuBKL-JM5M-ZXagTzTSjSWHkiRMAerciFuFbcxgl8bi87kvAz8uyawLQzZZ82h5brbK9lpvU1z3RL0UTEAiUxBi4-yi2dgIFV6bqhjHX5ZGXXNcBrrDEuBfLFfH9H5Y8KxMTWVnSTYA2YMZXS-tR63QwXHtgi6-MRHI7tVGGMjkYPBQLqVoHdDyLSlJZlhEVcGhwbu8YbwjM3qbh"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="serif-text text-xl font-bold group-hover:text-primary transition-colors">Starry Sky Lantern</h3>
+<span class="text-primary font-bold">$55</span>
+</div>
+<p class="text-on-surface-variant text-sm line-clamp-2 font-body mb-6">Corten steel lantern with constellation cut-outs for ambient night lighting.</p>
+<button class="w-full flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-full hover:bg-primary hover:text-white hover:border-primary transition-all font-label uppercase text-xs tracking-widest font-bold">
+<span class="material-symbols-outlined text-base" data-icon="add_shopping_cart">add_shopping_cart</span>
+                                    Add to Cart
+                                </button>
+</div>
+</div>
+<!-- Product Card 6 -->
+<div class="glass-card group rounded-xl overflow-hidden transition-all duration-500 hover:-translate-y-2">
+<div class="aspect-[4/5] overflow-hidden relative">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" data-alt="Sleek laser cut black acrylic shelf organizer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAAgsE_lliVPPeW3JN1KHc_DIsFICCu1j-xzBkLzoW5LWOsNlBv0N7vtvXwXEygIM6c-zm68d9YtVOihXjD1IhHd-wfJb53l-rlOcd-2rCqgUkcFdxPBsP8VGvjZ8t2Ojssb_ePboCC1l6klGx1PwOsjXcDbQ4JCdeFX3b4nFVnCovxIaEGNq1uLobA-1uT-jejWpiW03CmcJhBROLRbHsmcg1Mp9uumoMrcK6nEstEh4ZNk6FN7YbpD5mJtAPgKFzKjptgqpxvX3r7"/>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start mb-2">
+<h3 class="serif-text text-xl font-bold group-hover:text-primary transition-colors">Obsidian Desk Tray</h3>
+<span class="text-primary font-bold">$42</span>
+</div>
+<p class="text-on-surface-variant text-sm line-clamp-2 font-body mb-6">High-gloss black acrylic with interlocking joints and felt-lined base.</p>
+<button class="w-full flex items-center justify-center gap-2 py-3 border border-outline-variant rounded-full hover:bg-primary hover:text-white hover:border-primary transition-all font-label uppercase text-xs tracking-widest font-bold">
+<span class="material-symbols-outlined text-base" data-icon="add_shopping_cart">add_shopping_cart</span>
+                                    Add to Cart
+                                </button>
+</div>
+</div>
+</div>
+<!-- Pagination/Load More -->
+<div class="mt-20 flex justify-center">
+<button class="px-10 py-4 bg-white text-primary border border-primary/20 rounded-full font-label tracking-widest uppercase text-xs font-bold shadow-sm hover:shadow-md hover:bg-primary hover:text-white transition-all duration-500">
+                            Load More Designs
+                        </button>
+</div>
+</section>
+</div>
+</header>
+</main>
+<!-- Footer -->
+<footer class="bg-slate-50 w-full pt-20 pb-10 mt-auto border-t border-black/5">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 w-full max-w-screen-2xl mx-auto">
+<div class="col-span-1 md:col-span-1">
+<div class="text-xl font-serif text-primary mb-6">Diamy Laser Cut</div>
+<p class="text-on-surface-variant text-sm font-body leading-relaxed">
+                    Crafting precision with light. Our atelier merges traditional craftsmanship with cutting-edge laser technology to create timeless pieces.
+                </p>
+</div>
+<div>
+<h4 class="serif-text text-primary font-bold mb-6">Shop</h4>
+<ul class="space-y-4 font-body text-on-surface-variant text-sm">
+<li><a class="hover:text-secondary transition-colors" href="#">Gifts</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Corporate</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Custom Designs</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Materials Guide</a></li>
+</ul>
+</div>
+<div>
+<h4 class="serif-text text-primary font-bold mb-6">Support</h4>
+<ul class="space-y-4 font-body text-on-surface-variant text-sm">
+<li><a class="hover:text-secondary transition-colors" href="#">Contact Us</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">Shipping</a></li>
+<li><a class="hover:text-secondary transition-colors" href="#">WhatsApp Support</a></li>
+</ul>
+</div>
+<div>
+<h4 class="serif-text text-primary font-bold mb-6">Newsletter</h4>
+<div class="flex flex-col gap-4">
+<p class="text-on-surface-variant text-sm font-body">Get notified about new drops and special releases.</p>
+<div class="flex bg-white rounded-full overflow-hidden border border-outline-variant">
+<input class="bg-transparent border-none focus:ring-0 text-sm px-4 py-2 w-full placeholder:text-outline" placeholder="Email address" type="email"/>
+<button class="bg-primary px-4 text-white">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div class="mt-20 pt-8 border-t border-black/5 px-12 text-center text-outline text-[10px] font-label uppercase tracking-widest font-bold">
+            © 2024 Diamy Laser Cut. Precision in every beam.
+        </div>
+</footer>
+</body></html>

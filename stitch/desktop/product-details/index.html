@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;family=Manrope:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#410002",
+              "surface-tint": "#5255a9",
+              "secondary": "#8c5000",
+              "on-primary-container": "#090664",
+              "inverse-primary": "#c0c1ff",
+              "surface-container-low": "#f3f3fa",
+              "tertiary-fixed-dim": "#62d4ff",
+              "on-secondary-fixed": "#2d1600",
+              "error": "#ba1a1a",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-container": "#001f29",
+              "primary-fixed-dim": "#c0c1ff",
+              "on-secondary-container": "#2d1600",
+              "inverse-on-surface": "#f2f0f7",
+              "secondary-fixed": "#ffdcbf",
+              "primary-fixed": "#e1e0ff",
+              "error-container": "#ffdad6",
+              "tertiary": "#006684",
+              "secondary-container": "#ffdcbf",
+              "surface-dim": "#dad9e0",
+              "surface-container-high": "#e4e1e9",
+              "surface-container": "#eeeef5",
+              "secondary-fixed-dim": "#ffb874",
+              "on-primary": "#ffffff",
+              "outline-variant": "#c7c5d3",
+              "tertiary-fixed": "#bce9ff",
+              "background": "#faf9ff",
+              "on-background": "#1b1b21",
+              "surface": "#faf9ff",
+              "on-surface": "#1b1b21",
+              "on-primary-fixed": "#090664",
+              "surface-variant": "#e3e1ec",
+              "surface-container-highest": "#dedde4",
+              "on-secondary": "#ffffff",
+              "inverse-surface": "#303036",
+              "on-tertiary-fixed-variant": "#004d63",
+              "outline": "#777682",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#bce9ff",
+              "on-error": "#ffffff",
+              "surface-bright": "#faf9ff",
+              "primary-container": "#e1e0ff",
+              "on-surface-variant": "#46464f",
+              "on-tertiary-fixed": "#001f29",
+              "on-primary-fixed-variant": "#3a3d90",
+              "on-secondary-fixed-variant": "#6b3b00",
+              "primary": "#5255a9"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.25rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Manrope', sans-serif; }
+        h1, h2, h3, .font-serif { font-family: 'Noto Serif', serif; }
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); }
+        .laser-glow-light { box-shadow: 0 10px 40px rgba(82, 85, 169, 0.08); }
+    </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation -->
+<nav class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl border-b border-outline-variant/20">
+<div class="flex items-center justify-between w-full px-8 py-4 max-w-screen-2xl mx-auto gap-12">
+<div class="text-2xl font-serif italic text-primary shrink-0">
+            Diamy Laser Cut
+        </div>
+<!-- Large Centered Search Bar -->
+<div class="flex-grow max-w-2xl hidden md:block">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-surface-container border-none rounded-full py-3 pl-12 pr-6 text-sm focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-on-surface-variant/50" placeholder="Search for celestial art, materials, or custom designs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4 text-on-surface shrink-0">
+<!-- Mobile search trigger could go here, or just keep it simple as requested -->
+<div class="md:hidden">
+<span class="material-symbols-outlined cursor-pointer hover:bg-black/5 p-2 rounded-full transition-all">search</span>
+</div>
+</div>
+</div>
+</nav>
+<main class="pt-32 pb-20 px-6 max-w-screen-2xl mx-auto">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Product Image Gallery (Left) -->
+<div class="lg:col-span-7 space-y-6">
+<div class="relative aspect-[4/5] rounded-lg overflow-hidden bg-surface-container-low group border border-outline-variant/10">
+<img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="Intricately cut geometric wooden wall art panel" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDivueJ4pxi2gOr5xCncfBKgB45pqFJc1zt6l_mH18n6QwZiu9ljzTvoG8083yHs1lP1R2yZOiSsXJbZ2SXw_aW2AbOU23-lzS6PsIsFCAYwzcfhP4KTx8Rdz1xr-JERPOzRk7azlC6vyrBrRZsS2kPGHzHjwczExRKpXYsE1D0AstAkypxYsa9c15T0b-bjRnhN69NhkmU4eVs30bBWpBal-zMNaihiYKC6gZ7P5kisae23PhF__wtf7L_t8v-PSLwEfrHrrFjfJNP"/>
+<div class="absolute top-6 left-6 flex flex-col gap-2">
+<span class="bg-secondary text-on-secondary px-4 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase shadow-lg shadow-secondary/20">Premium Edition</span>
+</div>
+</div>
+<div class="grid grid-cols-4 gap-4">
+<div class="aspect-square rounded-lg overflow-hidden bg-surface-container-high cursor-pointer ring-2 ring-primary">
+<img class="w-full h-full object-cover" data-alt="Close up of laser etched patterns on acrylic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRi8HfKFHN7E0qxLZqq5VOoYaJ83yoLpOO2hkGNEvljhJ1NRHgku-fQiRocXSltQqIjuobxmBjvWPoY8J68WNZq62Z2P1Me3o_wU4kiQymizLAPXrBSEZNNFrFRArqsrRypdf8wnPCJPMpw5ibhocuitpj2ST-dNXo_VPclaLhn10YFa9tUzFBR6ykL5jQ2WO0M-kZjNe026NN5aw1n6SiAguPYGd-n-DfRQSHTJLe3caILPE-vF3xxEizr2PA_VoSyzu4PCxFSpTS"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden bg-surface-container-high cursor-pointer hover:opacity-80 transition-opacity">
+<img class="w-full h-full object-cover" data-alt="Laser cutting process with sparks and blue light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6DJPLpFTBPNJLGfuSH4GlH43_IBSgoUF2UMDcLK85iT2xUohPCHySk2-EoR4cOJ19Cu8h3qYKPuEiXyt-ccrLNZoMQ6a3aupK6CZDRnBAfjf6k3f5aSzXas7dFv17YdUxFlztJRzan1EkywX2SHNciFJuxgme5TusQvStHjmw_PCzOSA2r1QNe__ctQLRl8tITGz9VuthxuCysrIpZY6hLzEDUDlKia31l6IN_8vfoFQXy4I_rCLXbrr-EknRAD8PNbEBwkb6BhMS"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden bg-surface-container-high cursor-pointer hover:opacity-80 transition-opacity">
+<img class="w-full h-full object-cover" data-alt="Finished laser cut architectural model components" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7ifvubo2-ggEa2g-PkCUIKNmpm0hzELIPVdYgHyxB3fakVa6O2IGMIO_vGQ54TzIahwtH-WLceWnNubuAdxegmaLB4He1R4c4Csx9XfAM-1nlofl884BabJRNDSLHfZWb3PQhkDzX2M1N-BRG59Ea-E1VPQ3L1fHxhB7RrEijd771iiALk_R_NWy1VoAdCTtOp5kR_PUwF6oYL0rDVFdeqaZ68BgVmrFOKuS_XFioZAGCdW8IXVcYR5YrZQE-pKB2WaRNbAvKrWpB"/>
+</div>
+<div class="aspect-square rounded-lg overflow-hidden bg-surface-container-high cursor-pointer hover:opacity-80 transition-opacity">
+<img class="w-full h-full object-cover" data-alt="Laser cut wood texture details" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDlaYvqULstREvz375QWXko_w2iEPskd-PsU17rNM33U5nstSewcyJN4sQS3lfyY7zd5j9twdw62CKJaCKW8tfve_V7laXl0J8wf9pioiB80TciMLE6VHuhijOAuY5LDfaRw8qVnMRRODGY_zZkosMzgK9W-Nd8LkQyQks77hDvhNEQjS1ggxhWxOGTC20FUU_cvAv1zW0J2PwS49p6QVg4_lS6vXQb4bHLYeb0MhiEim2i6-EyHdIljkqd9H9OR89w91AhqwpJases"/>
+</div>
+</div>
+</div>
+<!-- Product Details (Right) -->
+<div class="lg:col-span-5">
+<div class="sticky top-32 glass p-8 lg:p-12 rounded-lg border border-outline-variant/30 space-y-8 laser-glow-light">
+<header class="space-y-3">
+<p class="font-label text-primary tracking-[0.3em] uppercase text-[10px] font-bold">Home Decor / Custom Art</p>
+<h1 class="text-4xl lg:text-5xl font-serif font-bold text-on-surface leading-tight">Celestial Mandala Wall Panel</h1>
+<p class="text-3xl font-body text-secondary font-medium">$349.00</p>
+</header>
+<div class="space-y-4">
+<h3 class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Description</h3>
+<p class="text-on-surface-variant leading-relaxed text-sm">
+                        Hand-finished and laser-etched using our proprietary precision beam technology. This celestial mandala features over 4,000 individual vectors, cut through a multi-layered composite of architectural birch and smoke-tinted acrylic. Each piece is uniquely numbered.
+                    </p>
+</div>
+<div class="space-y-4">
+<h3 class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Material Specifications</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 bg-surface-container-highest rounded-full text-[11px] font-semibold border border-outline-variant/30 text-on-surface-variant">6mm Baltic Birch</span>
+<span class="px-4 py-2 bg-surface-container-highest rounded-full text-[11px] font-semibold border border-outline-variant/30 text-on-surface-variant">Matte Black Acrylic</span>
+<span class="px-4 py-2 bg-surface-container-highest rounded-full text-[11px] font-semibold border border-outline-variant/30 text-on-surface-variant">Satin Finish</span>
+</div>
+</div>
+<div class="pt-6 space-y-4">
+<button class="w-full py-5 px-8 rounded-full bg-primary text-on-primary font-bold text-base flex items-center justify-center gap-3 transition-all hover:shadow-2xl hover:shadow-primary/30 active:scale-[0.98]">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">chat</span>
+                        Buy via WhatsApp
+                    </button>
+<p class="text-center text-[11px] text-on-surface-variant/70 font-label tracking-wide">Instant support and custom sizing available via WhatsApp.</p>
+</div>
+<div class="grid grid-cols-2 gap-4 pt-6 border-t border-outline-variant/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">local_shipping</span>
+<span class="text-[11px] font-label font-bold text-on-surface-variant">Free Global Shipping</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">verified</span>
+<span class="text-[11px] font-label font-bold text-on-surface-variant">Lifetime Warranty</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Related Products Section -->
+<section class="mt-32">
+<div class="flex items-end justify-between mb-12">
+<div class="space-y-2">
+<p class="font-label text-primary tracking-widest uppercase text-[10px] font-bold">Curated Selection</p>
+<h2 class="text-3xl font-serif font-bold text-on-surface">You might also like</h2>
+</div>
+<a class="text-primary hover:text-primary-fixed-dim transition-colors font-label text-[10px] font-bold uppercase tracking-widest pb-1 border-b border-primary/30" href="#">View All</a>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+<!-- Related Card 1 -->
+<div class="group cursor-pointer">
+<div class="aspect-square bg-surface-container-low rounded-lg overflow-hidden mb-6 relative border border-outline-variant/10">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Minimalist laser cut geometric coaster set" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEcTRrwBRp0gle0Bwq4zIIuL8W7j7vQw2N31YmbciYvRjq235zWxW1JxVvPwsG9AmSHrx7dIGzt5oFbCuQVpeLlK92YsW_XZv1yDeSPb9EuONNyKKmn3Fy3VVdKjRlfNLbcOYft-xc0FiVHLDsqJZhwU4PaU4oVsHbvyMd8R0y893U0ij_Y83M_w8OpApTebpv7TiEKf0DoVNNAU-WHLAdOOM_gkd-YBD2tR2mRQcnRWJnkt26sVvXN-jjOEqeSnpi5_5fKwA78lXN"/>
+<div class="absolute inset-0 bg-gradient-to-t from-white/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex items-end">
+<button class="w-full py-2 bg-primary text-on-primary rounded-full text-[10px] font-label tracking-widest uppercase font-bold shadow-lg shadow-primary/20">Quick View</button>
+</div>
+</div>
+<h3 class="font-serif font-bold text-lg mb-1 group-hover:text-primary transition-colors text-on-surface">Geometric Coaster Set</h3>
+<p class="text-on-surface-variant font-body text-sm font-medium">$45.00</p>
+</div>
+<!-- Related Card 2 -->
+<div class="group cursor-pointer">
+<div class="aspect-square bg-surface-container-low rounded-lg overflow-hidden mb-6 relative border border-outline-variant/10">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Laser cut hanging pendant lamp shade" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeN3tJGdRSEcmvEwdJDwLTdH_xIn2jaVu4fw_yVsKiwrUUcV_U5_xh0-teRWhh_xA7pFU0PPonoyg-0rkeVJqGQshcn3WOki66cKicnPQ_S694LYHtcho0Jm05-oUNEEFhzGcVaCYFw0g8Fi_iA-x2FrY9o-XRuAghUqbF6wBUUIhLfiFTOuvCyaDqrAnVgsCe01nkBmIaYfjPsRcAgRF4J4bPs_FZHaCpGX_TDircp2ZiEn_W2G-0Ug2yVEyFsGYMGf-CqAUeUPox"/>
+<div class="absolute inset-0 bg-gradient-to-t from-white/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex items-end">
+<button class="w-full py-2 bg-primary text-on-primary rounded-full text-[10px] font-label tracking-widest uppercase font-bold shadow-lg shadow-primary/20">Quick View</button>
+</div>
+</div>
+<h3 class="font-serif font-bold text-lg mb-1 group-hover:text-primary transition-colors text-on-surface">Lattice Pendant Shade</h3>
+<p class="text-on-surface-variant font-body text-sm font-medium">$189.00</p>
+</div>
+<!-- Related Card 3 -->
+<div class="group cursor-pointer">
+<div class="aspect-square bg-surface-container-low rounded-lg overflow-hidden mb-6 relative border border-outline-variant/10">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Sophisticated laser etched desktop organizer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBM0FTQOv3iBKMLse5ZFZ_a_cF3xVhQsf7ZPA33oJR6BsdbdFYGeXJa8afd2I-W9PoiCnwufC3_mTElKhTEJOHckLsVn8DboWZYkx1iH_JtCT5EXNrQa5DHVxTIMg7tHiAn1ALzNpJFFqxEmwul5zhTpn40rhRM3Aw6ejXRan8BYx8dbprow0w2fB82KxkhMBVo3B54_4i0BvQgIcLuQcgN3n91QDtgkeujuoTr6wUGyI-i5M1cY_fntC_WgAjNiOdKM1DTA4r5tUjM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-white/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex items-end">
+<button class="w-full py-2 bg-primary text-on-primary rounded-full text-[10px] font-label tracking-widest uppercase font-bold shadow-lg shadow-primary/20">Quick View</button>
+</div>
+</div>
+<h3 class="font-serif font-bold text-lg mb-1 group-hover:text-primary transition-colors text-on-surface">Architectural Desktop Set</h3>
+<p class="text-on-surface-variant font-body text-sm font-medium">$120.00</p>
+</div>
+<!-- Related Card 4 -->
+<div class="group cursor-pointer">
+<div class="aspect-square bg-surface-container-low rounded-lg overflow-hidden mb-6 relative border border-outline-variant/10">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Modern laser cut world map wall hanging" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDwBLrVqItQpt3ZnNc_z9yXdvyBJdbsM-NFEUdoP0GFEW-RBfufgjrx3aFhsMl2HVjqQ-GjT46SrVr-qwrQWvU4ymFAhFG-_058lMNVn_WJgI2DjCicRWyAOTe1FewpUCh7rv4rYOX05LisVlh91JePPNva1KtL6CN1V2DnuYvnerar_8yf_IiuWgcrNEWjwCBEt1HNW--8Xu1-5PX1o-wkNoYQcFUO7vVk6tcAnwPiMfA9f7TUlrymVQ6mGbJiiv2ku2OKqc8SRadx"/>
+<div class="absolute inset-0 bg-gradient-to-t from-white/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity p-6 flex items-end">
+<button class="w-full py-2 bg-primary text-on-primary rounded-full text-[10px] font-label tracking-widest uppercase font-bold shadow-lg shadow-primary/20">Quick View</button>
+</div>
+</div>
+<h3 class="font-serif font-bold text-lg mb-1 group-hover:text-primary transition-colors text-on-surface">Planisphere Wall Map</h3>
+<p class="text-on-surface-variant font-body text-sm font-medium">$590.00</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-low w-full pt-20 pb-10 border-t border-outline-variant/20">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-12 px-12 w-full max-w-screen-2xl mx-auto">
+<div class="space-y-6">
+<div class="text-xl font-serif text-primary italic font-bold">Diamy Laser Cut</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">Pioneering the intersection of high-technology laser precision and traditional artisanal craftsmanship.</p>
+</div>
+<div class="space-y-6">
+<h4 class="font-serif text-on-surface text-lg font-bold">Services</h4>
+<div class="flex flex-col gap-3 font-body text-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Custom Prototyping</a>
+<a class="hover:text-primary transition-colors" href="#">Bulk Production</a>
+<a class="hover:text-primary transition-colors" href="#">Material Sourcing</a>
+</div>
+</div>
+<div class="space-y-6">
+<h4 class="font-serif text-on-surface text-lg font-bold">Customer Care</h4>
+<div class="flex flex-col gap-3 font-body text-sm text-on-surface-variant">
+<a class="hover:text-primary transition-colors" href="#">Contact Us</a>
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Shipping</a>
+<a class="text-secondary font-bold hover:text-primary transition-colors" href="#">WhatsApp Support</a>
+</div>
+</div>
+<div class="space-y-6">
+<h4 class="font-serif text-on-surface text-lg font-bold">Newsletter</h4>
+<div class="flex gap-2">
+<input class="bg-surface-container-highest border-none rounded-full px-4 py-2 text-sm focus:ring-1 focus:ring-primary w-full text-on-surface placeholder:text-on-surface-variant/50" placeholder="Your email" type="email"/>
+<button class="bg-primary text-on-primary p-2 rounded-full material-symbols-outlined hover:shadow-lg transition-shadow">arrow_forward</button>
+</div>
+</div>
+</div>
+<div class="mt-20 px-12 text-center text-on-surface-variant/60 text-[10px] font-label font-bold tracking-[0.2em] border-t border-outline-variant/20 pt-10 uppercase">
+        © 2024 Diamy Laser Cut. Precision in every beam.
+    </div>
+</footer>
+<!-- Custom Laser Progress Indicator -->
+<div class="fixed top-0 left-0 w-[2px] h-full bg-surface-container-high z-[60]">
+<div class="w-full bg-primary h-1/4 shadow-[0_0_15px_rgba(82,85,169,0.5)]"></div>
+</div>
+</body></html>

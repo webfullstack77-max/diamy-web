@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-primary": "#5255a9",
+              "secondary": "#d87d01",
+              "primary-container": "#e1e0ff",
+              "on-tertiary-fixed": "#001f29",
+              "surface-container-low": "#f7f7fc",
+              "surface-tint": "#484b9e",
+              "inverse-on-surface": "#f2f0f7",
+              "on-primary-container": "#090664",
+              "surface-container-lowest": "#ffffff",
+              "surface-dim": "#dbdae1",
+              "secondary-fixed": "#ffdcbf",
+              "on-tertiary": "#ffffff",
+              "on-background": "#1b1b23",
+              "on-tertiary-container": "#001f29",
+              "surface-container-high": "#ebeaf2",
+              "on-primary-fixed-variant": "#3a3d90",
+              "on-primary-fixed": "#090664",
+              "on-surface": "#1b1b23",
+              "surface-container-highest": "#e4e1ed",
+              "on-surface-variant": "#464651",
+              "on-tertiary-fixed-variant": "#004d63",
+              "on-secondary-fixed": "#2d1600",
+              "outline-variant": "#c7c5d3",
+              "tertiary": "#006783",
+              "primary": "#484b9e",
+              "error": "#ba1a1a",
+              "on-primary": "#ffffff",
+              "primary-fixed-dim": "#c0c1ff",
+              "on-secondary": "#ffffff",
+              "surface-variant": "#e4e1ed",
+              "surface-bright": "#fbf8ff",
+              "surface": "#fbf8ff",
+              "secondary-fixed-dim": "#ffb874",
+              "on-error": "#ffffff",
+              "on-secondary-fixed-variant": "#6b3b00",
+              "on-error-container": "#410002",
+              "surface-container": "#f1f0f7",
+              "background": "#fbf8ff",
+              "secondary-container": "#ffdcbf",
+              "tertiary-fixed-dim": "#62d4ff",
+              "tertiary-fixed": "#bce9ff",
+              "primary-fixed": "#e1e0ff",
+              "on-secondary-container": "#2d1600",
+              "inverse-surface": "#303038",
+              "tertiary-container": "#bce9ff",
+              "outline": "#777681",
+              "error-container": "#ffdad6"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface selection:bg-primary/20">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-xl border-b border-surface-container-highest">
+<div class="flex items-center justify-between px-6 py-4 w-full">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">search</span>
+<span class="text-xl font-bold tracking-widest text-primary uppercase font-headline">LUMINOUS</span>
+</div>
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm">notifications</span>
+</div>
+</div>
+</header>
+<main class="pt-24 pb-32">
+<!-- Search Section -->
+<section class="px-6 mb-12">
+<div class="relative group">
+<div class="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">search</span>
+</div>
+<input class="w-full bg-surface-container-high border-none rounded-full py-5 pl-14 pr-6 text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/30 transition-all font-medium text-lg shadow-sm" placeholder="Search the catalog..." type="text"/>
+</div>
+</section>
+<!-- Categories Circular Grid -->
+<section class="mb-16">
+<div class="px-6 mb-6">
+<h2 class="font-headline text-3xl font-bold text-on-surface leading-tight">Crafting<br/><span class="text-primary italic">Excellence</span></h2>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar gap-6 px-6 snap-x">
+<!-- Corte Laser -->
+<div class="flex flex-col items-center gap-3 snap-center shrink-0">
+<div class="w-24 h-24 rounded-full p-1 bg-gradient-to-tr from-primary to-secondary">
+<div class="w-full h-full rounded-full overflow-hidden border-4 border-surface">
+<img alt="Laser cutting" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuADFe6K-yR0at2dbd7yi8KmNsgQ2oMGR9b7X0UmrBL_uoS32u0PVBZ_u6lXvqv8wQeGrEAVMcIX_Hy9acB7qb3clO5hUikF5Gzl1iSEdWHnNtg3_WQk4NKsSqz8kg4c0jHF6IdsGvVYcpfxarscCSlpTqGW41ZQfKB3LtRpNLr791PzSHP8P3hfDDjYMB9XqWd_CPnRypJiurFEi_2my52bS1gY1V6LDvSI_dvIpX6ZfzTMagvX4NkJxEixMILlJo4GbCIzRzaNI_0U"/>
+</div>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant font-label text-center w-24">Corte Laser</span>
+</div>
+<!-- Estampado -->
+<div class="flex flex-col items-center gap-3 snap-center shrink-0">
+<div class="w-24 h-24 rounded-full p-1 bg-surface-container-highest">
+<div class="w-full h-full rounded-full overflow-hidden border-4 border-surface">
+<img alt="Printed t-shirt" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPZfVmiWuEAkBnL1_dbjUVNyX8sUyDNvaPPoMHrr_Qhwti8GQJVGUGaKQYlATD_8TRqShITQOVtaHb_AHRrkti5krfPUT3_OxdmrSLeaCOqFOEv-IKGn1fuT-px93LnzEdxBzXoy42LFQmKc9pg9lu-uW1L0TeVup-Yvyz8ccbim6O5zwtS4pFQ3-K746bwUvDOA8gXxH7E8qEdBgJOSQY3YRZrMT03q9WQtX05bGpytlaMGq_9jVCSz3lBjzm90PzCr7ge6t51vIX"/>
+</div>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant font-label text-center w-24">Estampado</span>
+</div>
+<!-- Acrilico -->
+<div class="flex flex-col items-center gap-3 snap-center shrink-0">
+<div class="w-24 h-24 rounded-full p-1 bg-surface-container-highest">
+<div class="w-full h-full rounded-full overflow-hidden border-4 border-surface">
+<img alt="Acrylic design" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDE6RRoc0G207HDrCDLwjKdM8zT6VRqQMuk_iOJNVOpfPTxyF0IAbayK5Ja3unhBJE0XMYC8XzPilQDAvKer3yBCHch6Yd9h_Bmc9QB6Jjc6MCC_i_yMwtzUwQUC3-dWM2Ai9fx4AfUX11-w7rdtn10hEp7VGK1EtVTTr9Zy6r7XHyCO3Y7TOuQEHy40LF8VdrI_tV4xbFKbDz__Ci7XqvX50KftuaxXyFhBVhjgR0M8WswVM8iRsnkaaFWRgvo_Q3k5_o6wFsSYQMy"/>
+</div>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant font-label text-center w-24">Acrilico</span>
+</div>
+<!-- Vinil -->
+<div class="flex flex-col items-center gap-3 snap-center shrink-0">
+<div class="w-24 h-24 rounded-full p-1 bg-surface-container-highest">
+<div class="w-full h-full rounded-full overflow-hidden border-4 border-surface">
+<img alt="Vinyl decals" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAib9W12eKbC-rugmku9ly0zFP_1-VGHQbnhccFEJ_D8fiFlpkGIiglgtWhJrNz4mca4jDyxAVAzgOtXad1ZpaDK55hmGrNIKtkIEu8fXYS86h8qy9X1ITJgYlnrmejs-X9cjOONnCDeHWYukxYtMjzzAWBMQdM11u8pef2guQM34TPDMVoJ4q0UUHSZn3gMcsl_ZRZ-PGlW13WlVZm0UQE1_NOOj8fnOAsDqklB2uzIEKyX2VLv1LpYj2pScTVlvbba1wd4jrk1M5w"/>
+</div>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant font-label text-center w-24">Corte Vinil</span>
+</div>
+<!-- Neon -->
+<div class="flex flex-col items-center gap-3 snap-center shrink-0">
+<div class="w-24 h-24 rounded-full p-1 bg-surface-container-highest">
+<div class="w-full h-full rounded-full overflow-hidden border-4 border-surface">
+<img alt="Neon sign" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVU2lN5XkA0q0wLPXC8x-SO6exbDHs1TJZOdan5fVgGtJSWgWXqfofAPP6UY75eyr7q59tVbDteySrZqytq1JZQtd5sYcBf5I5xrAc9i6MOJ2j1DHOhRslxiM5n0s_hU0GTF3HI_slORorUebZ48N3Wmo-l5H0xe26IHIIo5pSb2x5FpWFc4_zZrTWkqYRB9e6Ayx1PFa8vsWwE8-yI97gYAoEac9PNDCfhgdnhUNsgTu19dPB6omNfwl5Oj0QVNcYRHetfFLvKVvG"/>
+</div>
+</div>
+<span class="text-[10px] font-bold uppercase tracking-tighter text-on-surface-variant font-label text-center w-24">Neon Signs</span>
+</div>
+</div>
+</section>
+<!-- Bento Featured Section -->
+<section class="px-6 mb-16">
+<div class="grid grid-cols-2 gap-4">
+<div class="col-span-2 relative h-48 rounded-[2rem] overflow-hidden bg-primary shadow-xl group">
+<img alt="Abstract lights" class="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCl1vLeEFHDPx7UiTgjev1KJXCYSCt2XkY7o8kM33Y3g8iq65-Ol18ti_1hPy-9DBQ3TEa8yDFArQVnDH_Tvkk1GdGZdsEGASdCxpVPLRGuTJHlNU0SS5_c7dh_vPFCH0QAvPVMpSyyKrIiOiORXox-GajUbaCpoORhgNaqYxR8Wx-nX1NMaxzQOB4jcjGoHT8U5_HbbrVqOsgFI4yqcXJAAQeAZK-zloqxH63g3LuzHuNCA88631JElc9SMVmyH04DxQZq5QCWZ-MW"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+<div class="relative h-full p-8 flex flex-col justify-end text-white">
+<span class="text-secondary-fixed font-label text-[10px] tracking-widest uppercase mb-2">Exclusive Edition</span>
+<h3 class="font-headline text-2xl font-bold">Bespoke Acrylics</h3>
+</div>
+</div>
+<div class="h-40 rounded-[2rem] bg-white border border-surface-container-highest p-6 flex flex-col justify-between shadow-sm">
+<span class="material-symbols-outlined text-secondary">flare</span>
+<span class="text-xs font-bold leading-tight uppercase font-label text-on-surface">Precision<br/>Cutting</span>
+</div>
+<div class="h-40 rounded-[2rem] bg-primary p-6 flex flex-col justify-between text-white shadow-sm">
+<span class="material-symbols-outlined">design_services</span>
+<span class="text-xs font-bold leading-tight uppercase font-label">Design<br/>Atelier</span>
+</div>
+</div>
+</section>
+<!-- Feedback Glassmorphism Carousel -->
+<section class="mb-20">
+<div class="px-6 mb-8 flex items-end justify-between">
+<div>
+<h2 class="font-headline text-2xl font-bold text-on-surface">Client Feedback</h2>
+<p class="text-on-surface-variant text-sm mt-1">Voices from the Atelier</p>
+</div>
+<div class="flex gap-2 mb-1">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+<div class="w-2 h-2 rounded-full bg-surface-container-highest"></div>
+</div>
+</div>
+<div class="flex overflow-x-auto hide-scrollbar gap-5 px-6 pb-4 snap-x">
+<!-- Feedback 1 -->
+<div class="snap-center shrink-0 w-80 p-6 rounded-[2rem] bg-white/40 backdrop-blur-xl border border-surface-container-highest relative overflow-hidden shadow-sm">
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 blur-[40px] rounded-full"></div>
+<div class="flex gap-1 mb-4">
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="text-on-surface font-body italic mb-6 leading-relaxed">"The level of detail in the laser etching surpassed our expectations. Truly a premium studio for bespoke materials."</p>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">MA</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Marco Arvizu</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-label">Architectural Studio</p>
+</div>
+</div>
+</div>
+<!-- Feedback 2 -->
+<div class="snap-center shrink-0 w-80 p-6 rounded-[2rem] bg-white/40 backdrop-blur-xl border border-surface-container-highest relative overflow-hidden shadow-sm">
+<div class="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/5 blur-[40px] rounded-full"></div>
+<div class="flex gap-1 mb-4">
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="text-on-surface font-body italic mb-6 leading-relaxed">"Stunning neon work. It has completely transformed our retail space atmosphere. Fast turnaround too!"</p>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-bold text-xs">SL</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Sofia Luna</p>
+<p class="text-[10px] text-on-surface-variant uppercase font-label">Boutique Owner</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="w-full py-12 mb-24 flex flex-col items-center space-y-4 px-8 text-center bg-surface-container-low border-t border-surface-container-highest">
+<span class="text-sm font-bold text-primary font-headline tracking-widest uppercase">Luminous Atelier</span>
+<div class="flex gap-6 text-xs font-medium text-outline font-label uppercase tracking-widest">
+<a class="hover:text-primary transition-colors" href="#">Contact</a>
+<a class="hover:text-primary transition-colors" href="#">Shipping</a>
+<a class="hover:text-primary transition-colors" href="#">Privacy</a>
+</div>
+<p class="text-xs font-medium text-outline font-label">© 2024 Luminous Atelier</p>
+</footer>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[2rem] bg-white/80 backdrop-blur-2xl border-t border-surface-container-highest shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+<div class="flex justify-around items-center w-full px-4 pb-6 pt-3">
+<!-- Active: Catalog -->
+<button class="flex flex-col items-center justify-center bg-primary/10 text-primary rounded-full px-5 py-2 scale-90 transition-all duration-300">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase font-label mt-1">Catalog</span>
+</button>
+<!-- Inactive: Materials -->
+<button class="flex flex-col items-center justify-center text-outline px-5 py-2 hover:text-primary transition-all">
+<span class="material-symbols-outlined">layers</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase font-label mt-1">Materials</span>
+</button>
+<!-- Inactive: Orders -->
+<button class="flex flex-col items-center justify-center text-outline px-5 py-2 hover:text-primary transition-all">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase font-label mt-1">Orders</span>
+</button>
+<!-- Inactive: Profile -->
+<button class="flex flex-col items-center justify-center text-outline px-5 py-2 hover:text-primary transition-all">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase font-label mt-1">Profile</span>
+</button>
+</div>
+</nav>
+<!-- Contextual FAB -->
+<button class="fixed right-6 bottom-28 w-16 h-16 rounded-full bg-primary shadow-2xl flex items-center justify-center text-white z-40 active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</body></html>

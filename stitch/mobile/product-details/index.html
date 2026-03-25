@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Diamy Catalog - Product Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@300;400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "inverse-primary": "#5255a9",
+              "secondary": "#d87d01",
+              "primary-container": "#484b9e",
+              "on-tertiary-fixed": "#001f29",
+              "surface-container-low": "#f4f4f7",
+              "surface-tint": "#5255a9",
+              "inverse-on-surface": "#f1f0f7",
+              "on-primary-container": "#e1e0ff",
+              "surface-container-lowest": "#ffffff",
+              "surface-dim": "#dbdae1",
+              "secondary-fixed": "#ffdcbf",
+              "on-tertiary": "#ffffff",
+              "on-background": "#1b1b23",
+              "on-tertiary-container": "#001f29",
+              "surface-container-high": "#e9e8ef",
+              "on-primary-fixed-variant": "#3a3d90",
+              "on-primary-fixed": "#090664",
+              "on-surface": "#1b1b23",
+              "surface-container-highest": "#e4e1ed",
+              "on-surface-variant": "#464651",
+              "on-tertiary-fixed-variant": "#004d63",
+              "on-secondary-fixed": "#2d1600",
+              "outline-variant": "#c7c5d3",
+              "tertiary": "#006783",
+              "primary": "#484b9e",
+              "error": "#ba1a1a",
+              "on-primary": "#ffffff",
+              "primary-fixed-dim": "#c0c1ff",
+              "on-secondary": "#ffffff",
+              "surface-variant": "#e4e1ed",
+              "surface-bright": "#f9f8ff",
+              "surface": "#f9f8ff",
+              "secondary-fixed-dim": "#ffb874",
+              "on-error": "#ffffff",
+              "on-secondary-fixed-variant": "#6b3b00",
+              "on-error-container": "#410002",
+              "surface-container": "#efedf4",
+              "background": "#f9f8ff",
+              "secondary-container": "#ffdcbf",
+              "tertiary-fixed-dim": "#62d4ff",
+              "tertiary-fixed": "#bce9ff",
+              "primary-fixed": "#e1e0ff",
+              "on-secondary-container": "#2d1600",
+              "inverse-surface": "#303038",
+              "tertiary-container": "#bce9ff",
+              "outline": "#777682",
+              "error-container": "#ffdad6"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #f9f8ff;
+            color: #1b1b23;
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl flex items-center justify-between px-6 py-4 shadow-sm">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined text-primary">arrow_back</span>
+</button>
+<span class="text-xl font-bold tracking-widest text-primary uppercase font-headline">LUMINOUS</span>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined text-primary">share</span>
+</button>
+</header>
+<main class="flex-grow pt-20 pb-32">
+<!-- Hero Product Image Section -->
+<section class="relative px-6 mb-8">
+<div class="relative w-full aspect-[4/5] rounded-[2rem] overflow-hidden bg-surface-container-low shadow-xl">
+<img alt="Product Image" class="w-full h-full object-cover" data-alt="Modern geometric acrylic laser cut sculpture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz22exqrAJQxGyDijSzpu0cP4LCzpYW-NdyIYV5UVSsEhFyA9CpaLgLjtvAnAN8GG9_9awVLk0HGR2CbHUDlIsL0Ik0B4mNXhu4i5PBSQZ11771Etdl3VanpQSCF77tnzKOlpJDzCN6d-eAT-ULNM9uCqXdEJTBpSU-4jVpNiR-Kl-CRMIytUu6oreViHvxF8eamd9eVV8PHwqmZzpSC9pzaryNp21biSDH7WRzVzH2oExKd1jKVsQd7p8pDabiMkCLl9M0pEcWcgA"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent"></div>
+</div>
+<!-- Floating Detail Badge -->
+<div class="absolute -bottom-4 right-10 bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-outline/10 flex items-center gap-2 shadow-lg">
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="text-xs font-bold tracking-widest uppercase text-on-surface">Premium Edition</span>
+</div>
+</section>
+<!-- Product Information -->
+<section class="px-8 space-y-6">
+<div class="space-y-1">
+<h1 class="font-headline text-4xl font-bold text-on-background leading-tight">Prism Spectral Piece</h1>
+<div class="flex items-baseline gap-2">
+<span class="text-secondary font-bold text-2xl tracking-tight">$420.00</span>
+<span class="text-on-surface-variant text-sm line-through">$580.00</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex gap-2">
+<span class="px-4 py-1.5 bg-primary/10 rounded-full text-[10px] font-bold tracking-widest uppercase text-primary">Acrylic</span>
+<span class="px-4 py-1.5 bg-primary/10 rounded-full text-[10px] font-bold tracking-widest uppercase text-primary">Laser Etched</span>
+</div>
+<p class="text-on-surface-variant leading-relaxed text-sm font-medium">
+                    An architectural exploration of light refraction. This piece uses triple-layered dichroic acrylic, precision-cut at a micron level to create an ever-shifting spectrum of color as the viewer moves around the atelier.
+                </p>
+</div>
+<!-- WhatsApp Action -->
+<div class="pt-4">
+<a class="group relative flex items-center justify-center w-full bg-primary p-[1px] rounded-full overflow-hidden transition-all duration-300 active:scale-95 shadow-xl shadow-primary/25" href="#">
+<div class="flex items-center justify-center w-full py-4 px-8 bg-primary rounded-full gap-3">
+<span class="material-symbols-outlined text-white">chat</span>
+<span class="font-bold tracking-widest uppercase text-xs text-white">Comprar por WhatsApp</span>
+</div>
+</a>
+</div>
+</section>
+<!-- Recommendations Section -->
+<section class="mt-16 px-8">
+<div class="flex justify-between items-end mb-8">
+<h3 class="font-headline text-2xl font-bold">You might also like</h3>
+<span class="text-[10px] font-bold tracking-widest uppercase text-primary border-b-2 border-primary/20 pb-1">View Collection</span>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<!-- Rec Card 1 -->
+<div class="space-y-3">
+<div class="aspect-square rounded-2xl overflow-hidden bg-surface-container-low group shadow-md">
+<img alt="Related product" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Minimalist wood and resin tray design" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB4e_RuLM3dYf83hj2yBUccGs9X9YQFYbk4UxJkVvQxt9PnZ2AZ1VtkSYi8l5QbsyY9lVGll0vWLcgrbLjssmEE2EPnsniT2xgGBPvRUi4belx5AESyU18OGVRnkpyzh42IluXGYfKNM4tjFSIR5qQ5j6Zoo9SEvveKslhYESnweb7_KKo3qGEAvWa9fcwbOf0eD_Tr0bXHXFE51a0GtCCvW2l3MoSz1DSojCNA1oYqI03KAocJEFUlilITYTxgAkT0U-0A_Ih_-N-z"/>
+</div>
+<div class="px-1">
+<h4 class="text-xs font-bold uppercase tracking-wider truncate text-on-surface">Krypton Plate</h4>
+<p class="text-xs text-secondary font-bold">$185.00</p>
+</div>
+</div>
+<!-- Rec Card 2 -->
+<div class="space-y-3">
+<div class="aspect-square rounded-2xl overflow-hidden bg-surface-container-low group shadow-md">
+<img alt="Related product" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Abstract laser cut metal wall art" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKAjDoH76lgbm3wJNtSO5DqYFyCa0WI7qd-BUMrP-UMeC05iB6fqgwONzmR3HQ1anX9JscdQRDNHwWXHeO7hyN783OOlo-hHvIFM_Ds0FsUAbz9_Cd5J3KG38jhN2B65s_pCrYmc_De6sikyWte9dP5pTC518YeeWo3YfPo0lDR6aqKyqw0EczQit1My18G943cd-nwR4OO3Qj-4h_OskYqjiIl_PG5XSyfbthuCbbPW4830ZBmm2PvVY1DBUKIXOLvfDZ2OL0_yIA"/>
+</div>
+<div class="px-1">
+<h4 class="text-xs font-bold uppercase tracking-wider truncate text-on-surface">Void Pendant</h4>
+<p class="text-xs text-secondary font-bold">$210.00</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Shell (Destination Anchor) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-[2.5rem] bg-white/80 backdrop-blur-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)] flex justify-around items-center px-4 pb-6 pt-3 border-t border-slate-100">
+<a class="flex flex-col items-center justify-center bg-primary/10 text-primary rounded-full px-5 py-2 scale-90 duration-300 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase mt-1">Catalog</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase mt-1">Materials</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase mt-1">Orders</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 px-5 py-2 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-bold tracking-tighter uppercase mt-1">Profile</span>
+</a>
+</nav>
+<!-- Footer Space -->
+<footer class="w-full py-12 mb-24 border-t border-slate-100 flex flex-col items-center space-y-4 px-8 text-center bg-slate-50/50">
+<div class="text-sm font-bold text-slate-900 uppercase tracking-widest">Diamy Catalog</div>
+<div class="flex gap-6">
+<a class="text-xs font-semibold text-slate-500 hover:text-primary transition-colors" href="#">Contact</a>
+<a class="text-xs font-semibold text-slate-500 hover:text-primary transition-colors" href="#">Shipping</a>
+<a class="text-xs font-semibold text-slate-500 hover:text-primary transition-colors" href="#">Privacy</a>
+</div>
+<p class="text-[10px] text-slate-400 font-medium">© 2024 Luminous Atelier</p>
+</footer>
+</body></html>

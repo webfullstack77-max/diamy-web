@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@300;400;500;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error-container": "#410002",
+              "surface-tint": "#5255a9",
+              "secondary": "#a85d00",
+              "on-primary-container": "#090664",
+              "inverse-primary": "#c0c1ff",
+              "surface-container-low": "#f4f3fb",
+              "tertiary-fixed-dim": "#62d4ff",
+              "on-secondary-fixed": "#2d1600",
+              "error": "#ba1a1a",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-container": "#001f29",
+              "primary-fixed-dim": "#c0c1ff",
+              "on-secondary-container": "#452400",
+              "inverse-on-surface": "#f2f0f7",
+              "secondary-fixed": "#ffdcbf",
+              "primary-fixed": "#e1e0ff",
+              "error-container": "#ffdad6",
+              "tertiary": "#006684",
+              "secondary-container": "#ffdcbf",
+              "surface-dim": "#dbdae1",
+              "surface-container-high": "#e9e8ef",
+              "surface-container": "#efedf4",
+              "secondary-fixed-dim": "#ffb874",
+              "on-primary": "#ffffff",
+              "outline-variant": "#c7c5d3",
+              "tertiary-fixed": "#bce9ff",
+              "background": "#F8F9FA",
+              "on-background": "#1b1b23",
+              "surface": "#ffffff",
+              "on-surface": "#1b1b23",
+              "on-primary-fixed": "#090664",
+              "surface-variant": "#e4e1ed",
+              "surface-container-highest": "#e3e2e9",
+              "on-secondary": "#ffffff",
+              "inverse-surface": "#303038",
+              "on-tertiary-fixed-variant": "#004d63",
+              "outline": "#777682",
+              "surface-container-lowest": "#ffffff",
+              "tertiary-container": "#bce9ff",
+              "on-error": "#ffffff",
+              "surface-bright": "#fdfbff",
+              "primary-container": "#e1e0ff",
+              "on-surface-variant": "#464651",
+              "on-tertiary-fixed": "#001f29",
+              "on-primary-fixed-variant": "#3a3d90",
+              "on-secondary-fixed-variant": "#6b3b00",
+              "primary": "#5255a9"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #F8F9FA;
+            color: #1b1b23;
+        }
+    </style>
+</head>
+<body class="font-body selection:bg-secondary/30">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-lg border-b border-outline-variant/30 px-12 py-6 flex items-center justify-between gap-8">
+<div class="text-2xl font-bold font-serif text-primary">
+        Diamy Laser Cut
+    </div>
+<!-- Centered Search Bar -->
+<div class="flex-1 max-w-2xl mx-auto">
+<div class="relative flex items-center bg-surface-container-low rounded-full px-6 py-3 group focus-within:ring-1 ring-primary/30 transition-all duration-300 border border-outline-variant/20">
+<span class="material-symbols-outlined text-outline mr-3">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-on-surface placeholder:text-outline font-light" placeholder="Buscar servicios o materiales..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:text-secondary transition-all duration-300 active:scale-95">account_circle</button>
+</div>
+</nav>
+<main class="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
+<!-- Category Grid Section -->
+<section class="mb-32">
+<div class="text-center mb-16">
+<h2 class="font-headline text-4xl md:text-5xl font-bold mb-4 text-on-surface">Nuestros Servicios</h2>
+<div class="h-1 w-24 bg-gradient-to-r from-secondary to-transparent mx-auto rounded-full"></div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-12 md:gap-16">
+<!-- Item 1 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-primary/20 group-hover:scale-105 transition-all duration-500"><img alt="Corte Laser" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9A5R2ekxhpO63z3JdR2W3IzVChv1P72lDi0fwhgIRgZX_7XVE7htXjHJWRZqqcF_8Wpe8emwZ9rUcJ3bnDpTjDoEAYhjhjRuTP_fmW1xaN4g1iFk3w-oPfUDwgDwqaZWlOI3AY3SWKGX8_znCajwTmQdccWYvtEl1Xky59jgNrEbSCOFEv7lvwxCSZr_4gd8hH5iPixapdl6IH4anQK_5tb3YHdIAZB1iHLGzElqmWTmfigCmh_rwiq0PGilOXRfigSQsLmbO-rW2"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-primary transition-colors">Corte Laser</span>
+</div>
+<!-- Item 2 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-secondary/20 group-hover:scale-105 transition-all duration-500"><img alt="Estampado de playeras" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_RCIEW7lJtjbIGmgtPuPqv6M3rv4Jg3SBSswFNK2tvV0KTrkMkaKJz0ywybI4FYQkpn6Tg8qOsi8kWo5Jw4uMgOdsUc55QqId-RLbQk7exZmOkgisMq5_R43ClN3AnbywKCxhN0ZNzL7HCk4iLmRZ6yqanxe5Zv-WO52inQK8LUXYvoSL8m-3Rf_ZL_XUqqdDAUamRerZtojWLHtNr0-arXdlFpSJSKGNAxj3JTGM1bKEGu5vS1KzoqcLju5_-B2l4trb9qWwAP20"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-secondary transition-colors">Estampado de playeras</span>
+</div>
+<!-- Item 3 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-tertiary/20 group-hover:scale-105 transition-all duration-500"><img alt="Diseños en acrílico" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXEiTyT7Gri6XsFXI_yxgm4AzTcRzm1afnOHLBsG1izUOJbNZgsO5oEPphTyf0sIEww3i6OdsDjJkkbfOgebrfoCowOz2x1zlPlQ5deKjtTbymFDGACppwtnzdydpJrW_utVCTHVN7EkFyZZlfoHa8RaLmhVYKhwg43VJw1Jb0-sTeYQ6PAzfDgocamBmVanDu7TDTCCUe3L_cAF-UyseF5KYq2cZH3qYPv1fFWAVfNVWqGsqYDEl888Yn41cqRAbqmZxJ-05BDnkr"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-tertiary transition-colors">diseños en acrilico</span>
+</div>
+<!-- Item 4 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-primary/20 group-hover:scale-105 transition-all duration-500"><img alt="Corte de Vinil" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDS20Av10aaIzNguUQc0gRYyKAZpLHrYEj91aBigOIXqekYX0KUP7lyyoh7VNNIIuACR_zvb3rt5uqJIx1nBhTmLhXG4fAD8ELBK2LyW4eCGi19EjZqW3Q9gOpGGPf2P0JVJD6l8oSDQJiseAd3cat1sRolWbcg5TlnnHxNsa3j1sHDa3iVe6ZIAH-8zopcpkdW2FKwbYtzf3bMKO1EQuXEXIkY3oPCxxNbAXB0DIhSq4dHPenHEk4PLxbNS39Gbm5nO1GqRX3P1uet"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-primary transition-colors">corte de Vinil</span>
+</div>
+<!-- Item 5 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-secondary/20 group-hover:scale-105 transition-all duration-500"><img alt="Letreros Led Neon" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmesz8Eu8PieG01Ee8qdGImHRpz4q-sTpnW3GUaDGQH41qUe80lRE-oGsguwyizJ6XNLZj4vmzvw4FWhPJooe6WCi_ft2CSoD6XHVU4WZb9mdS2Xip46MWJaevY0WzVzBIZZkyAb-GZfNM8IhkH3gBpPCxkFg4ckQblQrNxTY2gFlC_Qgo6pS6ApigCbc91zXaeFvhJH81iPt8LQ43GbFpECtlJhEFXRYVqNxOadA88V4fEBTjnAxBw9yEV2U8QTwmWFPB0MEUIc7R"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-secondary transition-colors">letreros Led Neon</span>
+</div>
+<!-- Item 6 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-tertiary/20 group-hover:scale-105 transition-all duration-500"><img alt="Tazas personalizadas" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBt8eaMw27D9B5HJVYmIiSfNvC34ilk-6GxJ84pNyNILVMYXfxFusOPuOtDlQasLTPj6kTUjmMWpAv2eAbiv9dfCbVUnMFdgB4aGWq1E7QXr-8aYv_euOURcOhqPrpgrADLiQdJxWdYlZasyDFcB87ExvZfyAoz4L7lKJFTqb_muFLvdt0PEeUYmS3C9Rft_OYVYVzkiCtrmeGP8xNo2RQwod2IazdUtGJysHvnms7Tr2zr5BuIEdNWc2wcOtjSqe97tuaGXP93wNNA"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-tertiary transition-colors">tazas personalidas</span>
+</div>
+<!-- Item 7 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-primary/20 group-hover:scale-105 transition-all duration-500"><img alt="Impresión 3D" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnYx0uoIeWIufSNrrx0NwAjgpBIffegKL1lLRoBHZiXNJ0D5NWoElKutAfd0_bz8JqRaS1O_ffhycWB6M2vOV78-w9P-fY88f086QIr34KN-G8k5XZH0ykHrcCd1YzWWnPOGkC-W-RwQAb5y-ikHSFlIdzFlfBwvm9ASaPWOyy3LZLOhv3m2qhPp2wWbolesNOG68l60x884__ByEbIJZZNS1XltC_bQf8QBbl_VXMuf4MR76jBnEMtDrhH21ZVhjMnxz_dncuWEqS"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-primary transition-colors">impresion 3D</span>
+</div>
+<!-- Item 8 -->
+<div class="flex flex-col items-center gap-6 group cursor-pointer">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full glass-card flex items-center justify-center border border-outline-variant/20 shadow-lg group-hover:shadow-secondary/20 group-hover:scale-105 transition-all duration-500"><img alt="Diseños en Coroplast" class="w-full h-full rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAr8vZVXV68gxMB5gi-_5WDBiHar-Zi76YRLS7xlt-GUKfyrmrpMRdkMNc1imiia5-Nc5IfVROivb_WCw3iouCKA8RBmZXuD1ITBrFQqoHIphDfrdLTs_BtnBTlfHOWKn5vrSsO17W2vlm3p7cYwLTNQeB66wA6rTGC66NR6ZFVP3MArTaF-P8g5QH6psVHsXDFS9Macwd61gFgWVdMwNxS3cC4rick3OmyyquG_82litecG22iP8EWgNSBaGORHx2ptF-XepuZF8z_"/></div>
+<span class="font-label text-xs uppercase tracking-widest text-center text-on-surface-variant font-bold group-hover:text-secondary transition-colors">diseños en Coroplast</span>
+</div>
+</div>
+</section>
+<!-- Client Reflections Testimonials -->
+<section class="bg-surface-container-low rounded-[2rem] p-12 md:p-20 relative overflow-hidden border border-outline-variant/20">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px]"></div>
+<div class="relative z-10 text-center mb-16">
+<h2 class="font-headline text-3xl md:text-4xl font-bold mb-4 text-on-surface">Reflexiones de Clientes</h2>
+<p class="text-on-surface-variant max-w-lg mx-auto font-light">Historias de precisión y creatividad contadas por quienes confían en nuestro taller.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<!-- Testimonial 1 -->
+<div class="bg-white p-8 rounded-2xl border border-outline-variant/20 shadow-sm hover:shadow-md transition-all">
+<div class="flex gap-1 mb-6">
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="italic text-on-surface mb-8 leading-relaxed font-light">"La precisión del corte en acrílico para mis prototipos fue impecable. Diamy entiende la importancia del detalle."</p>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl">person</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Roberto Méndez</p>
+<p class="text-xs text-outline font-label uppercase tracking-widest">Arquitecto</p>
+</div>
+</div>
+</div>
+<!-- Testimonial 2 -->
+<div class="bg-white p-8 rounded-2xl border border-outline-variant/20 shadow-sm hover:shadow-md transition-all">
+<div class="flex gap-1 mb-6">
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="italic text-on-surface mb-8 leading-relaxed font-light">"El letrero LED neón que fabricaron para mi estudio superó todas las expectativas. El acabado es simplemente profesional."</p>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary text-xl">person</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Elena Castillo</p>
+<p class="text-xs text-outline font-label uppercase tracking-widest">Diseñadora de Interiores</p>
+</div>
+</div>
+</div>
+<!-- Testimonial 3 -->
+<div class="bg-white p-8 rounded-2xl border border-outline-variant/20 shadow-sm hover:shadow-md transition-all">
+<div class="flex gap-1 mb-6">
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="italic text-on-surface mb-8 leading-relaxed font-light">"Excelente servicio en impresión 3D y vinil. Muy rápidos y con una atención al cliente que te hace sentir valorado."</p>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary text-xl">person</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Marco Tulio</p>
+<p class="text-xs text-outline font-label uppercase tracking-widest">Emprendedor</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-white border-t border-outline-variant/20 w-full px-12 py-12 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="font-serif text-lg font-semibold text-primary">Diamy Laser Cut</div>
+<div class="flex flex-wrap justify-center gap-8">
+<a class="font-sans text-sm font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Corte Laser</a>
+<a class="font-sans text-sm font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Estampado</a>
+<a class="font-sans text-sm font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Acrílico</a>
+<a class="font-sans text-sm font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Vinil</a>
+<a class="font-sans text-sm font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">Led Neon</a>
+<a class="font-sans text-sm font-bold tracking-tight text-on-surface-variant hover:text-primary transition-colors cursor-pointer" href="#">3D Print</a>
+</div>
+<div class="font-sans text-sm font-light tracking-tight text-on-surface-variant">
+        © 2024 Diamy Laser Cut. Crafted with Precision.
+    </div>
+</footer>
+</body></html>
