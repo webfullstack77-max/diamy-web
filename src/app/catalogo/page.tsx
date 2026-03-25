@@ -87,7 +87,7 @@ export default async function CatalogoPage({
           categories={categories.map((c) => ({
             slug: c.slug,
             name: c.name,
-            children: c.children.map((s) => ({ slug: s.slug, name: s.name })),
+            children: c.children.map((s: any) => ({ slug: s.slug, name: s.name })),
           }))}
         />
 
