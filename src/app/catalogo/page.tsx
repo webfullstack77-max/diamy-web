@@ -9,7 +9,6 @@ export const metadata: Metadata = { title: "Catálogo" };
 
 interface SearchParams {
   categoria?: string;
-  material?: string;
   q?: string;
 }
 
@@ -18,7 +17,7 @@ export default async function CatalogoPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const { categoria, material, q } = await searchParams;
+  const { categoria, q } = await searchParams;
 
   const categoryFilter = categoria
     ? { OR: [{ category: { slug: categoria } }, { subcategory: { slug: categoria } }] }
@@ -31,7 +30,6 @@ export default async function CatalogoPage({
     prisma.product.findMany({
       where: {
         isActive: true,
-        ...(material && { materials: { has: material } }),
         ...(categoryFilter && searchFilter
           ? { AND: [categoryFilter, searchFilter] }
           : categoryFilter
@@ -45,13 +43,6 @@ export default async function CatalogoPage({
     }),
     prisma.category.findMany({ where: { parentId: null }, include: { children: { orderBy: { name: "asc" } } }, orderBy: { name: "asc" } }) as Promise<any[]>,
   ]);
-
-  // Collect all unique materials from all products for filters
-  const allMaterials = await prisma.product.findMany({
-    where: { isActive: true },
-    select: { materials: true },
-  });
-  const materials = [...new Set(allMaterials.flatMap((p) => p.materials))].sort();
 
   const activeCategory = categories.find((c) => c.slug === categoria) as (typeof categories[0] & { promoMode?: boolean; promoImage?: string | null; promoDescription?: string | null }) | undefined;
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
@@ -72,7 +63,6 @@ export default async function CatalogoPage({
 
       {/* Mobile filter chips */}
       <FilterChips
-        materials={materials}
         categories={categories.map((c) => ({
           slug: c.slug,
           name: c.name,
@@ -83,7 +73,6 @@ export default async function CatalogoPage({
       <div className="flex gap-8 mt-6">
         {/* Desktop sidebar */}
         <FilterSidebar
-          materials={materials}
           categories={categories.map((c) => ({
             slug: c.slug,
             name: c.name,

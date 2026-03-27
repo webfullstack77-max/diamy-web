@@ -15,15 +15,13 @@ interface CategoryWithChildren {
 }
 
 interface Props {
-  materials: string[];
   categories: CategoryWithChildren[];
 }
 
-export default function FilterSidebar({ materials, categories }: Props) {
+export default function FilterSidebar({ categories }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const activeMaterial = params.get("material");
   const activeCategory = params.get("categoria");
 
   // Categorías expandidas (por slug)
@@ -153,39 +151,6 @@ export default function FilterSidebar({ materials, categories }: Props) {
             })}
           </ul>
         </div>
-
-        {/* Materials */}
-        {materials.length > 0 && (
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-widest text-on-surface-muted mb-3">
-              Materiales
-            </h3>
-            <ul className="space-y-1">
-              <li>
-                <button
-                  onClick={() => updateParam("material", null)}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition ${
-                    !activeMaterial ? "bg-primary-container text-primary font-medium" : "text-on-surface hover:bg-surface-container"
-                  }`}
-                >
-                  Todos
-                </button>
-              </li>
-              {materials.map((m) => (
-                <li key={m}>
-                  <button
-                    onClick={() => updateParam("material", m)}
-                    className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition ${
-                      activeMaterial === m ? "bg-primary-container text-primary font-medium" : "text-on-surface hover:bg-surface-container"
-                    }`}
-                  >
-                    {m}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
 
         {/* WhatsApp CTA */}
         <div className="bg-primary-container rounded-2xl p-4">

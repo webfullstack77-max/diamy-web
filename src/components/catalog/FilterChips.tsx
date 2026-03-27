@@ -9,11 +9,10 @@ interface Category {
 }
 
 interface Props {
-  materials: string[];
   categories: Category[];
 }
 
-export default function FilterChips({ materials, categories }: Props) {
+export default function FilterChips({ categories }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
