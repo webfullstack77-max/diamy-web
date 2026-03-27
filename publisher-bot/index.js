@@ -8,9 +8,9 @@ const { Pool } = require('pg');
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 // Establecer search_path al schema correcto en cada nueva conexión
-pool.on('connect', (client) => {
+pool.on('connect', async (client) => {
   const schema = process.env.DB_SCHEMA || 'diamy_v4';
-  client.query(`SET search_path TO "${schema}"`);
+  await client.query(`SET search_path TO "${schema}"`);
 });
 
 async function query(sql, params) {
@@ -179,7 +179,7 @@ cron.schedule('* * * * *', async () => {
   let ads;
   try {
     ads = await query(
-      `SELECT * FROM ads_queue WHERE status = 'scheduled' AND schedule_time <= $1`,
+      `SELECT * FROM ads_queue WHERE status = 'scheduled' AND "scheduleTime" <= $1`,
       [now]
     );
   } catch (err) {
@@ -225,7 +225,7 @@ cron.schedule('* * * * *', async () => {
 
     try {
       await query(
-        `UPDATE ads_queue SET status=$1, sent_at=$2, error_log=$3, fb_post_id=$4, ig_post_id=$5 WHERE id=$6`,
+        `UPDATE ads_queue SET status=$1, "sentAt"=$2, "errorLog"=$3, "fbPostId"=$4, "igPostId"=$5 WHERE id=$6`,
         [
           status,
           status !== 'failed' ? new Date().toISOString() : null,
