@@ -141,14 +141,47 @@ export default function FeaturedCarousel({ products }: { products: ProductWithCa
   const [scrollLeft, setScrollLeft] = useState(0);
   const [selected, setSelected] = useState<ProductWithCategory | null>(null);
   const dragMoved = useRef(false);
+  const pausedRef = useRef(false);
+  const pauseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  // Auto-scroll continuo de derecha a izquierda, se reinicia al llegar al final
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const SPEED = 0.6; // px por frame
+
+    const step = () => {
+      if (!pausedRef.current && track) {
+        track.scrollLeft += SPEED;
+        // Al llegar al final, vuelve al inicio suavemente
+        if (track.scrollLeft >= track.scrollWidth - track.clientWidth - 1) {
+          track.scrollLeft = 0;
+        }
+      }
+      rafRef.current = requestAnimationFrame(step);
+    };
+
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, []);
+
+  // Pausa temporal: detiene el auto-scroll X segundos y luego lo reanuda
+  const pauseAutoScroll = useCallback((ms = 3000) => {
+    pausedRef.current = true;
+    if (pauseTimer.current) clearTimeout(pauseTimer.current);
+    pauseTimer.current = setTimeout(() => { pausedRef.current = false; }, ms);
+  }, []);
 
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     if (!trackRef.current) return;
+    pauseAutoScroll(5000);
     setIsDragging(true);
     dragMoved.current = false;
     setStartX(e.pageX - trackRef.current.offsetLeft);
     setScrollLeft(trackRef.current.scrollLeft);
-  }, []);
+  }, [pauseAutoScroll]);
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !trackRef.current) return;
@@ -161,8 +194,12 @@ export default function FeaturedCarousel({ products }: { products: ProductWithCa
 
   const onMouseUp = useCallback(() => setIsDragging(false), []);
 
+  const onMouseEnter = useCallback(() => pauseAutoScroll(60000), []); // pausa al hacer hover
+  const onMouseLeave = useCallback(() => { setIsDragging(false); pausedRef.current = false; }, []);
+
   const scroll = (dir: "left" | "right") => {
     if (!trackRef.current) return;
+    pauseAutoScroll(4000);
     trackRef.current.scrollBy({ left: dir === "right" ? 300 : -300, behavior: "smooth" });
   };
 
@@ -185,7 +222,8 @@ export default function FeaturedCarousel({ products }: { products: ProductWithCa
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
           onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
           className={`flex gap-4 overflow-x-auto scroll-smooth pb-2 select-none
             [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
             ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
