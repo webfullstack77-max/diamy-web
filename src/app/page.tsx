@@ -3,7 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
-import ProductCard from "@/components/catalog/ProductCard";
+import FeaturedCarousel from "@/components/home/FeaturedCarousel";
 
 export const dynamic = "force-dynamic";
 
@@ -161,11 +161,7 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <FeaturedCarousel products={featuredProducts} />
           </div>
         </section>
       )}
