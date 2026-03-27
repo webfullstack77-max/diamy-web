@@ -20,6 +20,6 @@ jobs:
             git pull origin main
             npm install
             npm run db:generate
-            npm run db:migrate
+            npm run db:migrate:prod
             npm run build
             pm2 reload diamy --update-env
