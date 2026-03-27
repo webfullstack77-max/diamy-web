@@ -7,6 +7,12 @@ const { Pool } = require('pg');
 // ── PostgreSQL ──────────────────────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
+// Establecer search_path al schema correcto en cada nueva conexión
+pool.on('connect', (client) => {
+  const schema = process.env.DB_SCHEMA || 'diamy_v4';
+  client.query(`SET search_path TO "${schema}"`);
+});
+
 async function query(sql, params) {
   const { rows } = await pool.query(sql, params);
   return rows;
