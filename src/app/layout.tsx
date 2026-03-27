@@ -3,6 +3,7 @@ import { Noto_Serif, Manrope } from "next/font/google";
 import Header from "@/components/layout/Header";
 import MobileNav from "@/components/layout/MobileNav";
 import Footer from "@/components/layout/Footer";
+import AutoRefresh from "@/components/AutoRefresh";
 import "./globals.css";
 
 const notoSerif = Noto_Serif({
@@ -77,6 +78,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-background text-on-surface antialiased">
+        <AutoRefresh />
         <Header />
         <main className="flex-1 pt-16">{children}</main>
         <Footer />
