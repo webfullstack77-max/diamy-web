@@ -5,6 +5,8 @@ import CategoryGrid from "@/components/home/CategoryGrid";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import ProductCard from "@/components/catalog/ProductCard";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [categories, testimonials, featuredProducts] = await Promise.all([
     prisma.category.findMany({ where: { parentId: null }, orderBy: { name: "asc" } }),
