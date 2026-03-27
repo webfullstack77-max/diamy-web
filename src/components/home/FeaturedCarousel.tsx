@@ -164,8 +164,10 @@ export default function FeaturedCarousel({ products }: { products: ProductWithCa
     const step = () => {
       if (!pausedRef.current && track) {
         track.scrollLeft += SPEED;
-        if (track.scrollLeft >= track.scrollWidth - track.clientWidth - 1) {
-          track.scrollLeft = 0;
+        // Cuando llega a la mitad exacta (fin del set original), salta al inicio sin salto visible
+        const half = track.scrollWidth / 2;
+        if (track.scrollLeft >= half) {
+          track.scrollLeft -= half;
         }
       }
       rafRef.current = requestAnimationFrame(step);
@@ -255,19 +257,21 @@ export default function FeaturedCarousel({ products }: { products: ProductWithCa
           <span className="material-symbol" style={{ fontSize: "20px" }}>chevron_left</span>
         </button>
 
-        {/* Track */}
+        {/* Track — productos duplicados para loop infinito */}
         <div
           ref={trackRef}
           className={`flex gap-4 overflow-x-auto pb-2 select-none
             [scrollbar-width:none] [&::-webkit-scrollbar]:hidden
             ${cursorGrabbing ? "cursor-grabbing" : "cursor-grab"}`}
         >
-          {products.map((product) => {
+          {[...products, ...products].map((product, idx) => {
             const img = product.images[0] ?? null;
+            const isClone = idx >= products.length;
             return (
               <div
-                key={product.id}
+                key={`${product.id}-${idx}`}
                 onClick={() => { if (!dragMoved.current) setSelected(product); dragMoved.current = false; }}
+                aria-hidden={isClone}
                 className="shrink-0 w-52 rounded-2xl overflow-hidden border border-outline-variant bg-surface hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col"
               >
                 {/* Imagen */}
