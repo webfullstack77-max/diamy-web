@@ -65,3 +65,21 @@ model AdminSession {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model AdsQueue {
+  id           String    @id @default(cuid())
+  title        String
+  imageUrl     String
+  caption      String
+  hashtags     String?
+  channels     String    @default("[]")
+  scheduleTime DateTime  @default(now())
+  status       String    @default("scheduled")
+  sentAt       DateTime?
+  errorLog     String?
+  fbPostId     String?
+  igPostId     String?
+  createdAt    DateTime  @default(now())
+
+  @@map("ads_queue")
+}

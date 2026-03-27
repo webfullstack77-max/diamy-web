@@ -1,0 +1,16 @@
+{
+  "name": "diamy-publisher-bot",
+  "version": "1.0.0",
+  "description": "Publisher bot para WhatsApp, Facebook e Instagram",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.34.6",
+    "node-cron": "^4.2.1",
+    "pg": "^8.20.0",
+    "qrcode": "^1.5.4",
+    "dotenv": "^17.3.1"
+  }
+}
