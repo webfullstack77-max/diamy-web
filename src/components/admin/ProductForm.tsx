@@ -296,6 +296,19 @@ export default function ProductForm({ categories, product }: Props) {
 
         {/* Miniaturas */}
         {form.images.length > 0 && (
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs text-on-surface-muted">{form.images.length} archivo{form.images.length !== 1 ? "s" : ""}</span>
+            <button
+              type="button"
+              onClick={() => set("images", [])}
+              className="text-xs text-error hover:underline flex items-center gap-1"
+            >
+              <span className="material-symbol" style={{ fontSize: "14px" }}>delete_sweep</span>
+              Borrar todo
+            </button>
+          </div>
+        )}
+        {form.images.length > 0 && (
           <div className="flex flex-wrap gap-3">
             {form.images.map((img, i) => (
               <div key={i} className="relative w-20 h-20">
