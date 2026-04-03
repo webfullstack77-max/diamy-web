@@ -3,6 +3,27 @@
 import { useState } from "react";
 import Image from "next/image";
 
+function isVideo(url: string) {
+  return /\.(mp4|webm)(\?|$)/i.test(url);
+}
+
+function VideoModal({ src, onClose }: { src: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <div className="relative w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute -top-10 right-0 text-white/80 hover:text-white flex items-center gap-1 text-sm">
+          <span className="material-symbol" style={{ fontSize: "20px" }}>close</span>
+          Cerrar
+        </button>
+        <video src={src} controls autoPlay className="w-full rounded-2xl" style={{ maxHeight: "80vh" }} />
+      </div>
+    </div>
+  );
+}
+
 const PAGE_SIZE = 10;
 
 interface Props {
@@ -14,6 +35,7 @@ interface Props {
 export default function ModelSelector({ images, title, onModelSelect }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
   const [page, setPage] = useState(0);
+  const [videoModal, setVideoModal] = useState<string | null>(null);
 
   const totalPages = Math.ceil(images.length / PAGE_SIZE);
   const pageImages = images.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -40,21 +62,35 @@ export default function ModelSelector({ images, title, onModelSelect }: Props) {
     handleSelect(globalIndex);
   }
 
-  const mainImage = selected ? images[selected - 1] : images[0];
+  const mainMedia = selected ? images[selected - 1] : images[0];
+  const mainIsVideo = mainMedia ? isVideo(mainMedia) : false;
 
   return (
+    <>
     <div className="space-y-4">
-      {/* Imagen principal */}
-      <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-surface-container border border-outline-variant">
-        {mainImage ? (
-          <Image
-            src={mainImage}
-            alt={selected ? `${title} — Modelo #${selected}` : title}
-            fill
-            className="object-contain"
-            sizes="(max-width: 768px) 100vw, 50vw"
-            priority
-          />
+      {/* Imagen/video principal */}
+      <div
+        className={`relative w-full aspect-square rounded-2xl overflow-hidden bg-surface-container border border-outline-variant ${mainIsVideo ? "cursor-pointer" : ""}`}
+        onClick={() => { if (mainIsVideo && mainMedia) setVideoModal(mainMedia); }}
+      >
+        {mainMedia ? (
+          mainIsVideo ? (
+            <div className="w-full h-full bg-black/80 flex flex-col items-center justify-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-white/10 border-2 border-white/30 flex items-center justify-center hover:bg-white/20 transition">
+                <span className="material-symbol text-white" style={{ fontSize: "36px", fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+              </div>
+              <p className="text-white/60 text-sm">Toca para ver el video</p>
+            </div>
+          ) : (
+            <Image
+              src={mainMedia}
+              alt={selected ? `${title} — Modelo #${selected}` : title}
+              fill
+              className="object-contain"
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+            />
+          )
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <span className="material-symbol text-outline" style={{ fontSize: "64px" }}>image</span>
@@ -87,6 +123,7 @@ export default function ModelSelector({ images, title, onModelSelect }: Props) {
             const globalIndex = page * PAGE_SIZE + i;
             const modelNum = globalIndex + 1;
             const isActive = selected === modelNum;
+            const thumbIsVideo = isVideo(img);
             return (
               <button
                 key={globalIndex}
@@ -98,13 +135,13 @@ export default function ModelSelector({ images, title, onModelSelect }: Props) {
                     : "border-outline-variant hover:border-primary/50"
                 }`}
               >
-                <Image
-                  src={img}
-                  alt={`Modelo ${modelNum}`}
-                  fill
-                  className="object-cover"
-                  sizes="80px"
-                />
+                {thumbIsVideo ? (
+                  <div className="w-full h-full bg-black/80 flex items-center justify-center">
+                    <span className="material-symbol text-white" style={{ fontSize: "22px", fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+                  </div>
+                ) : (
+                  <Image src={img} alt={`Modelo ${modelNum}`} fill className="object-cover" sizes="80px" />
+                )}
                 <div className={`absolute bottom-0 inset-x-0 py-0.5 text-center text-xs font-bold ${
                   isActive ? "bg-primary text-on-primary" : "bg-black/40 text-white"
                 }`}>
@@ -155,5 +192,7 @@ export default function ModelSelector({ images, title, onModelSelect }: Props) {
         )}
       </div>
     </div>
+    {videoModal && <VideoModal src={videoModal} onClose={() => setVideoModal(null)} />}
+    </>
   );
 }
