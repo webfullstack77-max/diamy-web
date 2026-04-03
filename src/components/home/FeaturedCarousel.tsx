@@ -8,6 +8,10 @@ import type { Product, Category } from "@/types";
 type ProductWithCategory = Product & { category?: Category };
 
 // ── Modal ────────────────────────────────────────────────────────────────────
+function isVideo(url: string) {
+  return /\.(mp4|webm)(\?|$)/i.test(url);
+}
+
 function ProductModal({
   product,
   onClose,
@@ -15,22 +19,22 @@ function ProductModal({
   product: ProductWithCategory;
   onClose: () => void;
 }) {
+  // Solo imágenes (sin videos) para el modal del carrusel
+  const imageOnly = product.images.filter((src) => !isVideo(src));
   const [activeImg, setActiveImg] = useState(0);
 
-  // Cerrar con Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  // Bloquear scroll del body
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  const img = product.images[activeImg] ?? null;
+  const img = imageOnly[activeImg] ?? null;
 
   return (
     <div
@@ -71,10 +75,10 @@ function ProductModal({
           )}
         </div>
 
-        {/* Miniaturas */}
-        {product.images.length > 1 && (
+        {/* Miniaturas — solo imágenes */}
+        {imageOnly.length > 1 && (
           <div className="flex gap-2 px-4 pt-3 overflow-x-auto">
-            {product.images.map((src, i) => (
+            {imageOnly.map((src, i) => (
               <button
                 key={i}
                 onClick={() => setActiveImg(i)}
