@@ -24,14 +24,22 @@ interface Props {
   productUrl: string;
 }
 
+function isVideo(url: string) {
+  return /\.(mp4|webm)(\?|$)/i.test(url);
+}
+
 export default function CollectionView({ product, productUrl }: Props) {
   const [selectedModel, setSelectedModel] = useState<number | null>(null);
+
+  const modelImages = product.images.filter((img) => !isVideo(img));
+  const videos = product.images.filter((img) => isVideo(img));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
       {/* Left: Model Selector */}
       <ModelSelector
-        images={product.images}
+        images={modelImages}
+        videos={videos}
         title={product.title}
         onModelSelect={setSelectedModel}
       />
@@ -53,7 +61,7 @@ export default function CollectionView({ product, productUrl }: Props) {
 
         <p className="mt-2 text-sm text-on-surface-muted flex items-center gap-1.5">
           <span className="material-symbol text-primary" style={{ fontSize: "16px" }}>grid_view</span>
-          {product.images.length} modelos disponibles — elige el tuyo a la izquierda
+          {modelImages.length} modelo{modelImages.length !== 1 ? "s" : ""} disponible{modelImages.length !== 1 ? "s" : ""} — elige el tuyo a la izquierda
         </p>
 
         {/* Price */}

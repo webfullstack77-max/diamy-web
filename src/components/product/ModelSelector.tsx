@@ -28,11 +28,12 @@ const PAGE_SIZE = 10;
 
 interface Props {
   images: string[];
+  videos?: string[];
   title: string;
   onModelSelect: (modelNumber: number | null) => void;
 }
 
-export default function ModelSelector({ images, title, onModelSelect }: Props) {
+export default function ModelSelector({ images, videos = [], title, onModelSelect }: Props) {
   const [selected, setSelected] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [videoModal, setVideoModal] = useState<string | null>(null);
@@ -191,6 +192,23 @@ export default function ModelSelector({ images, title, onModelSelect }: Props) {
           </div>
         )}
       </div>
+
+      {/* Botón ver video si hay videos */}
+      {videos.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {videos.map((v, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setVideoModal(v)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl border border-outline-variant bg-surface-container hover:bg-primary-container hover:border-primary transition text-sm font-medium text-on-surface"
+            >
+              <span className="material-symbol text-primary" style={{ fontSize: "18px", fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+              {videos.length > 1 ? `Ver video ${i + 1}` : "Ver video del producto"}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
     {videoModal && <VideoModal src={videoModal} onClose={() => setVideoModal(null)} />}
     </>
