@@ -299,7 +299,7 @@ export default function MassiveGallery({
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar diseño... (ej: Mario, Zelda, Pokemon)"
+                placeholder="Buscar diseño..."
                 className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container text-sm text-on-surface placeholder:text-on-surface-muted focus:outline-none focus:border-primary transition"
               />
               {query && (
