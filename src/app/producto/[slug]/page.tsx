@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import ImageGallery from "@/components/product/ImageGallery";
 import WhatsAppButton from "@/components/product/WhatsAppButton";
 import CollectionView from "@/components/product/CollectionView";
+import MassiveGallery from "@/components/product/MassiveGallery";
 import ProductCard from "@/components/catalog/ProductCard";
 
 interface Props {
@@ -57,8 +58,22 @@ export default async function ProductoPage({ params }: Props) {
         <span className="text-on-surface truncate max-w-[200px]">{product.title}</span>
       </nav>
 
-      {/* Main content: colección o producto normal */}
-      {product.isCollection ? (
+      {/* Main content: galería masiva, colección o producto normal */}
+      {(product as any).isMassiveGallery ? (
+        <MassiveGallery
+          images={product.images}
+          title={product.title}
+          price={product.price}
+          originalPrice={product.originalPrice}
+          variablePrice={(product as any).variablePrice}
+          description={product.description}
+          materials={product.materials}
+          slug={product.slug}
+          category={product.category}
+          productUrl={productUrl}
+          whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}
+        />
+      ) : product.isCollection ? (
         <CollectionView
           product={{
             title: product.title,

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { slug, title, description, price, originalPrice, images, materials, categoryId, subcategoryId, isActive, isFeatured, isCollection, variablePrice } = body;
+  const { slug, title, description, price, originalPrice, images, materials, categoryId, subcategoryId, isActive, isFeatured, isCollection, isMassiveGallery, variablePrice } = body;
 
   if (!slug || !title || !description || (!price && !variablePrice) || !categoryId) {
     return NextResponse.json({ error: "Campos requeridos faltantes" }, { status: 400 });
@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       isActive: isActive ?? true,
       isFeatured: isFeatured ?? false,
       isCollection: isCollection ?? false,
+      isMassiveGallery: isMassiveGallery ?? false,
       variablePrice: variablePrice ?? false,
     },
     include: { category: true },

@@ -33,6 +33,7 @@ export default function ProductForm({ categories, product }: Props) {
     isActive: product?.isActive ?? true,
     isFeatured: product?.isFeatured ?? false,
     isCollection: product?.isCollection ?? false,
+    isMassiveGallery: (product as any)?.isMassiveGallery ?? false,
     variablePrice: (product as any)?.variablePrice ?? false,
     images: product?.images ?? [] as string[],
   });
@@ -140,6 +141,7 @@ export default function ProductForm({ categories, product }: Props) {
       isActive: form.isActive,
       isFeatured: form.isFeatured,
       isCollection: form.isCollection,
+      isMassiveGallery: (form as any).isMassiveGallery,
       variablePrice: form.variablePrice,
       images: form.images,
     };
@@ -376,6 +378,18 @@ export default function ProductForm({ categories, product }: Props) {
           <div>
             <span className="font-medium text-on-surface">Mostrar selector de modelos</span>
             <p className="text-xs text-on-surface-muted">Para colecciones con múltiples diseños (tazas, playeras, etc.)</p>
+          </div>
+        </label>
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={(form as any).isMassiveGallery}
+            onChange={(e) => set("isMassiveGallery", e.target.checked)}
+            className="w-4 h-4 accent-primary"
+          />
+          <div>
+            <span className="font-medium text-on-surface">Galería Masiva</span>
+            <p className="text-xs text-on-surface-muted">Para +50 imágenes — muestra grid con buscador por nombre del diseño</p>
           </div>
         </label>
       </div>
