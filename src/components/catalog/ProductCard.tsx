@@ -8,8 +8,15 @@ interface Props {
   product: ProductWithCategory;
 }
 
+function isVideo(url: string) {
+  return /\.(mp4|webm)(\?|$)/i.test(url);
+}
+
 export default function ProductCard({ product }: Props) {
-  const img = product.images[0] ?? null;
+  const firstMedia = product.images[0] ?? null;
+  const firstIsVideo = firstMedia ? isVideo(firstMedia) : false;
+  // Si el primer archivo es video, usar la segunda imagen como thumbnail
+  const thumbnail = firstIsVideo ? (product.images[1] ?? null) : firstMedia;
 
   return (
     <Link
@@ -18,9 +25,9 @@ export default function ProductCard({ product }: Props) {
     >
       {/* Image */}
       <div className="relative w-full aspect-[4/5] bg-surface-container overflow-hidden">
-        {img ? (
+        {thumbnail ? (
           <Image
-            src={img}
+            src={thumbnail}
             alt={product.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -28,12 +35,14 @@ export default function ProductCard({ product }: Props) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span
-              className="material-symbol text-outline"
-              style={{ fontSize: "48px" }}
-            >
-              image
-            </span>
+            <span className="material-symbol text-outline" style={{ fontSize: "48px" }}>image</span>
+          </div>
+        )}
+        {firstIsVideo && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+              <span className="material-symbol text-white" style={{ fontSize: "28px", fontVariationSettings: "'FILL' 1" }}>play_arrow</span>
+            </div>
           </div>
         )}
         {product.originalPrice && (

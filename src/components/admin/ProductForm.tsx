@@ -65,6 +65,10 @@ export default function ProductForm({ categories, product }: Props) {
     setUploading(false);
   }
 
+  function isVideo(url: string) {
+    return url.match(/\.(mp4|webm)(\?|$)/i) !== null;
+  }
+
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     await uploadFiles(files);
@@ -74,7 +78,9 @@ export default function ProductForm({ categories, product }: Props) {
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
-    const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+    const files = Array.from(e.dataTransfer.files).filter(
+      (f) => f.type.startsWith("image/") || f.type === "video/mp4" || f.type === "video/webm"
+    );
     uploadFiles(files);
   }
 
@@ -280,10 +286,10 @@ export default function ProductForm({ categories, product }: Props) {
             {uploading ? "hourglass_empty" : "upload_file"}
           </span>
           <p className="text-sm font-medium text-on-surface">
-            {uploading ? "Subiendo imágenes..." : "Arrastra las imágenes aquí"}
+            {uploading ? "Subiendo archivos..." : "Arrastra imágenes o videos aquí"}
           </p>
-          <p className="text-xs text-on-surface-muted">o haz clic para seleccionar — puedes elegir varias a la vez</p>
-          <input type="file" accept="image/*" multiple onChange={handleImageUpload} disabled={uploading} className="hidden" />
+          <p className="text-xs text-on-surface-muted">JPG, PNG, WebP · MP4, WebM (máx 50MB) · puedes elegir varios</p>
+          <input type="file" accept="image/*,video/mp4,video/webm" multiple onChange={handleImageUpload} disabled={uploading} className="hidden" />
         </label>
 
         {/* Miniaturas */}
@@ -291,7 +297,14 @@ export default function ProductForm({ categories, product }: Props) {
           <div className="flex flex-wrap gap-3">
             {form.images.map((img, i) => (
               <div key={i} className="relative w-20 h-20">
-                <Image src={img} alt={`img ${i}`} fill className="object-cover rounded-lg" sizes="80px" />
+                {isVideo(img) ? (
+                  <div className="w-full h-full rounded-lg bg-surface-container border border-outline-variant flex flex-col items-center justify-center gap-1">
+                    <span className="material-symbol text-primary" style={{ fontSize: "28px", fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+                    <span className="text-[9px] text-on-surface-muted font-medium">VIDEO</span>
+                  </div>
+                ) : (
+                  <Image src={img} alt={`img ${i}`} fill className="object-cover rounded-lg" sizes="80px" />
+                )}
                 <button
                   type="button"
                   onClick={() => removeImage(i)}
