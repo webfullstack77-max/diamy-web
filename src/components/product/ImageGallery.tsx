@@ -44,8 +44,14 @@ function ImageModal({
           <span className="material-symbol text-white" style={{ fontSize: "22px" }}>chevron_right</span>
         </button>
       )}
-      <div className="relative w-full max-w-3xl max-h-[90vh] aspect-square rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-        <Image src={src} alt={alt} fill className="object-contain" sizes="(max-width: 768px) 100vw, 80vw" />
+      <div className="relative" onClick={(e) => e.stopPropagation()}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={alt}
+          className="block rounded-2xl border-2 border-white/20 shadow-2xl"
+          style={{ maxWidth: "min(90vw, 900px)", maxHeight: "85vh", width: "auto", height: "auto" }}
+        />
       </div>
     </div>
   );
