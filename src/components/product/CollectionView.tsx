@@ -74,7 +74,7 @@ export default function CollectionView({ product, productUrl }: Props) {
           ) : (
             <>
               <span className="text-3xl font-bold text-on-surface">
-                ${product.price.toLocaleString("es-MX")}
+                ${product.price.toLocaleString("es-MX")} <span className="text-sm font-normal text-outline">MXN</span>
               </span>
               {product.originalPrice && (
                 <span className="text-lg text-on-surface-muted line-through">

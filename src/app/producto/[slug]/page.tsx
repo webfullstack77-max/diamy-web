@@ -107,7 +107,7 @@ export default async function ProductoPage({ params }: Props) {
                 </div>
               ) : (
                 <>
-                  <span className="text-3xl font-bold text-on-surface">${product.price.toLocaleString("es-MX")}</span>
+                  <span className="text-3xl font-bold text-on-surface">${product.price.toLocaleString("es-MX")}</span><span className="text-sm font-normal text-outline ml-1">MXN</span>
                   {product.originalPrice && (
                     <span className="text-lg text-on-surface-muted line-through">${product.originalPrice.toLocaleString("es-MX")}</span>
                   )}

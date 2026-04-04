@@ -217,7 +217,7 @@ export default function MassiveGallery({
                 </div>
               ) : (
                 <>
-                  <span className="text-3xl font-bold text-on-surface">${price.toLocaleString("es-MX")}</span>
+                  <span className="text-3xl font-bold text-on-surface">${price.toLocaleString("es-MX")}</span><span className="text-sm font-normal text-outline ml-1">MXN</span>
                   {originalPrice && (
                     <span className="text-lg text-on-surface-muted line-through">${originalPrice.toLocaleString("es-MX")}</span>
                   )}
