@@ -225,7 +225,7 @@ export default function ModelSelector({ images, videos = [], title, onModelSelec
         <button onClick={() => setLightbox(false)} className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
           <span className="material-symbol text-white" style={{ fontSize: "22px" }}>close</span>
         </button>
-        <div className="relative w-full max-w-3xl max-h-[90vh] aspect-square" onClick={(e) => e.stopPropagation()}>
+        <div className="relative w-full max-w-3xl max-h-[90vh] aspect-square rounded-2xl overflow-hidden border-2 border-white/20 shadow-2xl" onClick={(e) => e.stopPropagation()}>
           <Image src={mainMedia} alt={selected ? `${title} — Modelo #${selected}` : title} fill className="object-contain" sizes="90vw" />
         </div>
       </div>
