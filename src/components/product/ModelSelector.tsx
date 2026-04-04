@@ -37,6 +37,7 @@ export default function ModelSelector({ images, videos = [], title, onModelSelec
   const [selected, setSelected] = useState<number | null>(null);
   const [page, setPage] = useState(0);
   const [videoModal, setVideoModal] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState(false);
 
   const totalPages = Math.ceil(images.length / PAGE_SIZE);
   const pageImages = images.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -71,8 +72,8 @@ export default function ModelSelector({ images, videos = [], title, onModelSelec
     <div className="space-y-4">
       {/* Imagen/video principal */}
       <div
-        className={`relative w-full aspect-square rounded-2xl overflow-hidden bg-surface-container border border-outline-variant ${mainIsVideo ? "cursor-pointer" : ""}`}
-        onClick={() => { if (mainIsVideo && mainMedia) setVideoModal(mainMedia); }}
+        className={`relative w-full aspect-square rounded-2xl overflow-hidden bg-surface-container border border-outline-variant group ${mainIsVideo ? "cursor-pointer" : "cursor-zoom-in"}`}
+        onClick={() => { if (mainIsVideo && mainMedia) setVideoModal(mainMedia); else if (mainMedia) setLightbox(true); }}
       >
         {mainMedia ? (
           mainIsVideo ? (
@@ -83,14 +84,19 @@ export default function ModelSelector({ images, videos = [], title, onModelSelec
               <p className="text-white/60 text-sm">Toca para ver el video</p>
             </div>
           ) : (
-            <Image
-              src={mainMedia}
-              alt={selected ? `${title} — Modelo #${selected}` : title}
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
-            />
+            <>
+              <Image
+                src={mainMedia}
+                alt={selected ? `${title} — Modelo #${selected}` : title}
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition flex items-center justify-center">
+                <span className="material-symbol text-white opacity-0 group-hover:opacity-80 transition drop-shadow" style={{ fontSize: "36px" }}>zoom_in</span>
+              </div>
+            </>
           )
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -211,6 +217,19 @@ export default function ModelSelector({ images, videos = [], title, onModelSelec
       )}
     </div>
     {videoModal && <VideoModal src={videoModal} onClose={() => setVideoModal(null)} />}
+    {lightbox && mainMedia && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+        onClick={() => setLightbox(false)}
+      >
+        <button onClick={() => setLightbox(false)} className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
+          <span className="material-symbol text-white" style={{ fontSize: "22px" }}>close</span>
+        </button>
+        <div className="relative w-full max-w-3xl max-h-[90vh] aspect-square" onClick={(e) => e.stopPropagation()}>
+          <Image src={mainMedia} alt={selected ? `${title} — Modelo #${selected}` : title} fill className="object-contain" sizes="90vw" />
+        </div>
+      </div>
+    )}
     </>
   );
 }
