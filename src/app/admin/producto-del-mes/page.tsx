@@ -72,7 +72,7 @@ export default function ProductOfMonthAdmin() {
     cat.children?.forEach((sub) => {
       linkOptions.push({
         label: sub.name,
-        value: `/catalogo?categoria=${cat.slug}&sub=${sub.slug}`,
+        value: `/catalogo?categoria=${sub.slug}`,
         indent: true,
       });
     });
