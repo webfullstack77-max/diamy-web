@@ -27,7 +27,7 @@ export default function ProductOfMonth({ imageUrl, text, link }: Props) {
             <img
               src={imageUrl}
               alt="Producto del mes"
-              className="block w-full h-full object-cover rounded-[14px]"
+              className="block w-full h-auto rounded-[14px]"
             />
           </div>
         </div>
@@ -55,7 +55,7 @@ export default function ProductOfMonth({ imageUrl, text, link }: Props) {
         .led-frame {
           position: relative;
           width: 100%;
-          max-width: 400px;
+          max-width: 320px;
           border-radius: 16px;
           padding: 3px;
           background: conic-gradient(
@@ -77,7 +77,6 @@ export default function ProductOfMonth({ imageUrl, text, link }: Props) {
           overflow: hidden;
           background: var(--color-surface, #fff);
           width: 100%;
-          aspect-ratio: 1 / 1;
         }
 
         @property --led-angle {
