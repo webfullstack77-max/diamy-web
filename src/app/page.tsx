@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 import CategoryGrid from "@/components/home/CategoryGrid";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import FeaturedCarousel from "@/components/home/FeaturedCarousel";
+import ProductOfMonth from "@/components/home/ProductOfMonth";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, testimonials, featuredProducts] = await Promise.all([
+  const [categories, testimonials, featuredProducts, siteConfig] = await Promise.all([
     prisma.category.findMany({ where: { parentId: null }, orderBy: { name: "asc" } }),
     prisma.testimonial.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.product.findMany({
@@ -17,6 +18,7 @@ export default async function HomePage() {
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
+    prisma.siteConfig.findUnique({ where: { id: "main" } }),
   ]);
 
   return (
@@ -92,6 +94,14 @@ export default async function HomePage() {
 
       {/* Categories */}
       <CategoryGrid categories={categories} />
+
+      {/* Producto del mes */}
+      {siteConfig?.productOfMonthImage && (
+        <ProductOfMonth
+          imageUrl={siteConfig.productOfMonthImage}
+          text={siteConfig.productOfMonthText ?? undefined}
+        />
+      )}
 
       {/* How it works */}
       <section className="py-14 px-4 sm:px-6 lg:px-12 bg-surface-container">

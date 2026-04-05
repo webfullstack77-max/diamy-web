@@ -19,6 +19,7 @@ function AdminNav() {
           { href: "/admin/productos", icon: "inventory_2", label: "Productos" },
           { href: "/admin/categorias", icon: "category", label: "Categorías" },
           { href: "/admin/publicidad", icon: "campaign", label: "Publicidad" },
+          { href: "/admin/producto-del-mes", icon: "star", label: "Producto del mes" },
         ].map((item) => (
           <li key={item.href}>
             <Link

@@ -67,6 +67,14 @@ model AdminSession {
   createdAt DateTime @default(now())
 }
 
+model SiteConfig {
+  id                  String  @id @default("main")
+  productOfMonthImage String?
+  productOfMonthText  String?
+
+  @@map("site_config")
+}
+
 model AdsQueue {
   id           String    @id @default(cuid())
   title        String
