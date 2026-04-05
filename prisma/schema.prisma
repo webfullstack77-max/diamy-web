@@ -71,6 +71,7 @@ model SiteConfig {
   id                  String  @id @default("main")
   productOfMonthImage String?
   productOfMonthText  String?
+  productOfMonthLink  String?
 
   @@map("site_config")
 }

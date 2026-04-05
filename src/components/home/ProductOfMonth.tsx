@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
+
 interface Props {
   imageUrl: string;
   text?: string;
+  link?: string;
 }
 
-export default function ProductOfMonth({ imageUrl, text }: Props) {
+export default function ProductOfMonth({ imageUrl, text, link }: Props) {
   return (
     <section className="py-14 px-4 sm:px-6 lg:px-12 bg-background">
       <div className="max-w-md mx-auto flex flex-col items-center gap-6">
@@ -34,6 +37,17 @@ export default function ProductOfMonth({ imageUrl, text }: Props) {
           <p className="text-center text-on-surface-muted text-sm leading-relaxed max-w-sm">
             {text}
           </p>
+        )}
+
+        {/* Botón explorar */}
+        {link && (
+          <Link
+            href={link}
+            className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-primary/40 text-primary text-sm font-medium hover:bg-primary-container hover:border-primary transition"
+          >
+            <span className="material-symbol" style={{ fontSize: "16px" }}>grid_view</span>
+            Explorar productos
+          </Link>
         )}
       </div>
 

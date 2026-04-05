@@ -100,6 +100,7 @@ export default async function HomePage() {
         <ProductOfMonth
           imageUrl={siteConfig.productOfMonthImage}
           text={siteConfig.productOfMonthText ?? undefined}
+          link={siteConfig.productOfMonthLink ?? undefined}
         />
       )}
 

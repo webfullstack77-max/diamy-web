@@ -18,6 +18,7 @@ export async function GET() {
   return NextResponse.json({
     imageUrl: config.productOfMonthImage,
     text: config.productOfMonthText,
+    link: config.productOfMonthLink,
   });
 }
 
@@ -28,23 +29,26 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { imageUrl, text } = await request.json();
+  const { imageUrl, text, link } = await request.json();
 
   const config = await prisma.siteConfig.upsert({
     where: { id: "main" },
     update: {
       ...(imageUrl !== undefined && { productOfMonthImage: imageUrl }),
       ...(text !== undefined && { productOfMonthText: text }),
+      ...(link !== undefined && { productOfMonthLink: link }),
     },
     create: {
       id: "main",
       productOfMonthImage: imageUrl ?? null,
       productOfMonthText: text ?? null,
+      productOfMonthLink: link ?? null,
     },
   });
 
   return NextResponse.json({
     imageUrl: config.productOfMonthImage,
     text: config.productOfMonthText,
+    link: config.productOfMonthLink,
   });
 }

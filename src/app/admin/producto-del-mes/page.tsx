@@ -2,20 +2,39 @@
 
 import { useState, useEffect, useRef } from "react";
 
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  children: { id: string; name: string; slug: string }[];
+}
+
 export default function ProductOfMonthAdmin() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [text, setText] = useState("");
+  const [link, setLink] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // Cargar config actual
     fetch("/api/admin/product-of-month")
       .then((r) => r.json())
       .then((data) => {
         if (data.imageUrl) setImageUrl(data.imageUrl);
         if (data.text) setText(data.text);
+        if (data.link) setLink(data.link);
+      });
+
+    // Cargar categorías con sus subcategorías
+    fetch("/api/admin/categories")
+      .then((r) => r.json())
+      .then((data: Category[]) => {
+        // Solo categorías raíz (sin parent)
+        setCategories(data.filter((c) => !(c as unknown as { parentId: string | null }).parentId));
       });
   }, []);
 
@@ -36,12 +55,28 @@ export default function ProductOfMonthAdmin() {
     await fetch("/api/admin/product-of-month", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl, text }),
+      body: JSON.stringify({ imageUrl, text, link: link || null }),
     });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
+
+  // Construir las opciones del selector
+  const linkOptions: { label: string; value: string; indent?: boolean }[] = [
+    { label: "— Sin botón —", value: "" },
+    { label: "Todo el catálogo", value: "/catalogo" },
+  ];
+  categories.forEach((cat) => {
+    linkOptions.push({ label: cat.name, value: `/catalogo?categoria=${cat.slug}` });
+    cat.children?.forEach((sub) => {
+      linkOptions.push({
+        label: sub.name,
+        value: `/catalogo?categoria=${cat.slug}&sub=${sub.slug}`,
+        indent: true,
+      });
+    });
+  });
 
   return (
     <div className="max-w-xl">
@@ -52,8 +87,8 @@ export default function ProductOfMonthAdmin() {
         </p>
       </div>
 
-      {/* Preview / Upload */}
       <div className="bg-surface rounded-2xl border border-outline-variant p-6 space-y-5">
+        {/* Imagen */}
         <div>
           <p className="text-sm font-medium text-on-surface mb-3">Imagen</p>
           {imageUrl ? (
@@ -99,6 +134,30 @@ export default function ProductOfMonthAdmin() {
             placeholder="Ej: Este mes tenemos una oferta especial en nuestras tazas personalizadas..."
             className="w-full rounded-xl border border-outline-variant bg-surface-container px-4 py-3 text-sm text-on-surface placeholder:text-outline resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
           />
+        </div>
+
+        {/* Enlace del botón */}
+        <div>
+          <label className="text-sm font-medium text-on-surface block mb-1">
+            Botón "Explorar productos" — destino
+          </label>
+          <p className="text-xs text-on-surface-muted mb-2">
+            Selecciona la categoría o subcategoría a la que llevará el botón. Déjalo en "Sin botón" para ocultarlo.
+          </p>
+          <select
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            className="w-full rounded-xl border border-outline-variant bg-surface-container px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            {linkOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.indent ? `  ↳ ${opt.label}` : opt.label}
+              </option>
+            ))}
+          </select>
+          {link && (
+            <p className="mt-1.5 text-xs text-primary font-mono">{link}</p>
+          )}
         </div>
 
         {/* Guardar */}
