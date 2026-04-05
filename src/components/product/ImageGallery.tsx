@@ -179,7 +179,7 @@ export default function ImageGallery({ images, title }: Props) {
           alt={`${title} - imagen ${active + 1}`}
           onClose={() => setLightbox(false)}
           onPrev={active > 0 ? () => setActive((a) => a - 1) : undefined}
-          onNext={active < nonVideoImages.length - 1 ? () => { setActive((a) => a + 1); } : undefined}
+          onNext={active < images.length - 1 ? () => setActive((a) => a + 1) : undefined}
         />
       )}
     </>

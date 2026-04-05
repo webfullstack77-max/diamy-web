@@ -225,6 +225,22 @@ export default function ModelSelector({ images, videos = [], title, onModelSelec
         <button onClick={() => setLightbox(false)} className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
           <span className="material-symbol text-white" style={{ fontSize: "22px" }}>close</span>
         </button>
+        {selected !== null && selected > 1 && (
+          <button
+            onClick={(e) => { e.stopPropagation(); const prev = selected - 2; setSelected(prev + 1); onModelSelect(prev + 1); }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+          >
+            <span className="material-symbol text-white" style={{ fontSize: "22px" }}>chevron_left</span>
+          </button>
+        )}
+        {selected !== null && selected < images.length && (
+          <button
+            onClick={(e) => { e.stopPropagation(); const next = selected; setSelected(next + 1); onModelSelect(next + 1); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition"
+          >
+            <span className="material-symbol text-white" style={{ fontSize: "22px" }}>chevron_right</span>
+          </button>
+        )}
         <div className="relative" onClick={(e) => e.stopPropagation()}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
