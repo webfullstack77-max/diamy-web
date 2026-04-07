@@ -38,6 +38,22 @@ export default function ProductForm({ categories, product }: Props) {
     images: product?.images ?? [] as string[],
   });
 
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(isEdit);
+
+  // Auto-generate slug from title (only on new products, until user edits slug manually)
+  useEffect(() => {
+    if (slugManuallyEdited) return;
+    const generated = form.title
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // remove accents
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .slice(0, 80);
+    set("slug", generated);
+  }, [form.title]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -189,8 +205,8 @@ export default function ProductForm({ categories, product }: Props) {
           <input type="text" value={form.title} onChange={(e) => set("title", e.target.value)} required className={inputCls} />
         </Field>
         <Field label="Slug (URL)">
-          <input type="text" value={form.slug} onChange={(e) => set("slug", e.target.value)} required pattern="[a-z0-9-]+" className={inputCls} />
-          <p className="text-xs text-on-surface-muted mt-1">Solo letras minúsculas, números y guiones</p>
+          <input type="text" value={form.slug} onChange={(e) => { setSlugManuallyEdited(true); set("slug", e.target.value); }} required pattern="[a-z0-9-]+" className={inputCls} />
+          <p className="text-xs text-on-surface-muted mt-1">Solo letras minúsculas, números y guiones — se genera automáticamente del título</p>
         </Field>
         <div>
           <div className="flex items-center justify-between mb-1.5">
