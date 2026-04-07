@@ -186,9 +186,13 @@ export default function FeaturedCarousel({ products }: { products: ProductWithCa
                   </h3>
                   <div className="mt-2 flex items-baseline gap-1.5">
                     <span className="font-bold text-on-surface text-sm">
-                      ${product.price.toLocaleString("es-MX")}
+                      {product.variablePrice ? (
+                        <span className="text-primary font-semibold text-xs">Precio variable</span>
+                      ) : (
+                        `$${product.price.toLocaleString("es-MX")}`
+                      )}
                     </span>
-                    {product.originalPrice && (
+                    {!product.variablePrice && product.originalPrice && (
                       <span className="text-xs text-on-surface-muted line-through">
                         ${product.originalPrice.toLocaleString("es-MX")}
                       </span>

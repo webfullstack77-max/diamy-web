@@ -81,9 +81,12 @@ export default function ProductCard({ product }: Props) {
         <div className="mt-auto flex items-center justify-between">
           <div className="flex items-baseline gap-1.5">
             <span className="font-bold text-on-surface">
-              ${product.price.toLocaleString("es-MX")} <span className="text-xs font-normal text-outline">MXN</span>
+              {product.variablePrice
+                ? <span className="text-sm text-primary">Precio variable</span>
+                : <>{`$${product.price.toLocaleString("es-MX")}`} <span className="text-xs font-normal text-outline">MXN</span></>
+              }
             </span>
-            {product.originalPrice && (
+            {!product.variablePrice && product.originalPrice && (
               <span className="text-xs text-on-surface-muted line-through">
                 ${product.originalPrice.toLocaleString("es-MX")}
               </span>

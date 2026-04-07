@@ -100,13 +100,19 @@ export default function ProductModal({
           <h2 className="font-serif text-xl font-bold text-on-surface mb-2">{product.title}</h2>
 
           <div className="flex items-baseline gap-2 mb-3">
-            <span className="text-2xl font-bold text-on-surface">
-              ${product.price.toLocaleString("es-MX")} <span className="text-xs font-normal text-outline">MXN</span>
-            </span>
-            {product.originalPrice && (
-              <span className="text-sm text-on-surface-muted line-through">
-                ${product.originalPrice.toLocaleString("es-MX")}
-              </span>
+            {product.variablePrice ? (
+              <span className="text-lg font-semibold text-primary">Precio variable</span>
+            ) : (
+              <>
+                <span className="text-2xl font-bold text-on-surface">
+                  ${product.price.toLocaleString("es-MX")} <span className="text-xs font-normal text-outline">MXN</span>
+                </span>
+                {product.originalPrice && (
+                  <span className="text-sm text-on-surface-muted line-through">
+                    ${product.originalPrice.toLocaleString("es-MX")}
+                  </span>
+                )}
+              </>
             )}
           </div>
 

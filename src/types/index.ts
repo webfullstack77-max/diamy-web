@@ -27,6 +27,7 @@ export interface Product {
   isActive: boolean;
   isFeatured: boolean;
   isCollection: boolean;
+  variablePrice: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
