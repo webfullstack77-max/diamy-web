@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 
+interface ProductResult {
+  id: string;
+  title: string;
+  images: string[];
+  slug: string;
+}
+
 interface Item {
   id: string;
   image: string;
@@ -9,6 +16,8 @@ interface Item {
   link: string | null;
   order: number;
   isActive: boolean;
+  productId: string | null;
+  product: { id: string; title: string; images: string[] } | null;
 }
 
 interface Category {
@@ -18,7 +27,7 @@ interface Category {
   children: { id: string; name: string; slug: string }[];
 }
 
-const emptyForm = { image: "", text: "", link: "", order: 0, isActive: true };
+const emptyForm = { image: "", text: "", link: "", order: 0, isActive: true, productId: "" };
 
 export default function ProductOfMonthAdmin() {
   const [items, setItems] = useState<Item[]>([]);
@@ -28,12 +37,28 @@ export default function ProductOfMonthAdmin() {
   const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [productSearch, setProductSearch] = useState("");
+  const [productResults, setProductResults] = useState<ProductResult[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<ProductResult | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = () =>
     fetch("/api/admin/product-of-month")
       .then((r) => r.json())
       .then(setItems);
+
+  function handleProductSearchChange(q: string) {
+    setProductSearch(q);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (!q.trim()) { setProductResults([]); return; }
+    searchTimer.current = setTimeout(() => {
+      fetch(`/api/admin/products?q=${encodeURIComponent(q)}&limit=8`)
+        .then((r) => r.json())
+        .then((data) => setProductResults(Array.isArray(data) ? data : data.products ?? []));
+    }, 300);
+  }
 
   useEffect(() => {
     load();
@@ -59,23 +84,27 @@ export default function ProductOfMonthAdmin() {
   async function handleSave() {
     if (!form.image) return;
     setSaving(true);
+    const payload = { ...form, productId: form.productId || null };
     if (editId) {
       await fetch(`/api/admin/product-of-month/${editId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
     } else {
       await fetch("/api/admin/product-of-month", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, order: items.length }),
+        body: JSON.stringify({ ...payload, order: items.length }),
       });
     }
     setSaving(false);
     setShowForm(false);
     setEditId(null);
     setForm(emptyForm);
+    setSelectedProduct(null);
+    setProductSearch("");
+    setProductResults([]);
     load();
   }
 
@@ -106,7 +135,10 @@ export default function ProductOfMonthAdmin() {
 
   function openEdit(item: Item) {
     setEditId(item.id);
-    setForm({ image: item.image, text: item.text ?? "", link: item.link ?? "", order: item.order, isActive: item.isActive });
+    setForm({ image: item.image, text: item.text ?? "", link: item.link ?? "", order: item.order, isActive: item.isActive, productId: item.productId ?? "" });
+    setSelectedProduct(item.product ? { id: item.product.id, title: item.product.title, images: item.product.images, slug: "" } : null);
+    setProductSearch("");
+    setProductResults([]);
     setShowForm(true);
   }
 
@@ -214,6 +246,67 @@ export default function ProductOfMonthAdmin() {
             {form.link && <p className="text-xs text-primary font-mono mt-1">{form.link}</p>}
           </div>
 
+          {/* Producto vinculado */}
+          <div>
+            <label className="text-sm font-medium text-on-surface block mb-1">
+              Producto vinculado <span className="text-outline font-normal">(opcional)</span>
+            </label>
+            <p className="text-xs text-on-surface-muted mb-2">Al hacer clic en la imagen se abrirá la galería completa del producto.</p>
+
+            {selectedProduct ? (
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-primary/30 bg-primary-container/20">
+                {selectedProduct.images[0] && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={selectedProduct.images[0]} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-on-surface truncate">{selectedProduct.title}</p>
+                  <p className="text-xs text-primary">Producto vinculado</p>
+                </div>
+                <button
+                  onClick={() => { setSelectedProduct(null); setForm((f) => ({ ...f, productId: "" })); }}
+                  className="text-xs text-outline hover:text-on-surface transition px-2 py-1 rounded-lg hover:bg-surface-container"
+                >
+                  Quitar
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  type="text"
+                  value={productSearch}
+                  onChange={(e) => handleProductSearchChange(e.target.value)}
+                  onFocus={() => setSearchOpen(true)}
+                  placeholder="Buscar producto por nombre..."
+                  className={inputCls}
+                />
+                {searchOpen && productResults.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-surface border border-outline-variant rounded-xl shadow-lg overflow-hidden">
+                    {productResults.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => {
+                          setSelectedProduct(p);
+                          setForm((f) => ({ ...f, productId: p.id }));
+                          setProductSearch("");
+                          setProductResults([]);
+                          setSearchOpen(false);
+                        }}
+                        className="flex items-center gap-3 w-full px-3 py-2 hover:bg-surface-container transition text-left"
+                      >
+                        {p.images[0] && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={p.images[0]} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                        )}
+                        <span className="text-sm text-on-surface truncate">{p.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Activo */}
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -272,6 +365,12 @@ export default function ProductOfMonthAdmin() {
                 </div>
                 {item.text && <p className="text-sm text-on-surface-muted truncate">{item.text}</p>}
                 {item.link && <p className="text-xs text-primary font-mono truncate">{item.link}</p>}
+                {item.product && (
+                  <p className="text-xs text-on-surface-muted mt-0.5 flex items-center gap-1">
+                    <span className="material-symbol" style={{ fontSize: "12px" }}>link</span>
+                    {item.product.title}
+                  </p>
+                )}
               </div>
 
               {/* Acciones */}

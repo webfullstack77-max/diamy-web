@@ -46,6 +46,7 @@ model Product {
   isCollection    Boolean   @default(false)
   isMassiveGallery Boolean  @default(false)
   variablePrice   Boolean   @default(false)
+  productOfMonthItems ProductOfMonthItem[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -80,6 +81,8 @@ model ProductOfMonthItem {
   link      String?
   order     Int      @default(0)
   isActive  Boolean  @default(true)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 
   @@map("product_of_month_items")

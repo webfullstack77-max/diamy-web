@@ -2,16 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await requireAdmin();
   } catch {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const q = searchParams.get("q");
+  const limit = parseInt(searchParams.get("limit") ?? "0");
+
   const products = await prisma.product.findMany({
+    where: q ? { title: { contains: q, mode: "insensitive" } } : undefined,
     include: { category: true },
     orderBy: { createdAt: "desc" },
+    ...(limit > 0 ? { take: limit } : {}),
   });
   return NextResponse.json(products);
 }

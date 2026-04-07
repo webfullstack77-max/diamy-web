@@ -21,6 +21,7 @@ export default async function HomePage() {
     prisma.productOfMonthItem.findMany({
       where: { isActive: true },
       orderBy: { order: "asc" },
+      include: { product: { include: { category: true } } },
     }),
   ]);
 

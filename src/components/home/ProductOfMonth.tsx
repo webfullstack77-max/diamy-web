@@ -2,12 +2,14 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import ProductModal, { type ProductWithCategory } from "@/components/product/ProductModal";
 
 interface Item {
   id: string;
   image: string;
   text?: string | null;
   link?: string | null;
+  product?: ProductWithCategory | null;
 }
 
 interface Props {
@@ -19,6 +21,7 @@ const INTERVAL_MS = 10000;
 export default function ProductOfMonth({ items }: Props) {
   const [current, setCurrent] = useState(0);
   const [visible, setVisible] = useState(true);
+  const [modalProduct, setModalProduct] = useState<ProductWithCategory | null>(null);
   const paused = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -93,7 +96,10 @@ export default function ProductOfMonth({ items }: Props) {
 
           {/* Marco LED */}
           <div className="led-frame flex-1" style={{ maxWidth: "320px" }}>
-            <div className="led-frame-inner">
+            <div
+              className={`led-frame-inner ${item.product ? "cursor-pointer group" : ""}`}
+              onClick={() => item.product && setModalProduct(item.product)}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 key={item.id}
@@ -102,6 +108,12 @@ export default function ProductOfMonth({ items }: Props) {
                 className="block w-full h-auto rounded-[14px]"
                 style={{ opacity: visible ? 1 : 0, transition: "opacity 0.35s ease" }}
               />
+              {/* Overlay hover si hay producto vinculado */}
+              {item.product && (
+                <div className="absolute inset-0 rounded-[14px] bg-black/0 group-hover:bg-black/20 flex items-center justify-center transition">
+                  <span className="material-symbol text-white opacity-0 group-hover:opacity-90 drop-shadow transition" style={{ fontSize: "36px" }}>open_in_full</span>
+                </div>
+              )}
               {/* Contador */}
               {multi && (
                 <span className="absolute bottom-2 right-3 text-xs font-medium text-white/80 bg-black/30 rounded-full px-2 py-0.5 backdrop-blur-sm">
@@ -164,6 +176,10 @@ export default function ProductOfMonth({ items }: Props) {
           )}
         </div>
       </div>
+
+      {modalProduct && (
+        <ProductModal product={modalProduct} onClose={() => setModalProduct(null)} />
+      )}
 
       <style>{`
         .led-frame {
