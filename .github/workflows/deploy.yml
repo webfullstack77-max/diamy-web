@@ -22,5 +22,6 @@ jobs:
             set -a && source .env.production && set +a
             npm run db:generate
             npm run db:migrate:prod
+            rm -rf .next
             npm run build
             pm2 reload diamy --update-env
