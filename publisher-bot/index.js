@@ -196,6 +196,7 @@ cron.schedule('* * * * *', async () => {
 
     const productUrl = ad.productUrl ? buildImageUrl(ad.productUrl) : null;
     const fullText = [ad.caption, ad.hashtags, productUrl ? `🔗 ${productUrl}` : null].filter(Boolean).join('\n\n');
+    console.log(`[AD ${ad.id}] imageUrl="${ad.imageUrl}" productUrl="${ad.productUrl}" channels=${JSON.stringify(channels)}`);
     const errors = [];
     let fbPostId = null;
     let igPostId = null;
