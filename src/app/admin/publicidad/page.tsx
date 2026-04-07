@@ -8,6 +8,7 @@ type Channel = "whatsapp" | "facebook" | "instagram";
 interface Product {
   id: string;
   title: string;
+  slug: string;
   images: string[];
 }
 
@@ -151,6 +152,7 @@ export default function PublicidadPage() {
       hashtags,
       channels,
       scheduleTime: scheduleNow ? null : scheduleTime || null,
+      productUrl: selectedProduct?.slug ? `/producto/${selectedProduct.slug}` : null,
     };
     const res = await fetch("/api/admin/ads", {
       method: "POST",

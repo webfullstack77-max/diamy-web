@@ -95,6 +95,7 @@ model AdsQueue {
   caption      String
   hashtags     String?
   channels     String    @default("[]")
+  productUrl   String?
   scheduleTime DateTime  @default(now())
   status       String    @default("scheduled")
   sentAt       DateTime?
