@@ -9,7 +9,7 @@ import ProductOfMonth from "@/components/home/ProductOfMonth";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, testimonials, featuredProducts, siteConfig] = await Promise.all([
+  const [categories, testimonials, featuredProducts, productOfMonthItems] = await Promise.all([
     prisma.category.findMany({ where: { parentId: null }, orderBy: { name: "asc" } }),
     prisma.testimonial.findMany({ orderBy: { createdAt: "desc" } }),
     prisma.product.findMany({
@@ -18,7 +18,10 @@ export default async function HomePage() {
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
-    prisma.siteConfig.findUnique({ where: { id: "main" } }),
+    prisma.productOfMonthItem.findMany({
+      where: { isActive: true },
+      orderBy: { order: "asc" },
+    }),
   ]);
 
   return (
@@ -96,12 +99,8 @@ export default async function HomePage() {
       <CategoryGrid categories={categories} />
 
       {/* Producto del mes */}
-      {siteConfig?.productOfMonthImage && (
-        <ProductOfMonth
-          imageUrl={siteConfig.productOfMonthImage}
-          text={siteConfig.productOfMonthText ?? undefined}
-          link={siteConfig.productOfMonthLink ?? undefined}
-        />
+      {productOfMonthItems.length > 0 && (
+        <ProductOfMonth items={productOfMonthItems} />
       )}
 
       {/* How it works */}

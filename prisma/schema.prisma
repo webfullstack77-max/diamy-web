@@ -68,12 +68,21 @@ model AdminSession {
 }
 
 model SiteConfig {
-  id                  String  @id @default("main")
-  productOfMonthImage String?
-  productOfMonthText  String?
-  productOfMonthLink  String?
+  id String @id @default("main")
 
   @@map("site_config")
+}
+
+model ProductOfMonthItem {
+  id        String   @id @default(cuid())
+  image     String
+  text      String?
+  link      String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("product_of_month_items")
 }
 
 model AdsQueue {

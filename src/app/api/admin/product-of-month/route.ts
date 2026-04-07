@@ -9,46 +9,29 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const config = await prisma.siteConfig.upsert({
-    where: { id: "main" },
-    update: {},
-    create: { id: "main" },
+  const items = await prisma.productOfMonthItem.findMany({
+    orderBy: { order: "asc" },
   });
 
-  return NextResponse.json({
-    imageUrl: config.productOfMonthImage,
-    text: config.productOfMonthText,
-    link: config.productOfMonthLink,
-  });
+  return NextResponse.json(items);
 }
 
-export async function PUT(request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     await requireAdmin();
   } catch {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { imageUrl, text, link } = await request.json();
+  const { image, text, link, order } = await request.json();
 
-  const config = await prisma.siteConfig.upsert({
-    where: { id: "main" },
-    update: {
-      ...(imageUrl !== undefined && { productOfMonthImage: imageUrl }),
-      ...(text !== undefined && { productOfMonthText: text }),
-      ...(link !== undefined && { productOfMonthLink: link }),
-    },
-    create: {
-      id: "main",
-      productOfMonthImage: imageUrl ?? null,
-      productOfMonthText: text ?? null,
-      productOfMonthLink: link ?? null,
-    },
+  if (!image) {
+    return NextResponse.json({ error: "La imagen es requerida" }, { status: 400 });
+  }
+
+  const item = await prisma.productOfMonthItem.create({
+    data: { image, text: text || null, link: link || null, order: order ?? 0 },
   });
 
-  return NextResponse.json({
-    imageUrl: config.productOfMonthImage,
-    text: config.productOfMonthText,
-    link: config.productOfMonthLink,
-  });
+  return NextResponse.json(item, { status: 201 });
 }

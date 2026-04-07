@@ -2,6 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 
+interface Item {
+  id: string;
+  image: string;
+  text: string | null;
+  link: string | null;
+  order: number;
+  isActive: boolean;
+}
+
 interface Category {
   id: string;
   name: string;
@@ -9,169 +18,303 @@ interface Category {
   children: { id: string; name: string; slug: string }[];
 }
 
+const emptyForm = { image: "", text: "", link: "", order: 0, isActive: true };
+
 export default function ProductOfMonthAdmin() {
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
-  const [text, setText] = useState("");
-  const [link, setLink] = useState("");
+  const [items, setItems] = useState<Item[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    // Cargar config actual
+  const load = () =>
     fetch("/api/admin/product-of-month")
       .then((r) => r.json())
-      .then((data) => {
-        if (data.imageUrl) setImageUrl(data.imageUrl);
-        if (data.text) setText(data.text);
-        if (data.link) setLink(data.link);
-      });
+      .then(setItems);
 
-    // Cargar categorías con sus subcategorías
+  useEffect(() => {
+    load();
     fetch("/api/admin/categories")
       .then((r) => r.json())
-      .then((data: Category[]) => {
-        // Solo categorías raíz (sin parent)
-        setCategories(data.filter((c) => !(c as unknown as { parentId: string | null }).parentId));
-      });
+      .then((data: (Category & { parentId: string | null })[]) =>
+        setCategories(data.filter((c) => !c.parentId))
+      );
   }, []);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const form = new FormData();
-    form.append("file", file);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
     const data = await res.json();
-    if (data.url) setImageUrl(data.url);
+    if (data.url) setForm((f) => ({ ...f, image: data.url }));
     setUploading(false);
   }
 
   async function handleSave() {
+    if (!form.image) return;
     setSaving(true);
-    await fetch("/api/admin/product-of-month", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl, text, link: link || null }),
-    });
+    if (editId) {
+      await fetch(`/api/admin/product-of-month/${editId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+    } else {
+      await fetch("/api/admin/product-of-month", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, order: items.length }),
+      });
+    }
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setShowForm(false);
+    setEditId(null);
+    setForm(emptyForm);
+    load();
   }
 
-  // Construir las opciones del selector
-  const linkOptions: { label: string; value: string; indent?: boolean }[] = [
+  async function handleDelete(id: string) {
+    if (!confirm("¿Eliminar este producto del mes?")) return;
+    await fetch(`/api/admin/product-of-month/${id}`, { method: "DELETE" });
+    load();
+  }
+
+  async function toggleActive(item: Item) {
+    await fetch(`/api/admin/product-of-month/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !item.isActive }),
+    });
+    load();
+  }
+
+  async function moveOrder(item: Item, dir: -1 | 1) {
+    const newOrder = item.order + dir;
+    await fetch(`/api/admin/product-of-month/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order: newOrder }),
+    });
+    load();
+  }
+
+  function openEdit(item: Item) {
+    setEditId(item.id);
+    setForm({ image: item.image, text: item.text ?? "", link: item.link ?? "", order: item.order, isActive: item.isActive });
+    setShowForm(true);
+  }
+
+  function openNew() {
+    setEditId(null);
+    setForm(emptyForm);
+    setShowForm(true);
+  }
+
+  // Link options from categories
+  const linkOptions: { label: string; value: string }[] = [
     { label: "— Sin botón —", value: "" },
     { label: "Todo el catálogo", value: "/catalogo" },
   ];
   categories.forEach((cat) => {
     linkOptions.push({ label: cat.name, value: `/catalogo?categoria=${cat.slug}` });
-    cat.children?.forEach((sub) => {
-      linkOptions.push({
-        label: sub.name,
-        value: `/catalogo?categoria=${sub.slug}`,
-        indent: true,
-      });
-    });
+    cat.children?.forEach((sub) =>
+      linkOptions.push({ label: `  ↳ ${sub.name}`, value: `/catalogo?categoria=${sub.slug}` })
+    );
   });
 
+  const inputCls = "w-full rounded-xl border border-outline-variant bg-surface-container px-4 py-2.5 text-sm text-on-surface placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary/40";
+
   return (
-    <div className="max-w-xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-on-surface font-serif">Producto del Mes</h1>
-        <p className="text-on-surface-muted text-sm mt-1">
-          La imagen y texto que se muestran en la página principal entre categorías y "¿Cómo funciona?".
-        </p>
-      </div>
-
-      <div className="bg-surface rounded-2xl border border-outline-variant p-6 space-y-5">
-        {/* Imagen */}
+    <div className="max-w-2xl">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <p className="text-sm font-medium text-on-surface mb-3">Imagen</p>
-          {imageUrl ? (
-            <div className="relative w-full max-w-xs rounded-xl overflow-hidden border border-outline-variant aspect-square bg-surface-container">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={imageUrl} alt="Producto del mes" className="w-full h-full object-cover" />
-              <button
-                onClick={() => setImageUrl(null)}
-                className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 hover:bg-black/70 flex items-center justify-center transition"
-              >
-                <span className="material-symbol text-white" style={{ fontSize: "16px" }}>close</span>
-              </button>
-            </div>
-          ) : (
-            <div
-              onClick={() => fileRef.current?.click()}
-              className="w-full max-w-xs aspect-square rounded-xl border-2 border-dashed border-outline-variant bg-surface-container flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary transition"
-            >
-              <span className="material-symbol text-outline" style={{ fontSize: "40px" }}>add_photo_alternate</span>
-              <p className="text-sm text-on-surface-muted">Haz clic para subir imagen</p>
-            </div>
-          )}
-          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
-          <button
-            onClick={() => fileRef.current?.click()}
-            disabled={uploading}
-            className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-outline-variant hover:bg-surface-container transition disabled:opacity-50"
-          >
-            <span className="material-symbol" style={{ fontSize: "16px" }}>upload</span>
-            {uploading ? "Subiendo..." : imageUrl ? "Cambiar imagen" : "Subir imagen"}
-          </button>
-        </div>
-
-        {/* Texto */}
-        <div>
-          <label className="text-sm font-medium text-on-surface block mb-2">
-            Texto debajo de la imagen
-          </label>
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            rows={3}
-            placeholder="Ej: Este mes tenemos una oferta especial en nuestras tazas personalizadas..."
-            className="w-full rounded-xl border border-outline-variant bg-surface-container px-4 py-3 text-sm text-on-surface placeholder:text-outline resize-none focus:outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </div>
-
-        {/* Enlace del botón */}
-        <div>
-          <label className="text-sm font-medium text-on-surface block mb-1">
-            Botón "Explorar productos" — destino
-          </label>
-          <p className="text-xs text-on-surface-muted mb-2">
-            Selecciona la categoría o subcategoría a la que llevará el botón. Déjalo en "Sin botón" para ocultarlo.
+          <h1 className="text-2xl font-bold text-on-surface font-serif">Producto del Mes</h1>
+          <p className="text-on-surface-muted text-sm mt-1">
+            Configura los productos que rotan en la página principal cada 10 segundos.
           </p>
-          <select
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            className="w-full rounded-xl border border-outline-variant bg-surface-container px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/40"
-          >
-            {linkOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.indent ? `  ↳ ${opt.label}` : opt.label}
-              </option>
-            ))}
-          </select>
-          {link && (
-            <p className="mt-1.5 text-xs text-primary font-mono">{link}</p>
-          )}
         </div>
-
-        {/* Guardar */}
         <button
-          onClick={handleSave}
-          disabled={saving || !imageUrl}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-40 disabled:cursor-not-allowed"
+          onClick={openNew}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary/90 transition"
         >
-          <span className="material-symbol" style={{ fontSize: "16px" }}>
-            {saved ? "check_circle" : "save"}
-          </span>
-          {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar cambios"}
+          <span className="material-symbol" style={{ fontSize: "18px" }}>add</span>
+          Agregar
         </button>
       </div>
+
+      {/* Formulario inline */}
+      {showForm && (
+        <div className="bg-surface rounded-2xl border border-outline-variant p-6 mb-6 space-y-4">
+          <h2 className="font-semibold text-on-surface">{editId ? "Editar item" : "Nuevo item"}</h2>
+
+          {/* Imagen */}
+          <div>
+            <p className="text-sm font-medium text-on-surface mb-2">Imagen *</p>
+            {form.image ? (
+              <div className="relative w-40 rounded-xl overflow-hidden border border-outline-variant">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={form.image} alt="" className="w-full h-auto" />
+                <button
+                  onClick={() => setForm((f) => ({ ...f, image: "" }))}
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 flex items-center justify-center"
+                >
+                  <span className="material-symbol text-white" style={{ fontSize: "14px" }}>close</span>
+                </button>
+              </div>
+            ) : (
+              <div
+                onClick={() => fileRef.current?.click()}
+                className="w-40 h-28 rounded-xl border-2 border-dashed border-outline-variant bg-surface-container flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary transition"
+              >
+                <span className="material-symbol text-outline" style={{ fontSize: "28px" }}>add_photo_alternate</span>
+                <p className="text-xs text-outline">Subir imagen</p>
+              </div>
+            )}
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-outline-variant hover:bg-surface-container transition disabled:opacity-50"
+            >
+              <span className="material-symbol" style={{ fontSize: "14px" }}>upload</span>
+              {uploading ? "Subiendo..." : form.image ? "Cambiar" : "Subir imagen"}
+            </button>
+          </div>
+
+          {/* Texto */}
+          <div>
+            <label className="text-sm font-medium text-on-surface block mb-1">Texto (opcional)</label>
+            <textarea
+              value={form.text}
+              onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
+              rows={2}
+              placeholder="Descripción breve del producto o promoción..."
+              className={inputCls + " resize-none"}
+            />
+          </div>
+
+          {/* Link */}
+          <div>
+            <label className="text-sm font-medium text-on-surface block mb-1">Botón "Explorar productos"</label>
+            <select
+              value={form.link}
+              onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))}
+              className={inputCls}
+            >
+              {linkOptions.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            {form.link && <p className="text-xs text-primary font-mono mt-1">{form.link}</p>}
+          </div>
+
+          {/* Activo */}
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
+              className="w-4 h-4 accent-primary"
+            />
+            <span className="text-sm text-on-surface">Visible en la página principal</span>
+          </label>
+
+          {/* Acciones */}
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={handleSave}
+              disabled={saving || !form.image}
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary/90 transition disabled:opacity-40"
+            >
+              <span className="material-symbol" style={{ fontSize: "16px" }}>save</span>
+              {saving ? "Guardando..." : "Guardar"}
+            </button>
+            <button
+              onClick={() => { setShowForm(false); setEditId(null); setForm(emptyForm); }}
+              className="px-5 py-2 rounded-xl border border-outline-variant text-sm text-on-surface hover:bg-surface-container transition"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Lista de items */}
+      {items.length === 0 ? (
+        <div className="bg-surface rounded-2xl border border-outline-variant p-10 text-center">
+          <span className="material-symbol text-outline" style={{ fontSize: "48px" }}>star</span>
+          <p className="text-on-surface-muted text-sm mt-2">No hay productos del mes configurados.</p>
+          <p className="text-on-surface-muted text-xs">Haz clic en "Agregar" para comenzar.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {items.map((item, i) => (
+            <div key={item.id} className="bg-surface rounded-2xl border border-outline-variant p-4 flex gap-4 items-start">
+              {/* Thumbnail */}
+              <div className="shrink-0 w-20 h-16 rounded-lg overflow-hidden border border-outline-variant bg-surface-container">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.image} alt="" className="w-full h-full object-cover" />
+              </div>
+
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${item.isActive ? "bg-primary-container text-primary" : "bg-surface-container text-outline"}`}>
+                    {item.isActive ? "Activo" : "Oculto"}
+                  </span>
+                  <span className="text-xs text-outline">#{i + 1}</span>
+                </div>
+                {item.text && <p className="text-sm text-on-surface-muted truncate">{item.text}</p>}
+                {item.link && <p className="text-xs text-primary font-mono truncate">{item.link}</p>}
+              </div>
+
+              {/* Acciones */}
+              <div className="flex flex-col gap-1 shrink-0">
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => moveOrder(item, -1)}
+                    disabled={i === 0}
+                    className="w-7 h-7 rounded-lg border border-outline-variant flex items-center justify-center hover:bg-surface-container transition disabled:opacity-30"
+                  >
+                    <span className="material-symbol" style={{ fontSize: "14px" }}>arrow_upward</span>
+                  </button>
+                  <button
+                    onClick={() => moveOrder(item, 1)}
+                    disabled={i === items.length - 1}
+                    className="w-7 h-7 rounded-lg border border-outline-variant flex items-center justify-center hover:bg-surface-container transition disabled:opacity-30"
+                  >
+                    <span className="material-symbol" style={{ fontSize: "14px" }}>arrow_downward</span>
+                  </button>
+                </div>
+                <button
+                  onClick={() => toggleActive(item)}
+                  className="w-full px-2 py-1 rounded-lg border border-outline-variant text-xs hover:bg-surface-container transition"
+                >
+                  {item.isActive ? "Ocultar" : "Mostrar"}
+                </button>
+                <button
+                  onClick={() => openEdit(item)}
+                  className="w-full px-2 py-1 rounded-lg border border-outline-variant text-xs hover:bg-surface-container transition"
+                >
+                  Editar
+                </button>
+                <button
+                  onClick={() => handleDelete(item.id)}
+                  className="w-full px-2 py-1 rounded-lg border border-error/30 text-error text-xs hover:bg-error/5 transition"
+                >
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
