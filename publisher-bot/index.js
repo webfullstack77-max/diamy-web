@@ -83,7 +83,7 @@ async function sendWhatsApp(ad, fullText) {
       continue;
     }
     try {
-      const imgUrl = buildImageUrl(ad.image_url);
+      const imgUrl = buildImageUrl(ad.imageUrl);
       if (imgUrl) {
         const media = await MessageMedia.fromUrl(imgUrl, { unsafeMime: true });
         await waClient.sendMessage(chat.id._serialized, media, { caption: fullText });
