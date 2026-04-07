@@ -25,3 +25,6 @@ jobs:
             rm -rf .next
             npm run build
             pm2 reload diamy --update-env
+            cd ${{ secrets.VPS_PATH }}
+            npm install --prefix publisher-bot
+            pm2 reload diamy-pub --update-env || pm2 start publisher-bot/index.js --name diamy-pub
