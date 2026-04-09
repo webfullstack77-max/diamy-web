@@ -119,6 +119,14 @@ export default function CollectionView({ product, productUrl }: Props) {
           </div>
         </div>
 
+        {/* Plantilla de modelos */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/3ModelosFinal.PNG"
+          alt="Guía de modelos disponibles"
+          className="mt-6 w-full rounded-2xl"
+        />
+
         {/* CTA */}
         <div className="mt-6 flex flex-col gap-3">
           <WhatsAppButton

@@ -254,6 +254,13 @@ export default function MassiveGallery({
               </div>
             </div>
 
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/3ModelosFinal.PNG"
+              alt="Guía de modelos disponibles"
+              className="w-full rounded-2xl"
+            />
+
             {whatsappNumber && (
               <a
                 href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hola! Me interesa uno de los diseños de ${title}. ¿Pueden ayudarme? ${productUrl}`)}`}

@@ -144,6 +144,13 @@ export default async function ProductoPage({ params }: Props) {
               </div>
             </div>
 
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/3ModelosFinal.PNG"
+              alt="Guía de modelos disponibles"
+              className="mt-6 w-full rounded-2xl"
+            />
+
             <div className="mt-6 flex flex-col gap-3">
               <WhatsAppButton productTitle={product.title} productUrl={productUrl} />
               <ShareButton
