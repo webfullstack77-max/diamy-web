@@ -4,6 +4,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import ImageGallery from "@/components/product/ImageGallery";
 import WhatsAppButton from "@/components/product/WhatsAppButton";
+import ShareButton from "@/components/product/ShareButton";
 import CollectionView from "@/components/product/CollectionView";
 import MassiveGallery from "@/components/product/MassiveGallery";
 import ProductCard from "@/components/catalog/ProductCard";
@@ -143,8 +144,14 @@ export default async function ProductoPage({ params }: Props) {
               </div>
             </div>
 
-            <div className="mt-6">
+            <div className="mt-6 flex flex-col gap-3">
               <WhatsAppButton productTitle={product.title} productUrl={productUrl} />
+              <ShareButton
+                title={product.title}
+                description={product.description}
+                imageUrl={product.images[0] ?? ""}
+                url={productUrl}
+              />
             </div>
           </div>
         </div>

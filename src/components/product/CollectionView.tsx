@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import ModelSelector from "./ModelSelector";
 import WhatsAppButton from "./WhatsAppButton";
+import ShareButton from "./ShareButton";
 
 interface Category {
   name: string;
@@ -119,17 +120,23 @@ export default function CollectionView({ product, productUrl }: Props) {
         </div>
 
         {/* CTA */}
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col gap-3">
           <WhatsAppButton
             productTitle={product.title}
             productUrl={productUrl}
             selectedModel={selectedModel ?? undefined}
           />
           {!selectedModel && (
-            <p className="text-xs text-center text-on-surface-muted mt-2">
+            <p className="text-xs text-center text-on-surface-muted -mt-1">
               💡 Selecciona un modelo para incluirlo en tu mensaje
             </p>
           )}
+          <ShareButton
+            title={product.title}
+            description={product.description}
+            imageUrl={product.images[0] ?? ""}
+            url={productUrl}
+          />
         </div>
       </div>
     </div>

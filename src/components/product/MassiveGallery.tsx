@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useMemo, useEffect, useCallback } from "react";
+import ShareButton from "./ShareButton";
 
 interface Props {
   images: string[];
@@ -267,6 +268,12 @@ export default function MassiveGallery({
                 Cotizar por WhatsApp
               </a>
             )}
+            <ShareButton
+              title={title}
+              description={description}
+              imageUrl={images[0] ?? ""}
+              url={productUrl}
+            />
           </div>
 
           {/* Preview de la primera imagen (derecha) */}
