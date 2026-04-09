@@ -13,7 +13,7 @@ function getRangeStart(rango: string): Date {
   const now = new Date();
   if (rango === "7d") return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   if (rango === "90d") return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-  return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // default 30d
+  return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 }
 
 function formatPath(path: string): string {
@@ -24,8 +24,8 @@ function formatPath(path: string): string {
   return path;
 }
 
-function formatDate(date: Date): string {
-  return date.toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
+function formatDate(d: string): string {
+  return new Date(d + "T12:00:00").toLocaleDateString("es-MX", { day: "2-digit", month: "short" });
 }
 
 export default async function EstadisticasPage({ searchParams }: Props) {
@@ -33,40 +33,52 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   const rangeStart = getRangeStart(rango);
   const now = new Date();
 
-  // Inicio de hoy y semana
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
   const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const monthStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const [totalHoy, totalSemana, totalMes, totalHistorico] = await Promise.all([
-    prisma.pageView.count({ where: { createdAt: { gte: todayStart } } }),
-    prisma.pageView.count({ where: { createdAt: { gte: weekStart } } }),
-    prisma.pageView.count({ where: { createdAt: { gte: monthStart } } }),
-    prisma.pageView.count(),
-  ]);
-
-  // Visitas por día en el rango seleccionado (sin raw SQL)
+  // Traer todas las vistas para el rango con visitorId y path
   const viewsInRange = await prisma.pageView.findMany({
     where: { createdAt: { gte: rangeStart } },
-    select: { createdAt: true },
+    select: { createdAt: true, visitorId: true, path: true },
     orderBy: { createdAt: "asc" },
   });
 
-  const byDay = new Map<string, number>();
+  // Vistas de periodos fijos para las cards (visitantes únicos)
+  const [viewsHoy, viewsSemana, viewsMes, viewsTotal] = await Promise.all([
+    prisma.pageView.findMany({ where: { createdAt: { gte: todayStart } }, select: { visitorId: true } }),
+    prisma.pageView.findMany({ where: { createdAt: { gte: weekStart } }, select: { visitorId: true } }),
+    prisma.pageView.findMany({ where: { createdAt: { gte: monthStart } }, select: { visitorId: true } }),
+    prisma.pageView.findMany({ select: { visitorId: true } }),
+  ]);
+
+  function uniqueVisitors(rows: { visitorId: string | null }[]) {
+    return new Set(rows.map((r) => r.visitorId).filter(Boolean)).size;
+  }
+
+  const visitantesHoy = uniqueVisitors(viewsHoy);
+  const visitantesSemana = uniqueVisitors(viewsSemana);
+  const visitantesMes = uniqueVisitors(viewsMes);
+  const visitantesTotal = uniqueVisitors(viewsTotal);
+
+  // Visitantes únicos por día en el rango seleccionado
+  const byDay = new Map<string, Set<string>>();
   for (const v of viewsInRange) {
     const day = v.createdAt.toISOString().slice(0, 10);
-    byDay.set(day, (byDay.get(day) || 0) + 1);
+    if (!byDay.has(day)) byDay.set(day, new Set());
+    if (v.visitorId) byDay.get(day)!.add(v.visitorId);
   }
-  const visitasPorDia = Array.from(byDay.entries()).map(([day, count]) => ({ day, count }));
+  const visitasPorDia = Array.from(byDay.entries())
+    .map(([day, visitors]) => ({ day, count: visitors.size }))
+    .sort((a, b) => a.day.localeCompare(b.day));
 
-  // Top páginas (sin groupBy para compatibilidad con Prisma 7)
-  const allPathViews = await prisma.pageView.findMany({
-    where: { createdAt: { gte: rangeStart } },
-    select: { path: true },
-  });
+  // Total visitantes únicos en el rango (para el subtítulo)
+  const visitantesRango = new Set(viewsInRange.map((v) => v.visitorId).filter(Boolean)).size;
+
+  // Top páginas (por page views, no por visitantes únicos)
   const byPath = new Map<string, number>();
-  for (const v of allPathViews) {
+  for (const v of viewsInRange) {
     byPath.set(v.path, (byPath.get(v.path) || 0) + 1);
   }
   const topPaginas = Array.from(byPath.entries())
@@ -74,8 +86,8 @@ export default async function EstadisticasPage({ searchParams }: Props) {
     .slice(0, 10)
     .map(([path, count]) => ({ path, count }));
 
+  const totalPageViewsRango = viewsInRange.length;
   const maxVisitas = Math.max(...visitasPorDia.map((d) => d.count), 1);
-  const totalRango = visitasPorDia.reduce((s, d) => s + d.count, 0);
 
   const rangos = [
     { label: "7 días", value: "7d" },
@@ -84,10 +96,10 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   ];
 
   const cards = [
-    { label: "Hoy", value: totalHoy, icon: "today", color: "text-blue-500" },
-    { label: "Esta semana", value: totalSemana, icon: "date_range", color: "text-violet-500" },
-    { label: "Este mes", value: totalMes, icon: "calendar_month", color: "text-pink-500" },
-    { label: "Total histórico", value: totalHistorico, icon: "bar_chart", color: "text-primary" },
+    { label: "Visitantes únicos hoy", value: visitantesHoy, icon: "person", color: "text-blue-500" },
+    { label: "Visitantes únicos semana", value: visitantesSemana, icon: "people", color: "text-violet-500" },
+    { label: "Visitantes únicos mes", value: visitantesMes, icon: "calendar_month", color: "text-pink-500" },
+    { label: "Visitantes únicos total", value: visitantesTotal, icon: "bar_chart", color: "text-primary" },
   ];
 
   return (
@@ -96,7 +108,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
         <h1 className="font-serif text-3xl font-bold text-on-surface">Estadísticas</h1>
       </div>
 
-      {/* Cards resumen */}
+      {/* Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {cards.map((c) => (
           <div key={c.label} className="bg-surface rounded-2xl border border-outline-variant p-5">
@@ -107,18 +119,20 @@ export default async function EstadisticasPage({ searchParams }: Props) {
               {c.icon}
             </span>
             <p className="text-2xl font-bold text-on-surface mt-2">{c.value.toLocaleString("es-MX")}</p>
-            <p className="text-sm text-on-surface-muted">{c.label}</p>
+            <p className="text-xs text-on-surface-muted mt-0.5 leading-tight">{c.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Gráfica + filtros */}
+      {/* Gráfica */}
       <div className="bg-surface rounded-2xl border border-outline-variant p-6 mb-8">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
-            <h2 className="font-semibold text-on-surface">Visitas por día</h2>
+            <h2 className="font-semibold text-on-surface">Visitantes únicos por día</h2>
             <p className="text-sm text-on-surface-muted mt-0.5">
-              {totalRango.toLocaleString("es-MX")} visitas en el período seleccionado
+              <span className="font-medium text-on-surface">{visitantesRango.toLocaleString("es-MX")}</span> visitantes únicos
+              {" · "}
+              <span className="font-medium text-on-surface">{totalPageViewsRango.toLocaleString("es-MX")}</span> páginas vistas
             </p>
           </div>
           <div className="flex gap-2">
@@ -142,6 +156,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <span className="material-symbol text-outline mb-2" style={{ fontSize: "40px" }}>bar_chart</span>
             <p className="text-on-surface-muted text-sm">Sin datos en este período</p>
+            <p className="text-on-surface-muted text-xs mt-1">Las visitas empezarán a aparecer cuando usuarios entren al sitio</p>
           </div>
         ) : (
           <div className="flex items-end gap-1 h-40 overflow-x-auto pb-6">
@@ -155,13 +170,10 @@ export default async function EstadisticasPage({ searchParams }: Props) {
                   <div
                     className="w-full rounded-t-md bg-primary/70 hover:bg-primary transition-all"
                     style={{ height: `${heightPct}%` }}
-                    title={`${formatDate(new Date(d.day))}: ${d.count} visitas`}
+                    title={`${formatDate(d.day)}: ${d.count} visitante${d.count !== 1 ? "s" : ""}`}
                   />
-                  <span
-                    className="text-[9px] text-on-surface-muted -rotate-45 origin-top-left whitespace-nowrap mt-1"
-                    style={{ fontSize: "9px" }}
-                  >
-                    {formatDate(new Date(d.day))}
+                  <span className="text-on-surface-muted whitespace-nowrap mt-1" style={{ fontSize: "9px", transform: "rotate(-45deg)", transformOrigin: "top left", display: "block" }}>
+                    {formatDate(d.day)}
                   </span>
                 </div>
               );
@@ -174,7 +186,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
       <div className="bg-surface rounded-2xl border border-outline-variant overflow-hidden">
         <div className="p-5 border-b border-outline-variant">
           <h2 className="font-semibold text-on-surface">Páginas más visitadas</h2>
-          <p className="text-sm text-on-surface-muted mt-0.5">En el período seleccionado</p>
+          <p className="text-sm text-on-surface-muted mt-0.5">Por número de visitas en el período</p>
         </div>
         {topPaginas.length === 0 ? (
           <p className="text-center text-on-surface-muted text-sm py-8">Sin datos</p>
@@ -184,25 +196,23 @@ export default async function EstadisticasPage({ searchParams }: Props) {
               <tr>
                 <th className="text-left px-5 py-3 text-on-surface-muted font-medium">#</th>
                 <th className="text-left px-5 py-3 text-on-surface-muted font-medium">Página</th>
-                <th className="text-left px-5 py-3 text-on-surface-muted font-medium">Ruta</th>
+                <th className="text-left px-5 py-3 text-on-surface-muted font-medium hidden sm:table-cell">Ruta</th>
                 <th className="text-right px-5 py-3 text-on-surface-muted font-medium">Visitas</th>
                 <th className="text-right px-5 py-3 text-on-surface-muted font-medium hidden sm:table-cell">%</th>
               </tr>
             </thead>
             <tbody>
               {topPaginas.map((p, i) => {
-                const pct = totalRango > 0 ? ((p.count / totalRango) * 100).toFixed(1) : "0";
+                const pct = totalPageViewsRango > 0 ? ((p.count / totalPageViewsRango) * 100).toFixed(1) : "0";
                 return (
                   <tr key={p.path} className={i % 2 === 0 ? "" : "bg-surface-container/30"}>
                     <td className="px-5 py-3 text-on-surface-muted">{i + 1}</td>
                     <td className="px-5 py-3 font-medium text-on-surface">{formatPath(p.path)}</td>
-                    <td className="px-5 py-3 text-on-surface-muted font-mono text-xs">{p.path}</td>
+                    <td className="px-5 py-3 text-on-surface-muted font-mono text-xs hidden sm:table-cell">{p.path}</td>
                     <td className="px-5 py-3 text-right font-semibold text-on-surface">
                       {p.count.toLocaleString("es-MX")}
                     </td>
-                    <td className="px-5 py-3 text-right text-on-surface-muted hidden sm:table-cell">
-                      {pct}%
-                    </td>
+                    <td className="px-5 py-3 text-right text-on-surface-muted hidden sm:table-cell">{pct}%</td>
                   </tr>
                 );
               })}

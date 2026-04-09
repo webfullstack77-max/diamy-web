@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req: NextRequest) {
   try {
-    const { path } = await req.json();
+    const { path, visitorId } = await req.json();
 
     if (!path || typeof path !== "string") {
       return NextResponse.json({ ok: false });
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       data: {
         path,
         ip,
+        visitorId: typeof visitorId === "string" ? visitorId : null,
         userAgent: ua || null,
         referer: req.headers.get("referer") || null,
       },
