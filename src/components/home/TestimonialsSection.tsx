@@ -55,14 +55,14 @@ export default function TestimonialsSection({ testimonials }: Props) {
           >
             <StarRating rating={t.rating} />
             <p className="text-sm text-on-surface leading-relaxed italic line-clamp-4">
-              &ldquo;{t.text}&rdquo;
+              &ldquo;{t.text ?? ""}&rdquo;
             </p>
             <div className="mt-auto flex items-center gap-3 pt-2 border-t border-outline-variant/40">
               <div className="w-9 h-9 rounded-full bg-primary-container flex items-center justify-center shrink-0">
                 <span className="material-symbol text-primary" style={{ fontSize: "20px" }}>person</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-on-surface">{t.author}</p>
+                <p className="text-sm font-semibold text-on-surface">{t.author ?? "Cliente"}</p>
                 {t.role && <p className="text-xs text-on-surface-muted">{t.role}</p>}
               </div>
             </div>

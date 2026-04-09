@@ -34,10 +34,17 @@ export interface Product {
 
 export interface Testimonial {
   id: string;
-  author: string;
+  token: string;
+  author: string | null;
   role: string | null;
-  text: string;
+  email: string | null;
+  phone: string | null;
+  text: string | null;
   rating: number;
   avatar: string | null;
+  orderNote: string | null;
+  isPublished: boolean;
+  isSubmitted: boolean;
+  submittedAt: Date | null;
   createdAt: Date;
 }

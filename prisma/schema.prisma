@@ -52,13 +52,20 @@ model Product {
 }
 
 model Testimonial {
-  id        String   @id @default(cuid())
-  author    String
-  role      String?
-  text      String
-  rating    Int      @default(5)
-  avatar    String?
-  createdAt DateTime @default(now())
+  id          String    @id @default(cuid())
+  token       String    @unique @default(cuid())
+  author      String?
+  role        String?
+  email       String?
+  phone       String?
+  text        String?
+  rating      Int       @default(5)
+  avatar      String?
+  orderNote   String?
+  isPublished Boolean   @default(false)
+  isSubmitted Boolean   @default(false)
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
 }
 
 model AdminSession {
