@@ -25,7 +25,7 @@ export default async function ProductoPage({ params }: Props) {
 
   const product = await prisma.product.findUnique({
     where: { slug, isActive: true },
-    include: { category: true },
+    include: { category: { include: { parent: true } } },
   });
 
   if (!product) notFound();
@@ -39,6 +39,11 @@ export default async function ProductoPage({ params }: Props) {
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const productUrl = `${siteUrl}/producto/${slug}`;
+
+  const isPlayeras =
+    product.category?.slug.toLowerCase().includes("playera") ||
+    product.category?.parent?.slug.toLowerCase().includes("playera") ||
+    false;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8">
@@ -73,6 +78,7 @@ export default async function ProductoPage({ params }: Props) {
           category={product.category}
           productUrl={productUrl}
           whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}
+          showModelGuide={isPlayeras}
         />
       ) : product.isCollection ? (
         <CollectionView
@@ -87,6 +93,7 @@ export default async function ProductoPage({ params }: Props) {
             category: product.category,
           }}
           productUrl={productUrl}
+          showModelGuide={isPlayeras}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
@@ -144,12 +151,14 @@ export default async function ProductoPage({ params }: Props) {
               </div>
             </div>
 
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/3ModelosFinal.PNG"
-              alt="Guía de modelos disponibles"
-              className="mt-6 w-full rounded-2xl"
-            />
+            {isPlayeras && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/3ModelosFinal.PNG"
+                alt="Guía de modelos disponibles"
+                className="mt-6 w-full rounded-2xl"
+              />
+            )}
 
             <div className="mt-6 flex flex-col gap-3">
               <WhatsAppButton productTitle={product.title} productUrl={productUrl} />

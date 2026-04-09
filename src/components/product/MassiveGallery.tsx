@@ -17,6 +17,7 @@ interface Props {
   category?: { name: string; slug: string } | null;
   productUrl: string;
   whatsappNumber?: string;
+  showModelGuide?: boolean;
 }
 
 // Deriva el nombre del diseño desde la URL del archivo
@@ -163,6 +164,7 @@ export default function MassiveGallery({
   category,
   productUrl,
   whatsappNumber,
+  showModelGuide,
 }: Props) {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
@@ -254,12 +256,14 @@ export default function MassiveGallery({
               </div>
             </div>
 
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/3ModelosFinal.PNG"
-              alt="Guía de modelos disponibles"
-              className="w-full rounded-2xl"
-            />
+            {showModelGuide && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/3ModelosFinal.PNG"
+                alt="Guía de modelos disponibles"
+                className="w-full rounded-2xl"
+              />
+            )}
 
             {whatsappNumber && (
               <a

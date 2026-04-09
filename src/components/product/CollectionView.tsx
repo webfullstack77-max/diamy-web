@@ -23,13 +23,14 @@ interface Props {
     category: Category | null;
   };
   productUrl: string;
+  showModelGuide?: boolean;
 }
 
 function isVideo(url: string) {
   return /\.(mp4|webm)(\?|$)/i.test(url);
 }
 
-export default function CollectionView({ product, productUrl }: Props) {
+export default function CollectionView({ product, productUrl, showModelGuide }: Props) {
   const [selectedModel, setSelectedModel] = useState<number | null>(null);
 
   const modelImages = product.images.filter((img) => !isVideo(img));
@@ -119,13 +120,14 @@ export default function CollectionView({ product, productUrl }: Props) {
           </div>
         </div>
 
-        {/* Plantilla de modelos */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/3ModelosFinal.PNG"
-          alt="Guía de modelos disponibles"
-          className="mt-6 w-full rounded-2xl"
-        />
+        {showModelGuide && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src="/3ModelosFinal.PNG"
+            alt="Guía de modelos disponibles"
+            className="mt-6 w-full rounded-2xl"
+          />
+        )}
 
         {/* CTA */}
         <div className="mt-6 flex flex-col gap-3">
