@@ -113,3 +113,16 @@ model AdsQueue {
 
   @@map("ads_queue")
 }
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  ip        String?
+  userAgent String?
+  referer   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@map("page_views")
+}

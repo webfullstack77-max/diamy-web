@@ -23,6 +23,7 @@ export default async function AdminDashboardPage() {
     { label: "Categorías", value: categoryCount, icon: "category", href: "/admin/categorias" },
   ];
 
+
   return (
     <div className="max-w-5xl">
       <h1 className="font-serif text-3xl font-bold text-on-surface mb-8">Dashboard</h1>
@@ -48,6 +49,19 @@ export default async function AdminDashboardPage() {
           </Link>
         ))}
       </div>
+
+      {/* Link a estadísticas */}
+      <Link
+        href="/admin/estadisticas"
+        className="flex items-center gap-4 bg-surface rounded-2xl border border-outline-variant p-5 hover:border-primary transition mb-8"
+      >
+        <span className="material-symbol text-primary" style={{ fontSize: "32px", fontVariationSettings: "'FILL' 1" }}>bar_chart</span>
+        <div>
+          <p className="font-semibold text-on-surface">Estadísticas de visitas</p>
+          <p className="text-sm text-on-surface-muted">Ver visitas por día, semana o mes y páginas más vistas</p>
+        </div>
+        <span className="material-symbol text-on-surface-muted ml-auto" style={{ fontSize: "20px" }}>chevron_right</span>
+      </Link>
 
       {/* Recent products */}
       <div className="bg-surface rounded-2xl border border-outline-variant overflow-hidden">

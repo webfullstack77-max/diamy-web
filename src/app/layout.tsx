@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import MobileNav from "@/components/layout/MobileNav";
 import Footer from "@/components/layout/Footer";
 import AutoRefresh from "@/components/AutoRefresh";
+import PageTracker from "@/components/analytics/PageTracker";
 import "./globals.css";
 
 const notoSerif = Noto_Serif({
@@ -79,6 +80,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-background text-on-surface antialiased">
         <AutoRefresh />
+        <PageTracker />
         <Header />
         <main className="flex-1 pt-16">{children}</main>
         <Footer />
