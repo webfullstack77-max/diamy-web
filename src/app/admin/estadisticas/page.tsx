@@ -60,14 +60,19 @@ export default async function EstadisticasPage({ searchParams }: Props) {
   }
   const visitasPorDia = Array.from(byDay.entries()).map(([day, count]) => ({ day, count }));
 
-  // Top páginas
-  const topPaginas = await prisma.pageView.groupBy({
-    by: ["path"],
-    _count: { path: true },
-    orderBy: { _count: { path: "desc" } },
-    take: 10,
+  // Top páginas (sin groupBy para compatibilidad con Prisma 7)
+  const allPathViews = await prisma.pageView.findMany({
     where: { createdAt: { gte: rangeStart } },
+    select: { path: true },
   });
+  const byPath = new Map<string, number>();
+  for (const v of allPathViews) {
+    byPath.set(v.path, (byPath.get(v.path) || 0) + 1);
+  }
+  const topPaginas = Array.from(byPath.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(([path, count]) => ({ path, count }));
 
   const maxVisitas = Math.max(...visitasPorDia.map((d) => d.count), 1);
   const totalRango = visitasPorDia.reduce((s, d) => s + d.count, 0);
@@ -186,14 +191,14 @@ export default async function EstadisticasPage({ searchParams }: Props) {
             </thead>
             <tbody>
               {topPaginas.map((p, i) => {
-                const pct = totalRango > 0 ? ((p._count.path / totalRango) * 100).toFixed(1) : "0";
+                const pct = totalRango > 0 ? ((p.count / totalRango) * 100).toFixed(1) : "0";
                 return (
                   <tr key={p.path} className={i % 2 === 0 ? "" : "bg-surface-container/30"}>
                     <td className="px-5 py-3 text-on-surface-muted">{i + 1}</td>
                     <td className="px-5 py-3 font-medium text-on-surface">{formatPath(p.path)}</td>
                     <td className="px-5 py-3 text-on-surface-muted font-mono text-xs">{p.path}</td>
                     <td className="px-5 py-3 text-right font-semibold text-on-surface">
-                      {p._count.path.toLocaleString("es-MX")}
+                      {p.count.toLocaleString("es-MX")}
                     </td>
                     <td className="px-5 py-3 text-right text-on-surface-muted hidden sm:table-cell">
                       {pct}%
