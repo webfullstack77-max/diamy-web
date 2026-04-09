@@ -46,17 +46,19 @@ export default async function EstadisticasPage({ searchParams }: Props) {
     prisma.pageView.count(),
   ]);
 
-  // Visitas por día en el rango seleccionado
-  type DayRow = { day: Date; count: number };
-  const visitasPorDia = await prisma.$queryRaw<DayRow[]>`
-    SELECT
-      DATE_TRUNC('day', "createdAt") AS day,
-      COUNT(*)::int AS count
-    FROM page_views
-    WHERE "createdAt" >= ${rangeStart}
-    GROUP BY day
-    ORDER BY day ASC
-  `;
+  // Visitas por día en el rango seleccionado (sin raw SQL)
+  const viewsInRange = await prisma.pageView.findMany({
+    where: { createdAt: { gte: rangeStart } },
+    select: { createdAt: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const byDay = new Map<string, number>();
+  for (const v of viewsInRange) {
+    const day = v.createdAt.toISOString().slice(0, 10);
+    byDay.set(day, (byDay.get(day) || 0) + 1);
+  }
+  const visitasPorDia = Array.from(byDay.entries()).map(([day, count]) => ({ day, count }));
 
   // Top páginas
   const topPaginas = await prisma.pageView.groupBy({
@@ -141,7 +143,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
             {visitasPorDia.map((d) => {
               const heightPct = Math.max((d.count / maxVisitas) * 100, 4);
               return (
-                <div key={d.day.toString()} className="flex flex-col items-center gap-1 flex-1 min-w-[28px] group">
+                <div key={d.day} className="flex flex-col items-center gap-1 flex-1 min-w-[28px] group">
                   <span className="text-xs text-on-surface font-medium opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
                     {d.count}
                   </span>
