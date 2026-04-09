@@ -261,7 +261,7 @@ export default function MassiveGallery({
               <img
                 src="/3ModelosFinal.PNG"
                 alt="Guía de modelos disponibles"
-                className="w-full rounded-2xl"
+                className="w-1/2 mx-auto rounded-2xl"
               />
             )}
 

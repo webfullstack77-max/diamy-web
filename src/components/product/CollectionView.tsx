@@ -125,7 +125,7 @@ export default function CollectionView({ product, productUrl, showModelGuide }: 
           <img
             src="/3ModelosFinal.PNG"
             alt="Guía de modelos disponibles"
-            className="mt-6 w-full rounded-2xl"
+            className="mt-6 w-1/2 mx-auto rounded-2xl"
           />
         )}
 
