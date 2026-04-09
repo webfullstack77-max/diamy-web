@@ -62,12 +62,23 @@ export default function ShareButton({ title, description, imageUrl, url }: Props
   return (
     <button
       onClick={handleShare}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-outline-variant text-on-surface-muted hover:bg-surface-container hover:text-on-surface transition text-sm font-medium"
+      className="flex items-center gap-2 px-4 py-2 rounded-xl border border-outline-variant text-on-surface-muted hover:bg-surface-container hover:text-on-surface transition text-sm font-medium w-fit mx-auto"
       title="Compartir producto"
     >
       <span
         className="material-symbol"
-        style={{ fontSize: "18px", fontVariationSettings: state === "copied" ? "'FILL' 1" : "'FILL' 0" }}
+        style={{
+          fontSize: "18px",
+          fontVariationSettings: state === "copied" ? "'FILL' 1" : "'FILL' 0",
+          ...(state === "copied"
+            ? { color: "#22c55e" }
+            : {
+                background: "linear-gradient(135deg, #6366f1, #ec4899)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }),
+        }}
       >
         {state === "copied" ? "check_circle" : "share"}
       </span>
