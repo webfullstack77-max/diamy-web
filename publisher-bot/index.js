@@ -194,7 +194,8 @@ cron.schedule('* * * * *', async () => {
     let channels = [];
     try { channels = JSON.parse(ad.channels || '[]'); } catch { channels = ['whatsapp']; }
 
-    const fullText = [ad.caption, ad.hashtags].filter(Boolean).join('\n\n');
+    const productUrl = ad.productUrl ? buildImageUrl(ad.productUrl) : null;
+    const fullText = [ad.caption, ad.hashtags, productUrl ? `👉 ${productUrl}` : null].filter(Boolean).join('\n\n');
     const errors = [];
     let fbPostId = null;
     let igPostId = null;
