@@ -107,7 +107,7 @@ async function publishFacebook(ad, fullText) {
     return { ok: false, error: 'Credenciales FB no configuradas' };
   }
 
-  const imgUrl = buildImageUrl(ad.image_url);
+  const imgUrl = buildImageUrl(ad.imageUrl);
   const endpoint = `https://graph.facebook.com/v21.0/${pageId}/photos`;
   const params = new URLSearchParams({
     message: fullText,
@@ -137,7 +137,7 @@ async function publishInstagram(ad, fullText) {
     return { ok: false, error: 'Credenciales IG no configuradas' };
   }
 
-  const imgUrl = buildImageUrl(ad.image_url);
+  const imgUrl = buildImageUrl(ad.imageUrl);
   if (!imgUrl) return { ok: false, error: 'Se requiere imagen para Instagram' };
 
   try {
