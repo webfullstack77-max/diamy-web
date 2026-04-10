@@ -157,11 +157,38 @@ npx prisma migrate dev --name <nombre>   # nueva migración local
 ## Deploy / CI-CD
 
 - **Repo:** `github.com/webfullstack77-max/diamy-web`
-- **Workflow:** `.github/workflows/deploy.yml` — trigger en push a `main`
-- **Pasos:** git pull → npm install → db:generate → db:migrate:prod → npm run build → pm2 reload diamy
-- **Secrets GitHub:** `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PATH`
+- **Workflow:** `app/.github/workflows/deploy.yml` — trigger automático en push a rama `main`
+- **Secrets GitHub Actions:** `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PATH`
 - **PM2 procesos en VPS:** `diamy` (Next.js), `diamy-pub` (publisher bot)
 - **Nginx:** `/etc/nginx/sites-available/diamy`, `client_max_body_size 60M`
+
+### Pasos del workflow (lo que ejecuta GitHub Actions en el VPS):
+```
+git pull origin main
+npm install
+npm run db:generate
+npm run db:migrate:prod
+npm run build
+pm2 reload diamy --update-env
+npm install --prefix publisher-bot
+pm2 reload diamy-pub --update-env || pm2 start publisher-bot/index.js --name diamy-pub
+```
+
+### Cómo deployar
+
+**Next.js (auto-deploy):**
+```bash
+# Desde app/ — cualquier push a main dispara el workflow
+git push origin main
+```
+
+**Publisher-bot (NO se auto-despliega):**
+El publisher-bot está en rama `master` (repo raíz). El workflow solo hace `git pull origin main`, por lo que cambios en `master` NO llegan al VPS automáticamente. Para aplicarlos:
+```bash
+# En VPS — después de hacer push a master en local:
+cd /var/www/diamy && git pull origin master && pm2 restart diamy-pub
+```
+O aplicar con sed directamente en el VPS si es un cambio pequeño.
 
 ---
 

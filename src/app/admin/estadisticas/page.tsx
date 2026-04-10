@@ -161,7 +161,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
         ) : (
           <div className="flex items-end gap-1 h-40 overflow-x-auto pb-6">
             {visitasPorDia.map((d) => {
-              const heightPct = Math.max((d.count / maxVisitas) * 100, 4);
+              const heightPx = Math.max(Math.round((d.count / maxVisitas) * 100), 4);
               return (
                 <div key={d.day} className="flex flex-col items-center gap-1 flex-1 min-w-[28px] group">
                   <span className="text-xs text-on-surface font-medium opacity-0 group-hover:opacity-100 transition whitespace-nowrap">
@@ -169,7 +169,7 @@ export default async function EstadisticasPage({ searchParams }: Props) {
                   </span>
                   <div
                     className="w-full rounded-t-md bg-primary/70 hover:bg-primary transition-all"
-                    style={{ height: `${heightPct}%` }}
+                    style={{ height: `${heightPx}px` }}
                     title={`${formatDate(d.day)}: ${d.count} visitante${d.count !== 1 ? "s" : ""}`}
                   />
                   <span className="text-on-surface-muted whitespace-nowrap mt-1" style={{ fontSize: "9px", transform: "rotate(-45deg)", transformOrigin: "top left", display: "block" }}>
