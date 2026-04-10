@@ -87,6 +87,23 @@ export default function PublicidadPage() {
     }
   }
 
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  async function handleResend(id: string) {
+    setBusyId(id);
+    const res = await fetch(`/api/admin/ads/${id}/resend`, { method: "POST" });
+    if (res.ok) await loadHistory();
+    setBusyId(null);
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("¿Eliminar este anuncio del historial?")) return;
+    setBusyId(id);
+    const res = await fetch(`/api/admin/ads/${id}`, { method: "DELETE" });
+    if (res.ok) await loadHistory();
+    setBusyId(null);
+  }
+
   function handleProductSelect(productId: string) {
     const p = products.find((x) => x.id === productId);
     if (!p) return;
@@ -419,6 +436,26 @@ export default function PublicidadPage() {
                     <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${STATUS_STYLES[ad.status] ?? STATUS_STYLES.scheduled}`}>
                       {STATUS_LABELS[ad.status] ?? ad.status}
                     </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => handleResend(ad.id)}
+                        disabled={busyId === ad.id}
+                        title="Reenviar"
+                        className="w-9 h-9 flex items-center justify-center rounded-lg text-on-surface-muted hover:bg-primary/10 hover:text-primary transition disabled:opacity-40"
+                      >
+                        <span className="material-symbol" style={{ fontSize: "20px" }}>
+                          {busyId === ad.id ? "hourglass_empty" : "send"}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => handleDelete(ad.id)}
+                        disabled={busyId === ad.id}
+                        title="Eliminar"
+                        className="w-9 h-9 flex items-center justify-center rounded-lg text-on-surface-muted hover:bg-red-50 hover:text-red-600 transition disabled:opacity-40"
+                      >
+                        <span className="material-symbol" style={{ fontSize: "20px" }}>delete</span>
+                      </button>
+                    </div>
                   </div>
                 );
               })}
