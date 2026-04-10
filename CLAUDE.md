@@ -27,13 +27,16 @@ Tienda online para **Diamy Laser Cut** (diamylasercut.com.mx), empresa mexicana 
 ## Estructura del repositorio
 
 ```
-DiamyVer4/
-├── app/                  ← Submodule Next.js (repo: webfullstack77-max/diamy-web, rama: main)
-├── publisher-bot/        ← Bot WhatsApp/FB/IG (Node.js, PM2: diamy-pub)
-└── .env.production       ← Variables de entorno del VPS (DATABASE_URL, etc.)
+DiamyVer4/                ← Repo local en rama master (solo contiene el submodule)
+└── app/                  ← Submodule Next.js (repo: webfullstack77-max/diamy-web, rama: main)
+    ├── src/              ← Código Next.js
+    ├── public/           ← Assets estáticos
+    └── publisher-bot/    ← Bot WhatsApp/FB/IG (Node.js, PM2: diamy-pub)
 ```
 
-El repo raíz también apunta a `webfullstack77-max/diamy-web` (rama: `master`).
+Todo el código de producción (Next.js + publisher-bot) vive en la rama `main` del repo `webfullstack77-max/diamy-web`. En el VPS, `/var/www/diamy` es un checkout directo de esa rama `main` — por eso `publisher-bot/` y `src/` están al mismo nivel.
+
+La rama `master` del repo raíz existe solo como contenedor del submodule `app/` y no se despliega.
 
 ---
 
@@ -176,19 +179,14 @@ pm2 reload diamy-pub --update-env || pm2 start publisher-bot/index.js --name dia
 
 ### Cómo deployar
 
-**Next.js (auto-deploy):**
+Todo se despliega con un push a `main`:
 ```bash
-# Desde app/ — cualquier push a main dispara el workflow
+# Desde app/ — cualquier push a main dispara el workflow,
+# que hace git pull + build Next.js + reload diamy-pub
 git push origin main
 ```
 
-**Publisher-bot (NO se auto-despliega):**
-El publisher-bot está en rama `master` (repo raíz). El workflow solo hace `git pull origin main`, por lo que cambios en `master` NO llegan al VPS automáticamente. Para aplicarlos:
-```bash
-# En VPS — después de hacer push a master en local:
-cd /var/www/diamy && git pull origin master && pm2 restart diamy-pub
-```
-O aplicar con sed directamente en el VPS si es un cambio pequeño.
+Esto incluye cambios al publisher-bot (`publisher-bot/index.js`), porque está dentro de la misma rama `main` que se despliega. No hay dos fuentes de verdad.
 
 ---
 
