@@ -9,6 +9,8 @@ import CollectionView from "@/components/product/CollectionView";
 import MassiveGallery from "@/components/product/MassiveGallery";
 import ProductCard from "@/components/catalog/ProductCard";
 
+export const revalidate = 60;
+
 interface Props {
   params: Promise<{ slug: string }>;
 }

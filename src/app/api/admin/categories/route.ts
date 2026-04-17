@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { revalidatePublicPages } from "@/lib/revalidate";
 
 export async function GET() {
   try {
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
     const category = await prisma.category.create({
       data: { slug, name, description: description ?? null, image: image ?? null, parentId: parentId ?? null, promoMode: promoMode ?? false, promoImage: promoImage ?? null, promoDescription: promoDescription ?? null },
     });
+    revalidatePublicPages();
     return NextResponse.json(category, { status: 201 });
   } catch (err: any) {
     if (err?.code === "P2002") {

@@ -6,7 +6,7 @@ import TestimonialsSection from "@/components/home/TestimonialsSection";
 import FeaturedCarousel from "@/components/home/FeaturedCarousel";
 import ProductOfMonth from "@/components/home/ProductOfMonth";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function HomePage() {
   const [categories, testimonials, featuredProducts, productOfMonthItems] = await Promise.all([

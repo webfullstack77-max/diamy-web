@@ -5,6 +5,8 @@ import ProductCard from "@/components/catalog/ProductCard";
 import FilterSidebar from "@/components/catalog/FilterSidebar";
 import FilterChips from "@/components/catalog/FilterChips";
 
+export const revalidate = 60;
+
 export const metadata: Metadata = { title: "Catálogo" };
 
 interface SearchParams {

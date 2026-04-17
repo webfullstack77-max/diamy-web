@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 
@@ -25,6 +26,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     include: { product: { include: { category: true } } },
   });
 
+  revalidatePath("/");
   return NextResponse.json(item);
 }
 
@@ -37,5 +39,6 @@ export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   await prisma.productOfMonthItem.delete({ where: { id } });
+  revalidatePath("/");
   return NextResponse.json({ ok: true });
 }

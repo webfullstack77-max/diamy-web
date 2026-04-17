@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
+import { revalidatePublicPages } from "@/lib/revalidate";
 
 export async function PUT(
   request: NextRequest,
@@ -37,6 +38,7 @@ export async function PUT(
     include: { category: true },
   });
 
+  revalidatePublicPages();
   return NextResponse.json(product);
 }
 
@@ -52,5 +54,6 @@ export async function DELETE(
 
   const { id } = await params;
   await prisma.product.delete({ where: { id } });
+  revalidatePublicPages();
   return NextResponse.json({ ok: true });
 }

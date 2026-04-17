@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -21,6 +22,7 @@ export async function PUT(
     },
   });
 
+  if (body.isPublished !== undefined) revalidatePath("/");
   return NextResponse.json(updated);
 }
 
@@ -32,5 +34,6 @@ export async function DELETE(
 
   const { id } = await params;
   await prisma.testimonial.delete({ where: { id } });
+  revalidatePath("/");
   return NextResponse.json({ ok: true });
 }
