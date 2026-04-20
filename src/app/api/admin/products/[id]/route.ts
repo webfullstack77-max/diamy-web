@@ -15,7 +15,7 @@ export async function PUT(
 
   const { id } = await params;
   const body = await request.json();
-  const { slug, title, description, price, originalPrice, images, materials, categoryId, subcategoryId, isActive, isFeatured, isCollection, isMassiveGallery, variablePrice } = body;
+  const { slug, title, description, price, originalPrice, images, materials, categoryId, subcategoryId, isActive, isFeatured, isCollection, isMassiveGallery, variablePrice, hasDimensions, widthCm, heightCm } = body;
 
   const product = await prisma.product.update({
     where: { id },
@@ -34,6 +34,9 @@ export async function PUT(
       isCollection: isCollection ?? false,
       isMassiveGallery: isMassiveGallery ?? false,
       variablePrice: variablePrice ?? false,
+      hasDimensions: hasDimensions ?? false,
+      widthCm: widthCm != null ? Number(widthCm) : null,
+      heightCm: heightCm != null ? Number(heightCm) : null,
     },
     include: { category: true },
   });

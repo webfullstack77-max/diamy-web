@@ -5,6 +5,7 @@ import Link from "next/link";
 import ModelSelector from "./ModelSelector";
 import WhatsAppButton from "./WhatsAppButton";
 import ShareButton from "./ShareButton";
+import DimensionsBlock from "./DimensionsBlock";
 
 interface Category {
   name: string;
@@ -21,6 +22,9 @@ interface Props {
     materials: string[];
     description: string;
     category: Category | null;
+    hasDimensions?: boolean;
+    widthCm?: number | null;
+    heightCm?: number | null;
   };
   productUrl: string;
   showModelGuide?: boolean;
@@ -106,6 +110,12 @@ export default function CollectionView({ product, productUrl, showModelGuide }: 
           <p className="text-xs font-semibold uppercase tracking-widest text-on-surface-muted mb-2">Descripción</p>
           <p className="text-sm text-on-surface leading-relaxed whitespace-pre-line">{product.description}</p>
         </div>
+
+        <DimensionsBlock
+          hasDimensions={product.hasDimensions}
+          widthCm={product.widthCm ?? null}
+          heightCm={product.heightCm ?? null}
+        />
 
         {/* Badges */}
         <div className="flex gap-3 mt-6">

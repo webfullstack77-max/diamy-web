@@ -28,6 +28,9 @@ export interface Product {
   isFeatured: boolean;
   isCollection: boolean;
   variablePrice: boolean;
+  hasDimensions: boolean;
+  widthCm: number | null;
+  heightCm: number | null;
   createdAt: Date;
   updatedAt: Date;
 }

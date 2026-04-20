@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useMemo, useEffect, useCallback } from "react";
 import ShareButton from "./ShareButton";
+import DimensionsBlock from "./DimensionsBlock";
 
 interface Props {
   images: string[];
@@ -13,6 +14,9 @@ interface Props {
   variablePrice?: boolean;
   description: string;
   materials: string[];
+  hasDimensions?: boolean;
+  widthCm?: number | null;
+  heightCm?: number | null;
   slug: string;
   category?: { name: string; slug: string } | null;
   productUrl: string;
@@ -160,6 +164,9 @@ export default function MassiveGallery({
   variablePrice,
   description,
   materials,
+  hasDimensions,
+  widthCm,
+  heightCm,
   slug,
   category,
   productUrl,
@@ -229,6 +236,12 @@ export default function MassiveGallery({
             </div>
 
             <p className="text-sm text-on-surface leading-relaxed">{description}</p>
+
+            <DimensionsBlock
+              hasDimensions={hasDimensions}
+              widthCm={widthCm ?? null}
+              heightCm={heightCm ?? null}
+            />
 
             {materials.length > 0 && (
               <div className="flex flex-wrap gap-2">

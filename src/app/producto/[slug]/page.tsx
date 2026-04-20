@@ -7,6 +7,7 @@ import WhatsAppButton from "@/components/product/WhatsAppButton";
 import ShareButton from "@/components/product/ShareButton";
 import CollectionView from "@/components/product/CollectionView";
 import MassiveGallery from "@/components/product/MassiveGallery";
+import DimensionsBlock from "@/components/product/DimensionsBlock";
 import ProductCard from "@/components/catalog/ProductCard";
 
 export const revalidate = 60;
@@ -76,6 +77,9 @@ export default async function ProductoPage({ params }: Props) {
           variablePrice={(product as any).variablePrice}
           description={product.description}
           materials={product.materials}
+          hasDimensions={(product as any).hasDimensions}
+          widthCm={(product as any).widthCm ?? null}
+          heightCm={(product as any).heightCm ?? null}
           slug={product.slug}
           category={product.category}
           productUrl={productUrl}
@@ -93,6 +97,9 @@ export default async function ProductoPage({ params }: Props) {
             materials: product.materials,
             description: product.description,
             category: product.category,
+            hasDimensions: (product as any).hasDimensions,
+            widthCm: (product as any).widthCm ?? null,
+            heightCm: (product as any).heightCm ?? null,
           }}
           productUrl={productUrl}
           showModelGuide={isPlayeras}
@@ -140,6 +147,12 @@ export default async function ProductoPage({ params }: Props) {
               <p className="text-xs font-semibold uppercase tracking-widest text-on-surface-muted mb-2">Descripción</p>
               <p className="text-sm text-on-surface leading-relaxed whitespace-pre-line">{product.description}</p>
             </div>
+
+            <DimensionsBlock
+              hasDimensions={(product as any).hasDimensions}
+              widthCm={(product as any).widthCm ?? null}
+              heightCm={(product as any).heightCm ?? null}
+            />
 
             <div className="flex gap-3 mt-6">
               <div className="flex flex-col items-center gap-1 flex-1 bg-surface-container rounded-xl p-3">

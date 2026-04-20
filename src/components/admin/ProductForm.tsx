@@ -35,6 +35,9 @@ export default function ProductForm({ categories, product }: Props) {
     isCollection: product?.isCollection ?? false,
     isMassiveGallery: (product as any)?.isMassiveGallery ?? false,
     variablePrice: (product as any)?.variablePrice ?? false,
+    hasDimensions: (product as any)?.hasDimensions ?? false,
+    widthCm: (product as any)?.widthCm != null ? String((product as any).widthCm) : "",
+    heightCm: (product as any)?.heightCm != null ? String((product as any).heightCm) : "",
     images: product?.images ?? [] as string[],
   });
 
@@ -159,6 +162,9 @@ export default function ProductForm({ categories, product }: Props) {
       isCollection: form.isCollection,
       isMassiveGallery: (form as any).isMassiveGallery,
       variablePrice: form.variablePrice,
+      hasDimensions: form.hasDimensions,
+      widthCm: form.hasDimensions && form.widthCm ? parseFloat(form.widthCm) : null,
+      heightCm: form.hasDimensions && form.heightCm ? parseFloat(form.heightCm) : null,
       images: form.images,
     };
 
@@ -279,12 +285,36 @@ export default function ProductForm({ categories, product }: Props) {
         </label>
       </div>
 
-      {/* Materiales */}
+      {/* Materiales y medidas */}
       <div className="bg-surface rounded-2xl border border-outline-variant p-6 space-y-4">
         <h2 className="font-semibold text-on-surface">Materiales</h2>
         <Field label="Materiales (separados por coma)">
           <input type="text" value={form.materials} onChange={(e) => set("materials", e.target.value)} placeholder="Acrílico, Madera, MDF" className={inputCls} />
         </Field>
+
+        <div className="pt-2 border-t border-outline-variant" />
+
+        <label className="flex items-start gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={form.hasDimensions}
+            onChange={(e) => set("hasDimensions", e.target.checked)}
+            className="mt-0.5 w-4 h-4 accent-primary"
+          />
+          <div>
+            <span className="text-sm font-medium text-on-surface">Este producto tiene medidas</span>
+            <p className="text-xs text-outline mt-0.5">Mostrar alto y ancho en cm debajo de la descripción</p>
+          </div>
+        </label>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Ancho (cm)">
+            <input type="number" value={form.widthCm} onChange={(e) => set("widthCm", e.target.value)} disabled={!form.hasDimensions} min="0" step="0.1" placeholder="40" className={`${inputCls} disabled:opacity-40 disabled:cursor-not-allowed`} />
+          </Field>
+          <Field label="Alto (cm)">
+            <input type="number" value={form.heightCm} onChange={(e) => set("heightCm", e.target.value)} disabled={!form.hasDimensions} min="0" step="0.1" placeholder="25" className={`${inputCls} disabled:opacity-40 disabled:cursor-not-allowed`} />
+          </Field>
+        </div>
       </div>
 
       {/* Imágenes */}

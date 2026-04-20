@@ -46,6 +46,9 @@ model Product {
   isCollection    Boolean   @default(false)
   isMassiveGallery Boolean  @default(false)
   variablePrice   Boolean   @default(false)
+  hasDimensions   Boolean   @default(false)
+  widthCm         Float?
+  heightCm        Float?
   productOfMonthItems ProductOfMonthItem[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

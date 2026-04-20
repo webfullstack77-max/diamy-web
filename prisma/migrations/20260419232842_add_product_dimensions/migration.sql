@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "hasDimensions" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "widthCm" DOUBLE PRECISION,
+ADD COLUMN     "heightCm" DOUBLE PRECISION;
