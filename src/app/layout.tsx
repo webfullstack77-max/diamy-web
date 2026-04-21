@@ -3,6 +3,7 @@ import { Noto_Serif, Manrope } from "next/font/google";
 import Header from "@/components/layout/Header";
 import MobileNav from "@/components/layout/MobileNav";
 import Footer from "@/components/layout/Footer";
+import FloatingWhatsApp from "@/components/layout/FloatingWhatsApp";
 import AutoRefresh from "@/components/AutoRefresh";
 import PageTracker from "@/components/analytics/PageTracker";
 import "./globals.css";
@@ -83,6 +84,7 @@ export default function RootLayout({
         <PageTracker />
         <Header />
         <main className="flex-1 pt-16">{children}</main>
+        <FloatingWhatsApp />
         <Footer />
         <MobileNav />
       </body>

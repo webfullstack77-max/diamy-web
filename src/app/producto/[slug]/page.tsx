@@ -48,8 +48,34 @@ export default async function ProductoPage({ params }: Props) {
     product.category?.parent?.slug.toLowerCase().includes("playera") ||
     false;
 
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.title,
+    description: product.description,
+    image: product.images.filter((img) => !/\.(mp4|webm)(\?|$)/i.test(img)),
+    sku: product.id,
+    brand: { "@type": "Brand", name: "Diamy Laser Cut" },
+    ...(product.category && { category: product.category.name }),
+    ...(product.materials.length > 0 && { material: product.materials.join(", ") }),
+    ...(!(product as any).variablePrice && {
+      offers: {
+        "@type": "Offer",
+        url: productUrl,
+        priceCurrency: "MXN",
+        price: product.price,
+        availability: "https://schema.org/InStock",
+        seller: { "@type": "Organization", name: "Diamy Laser Cut" },
+      },
+    }),
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+      />
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-on-surface-muted mb-6">
         <Link href="/" className="hover:text-primary transition">Inicio</Link>
