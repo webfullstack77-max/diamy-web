@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 
 const NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "527777961193";
-const MESSAGE = "Hola, tengo una duda sobre sus productos";
+const MESSAGE = "Hola, me interesa uno de sus productos";
 
 export default function FloatingWhatsApp() {
   const pathname = usePathname();
