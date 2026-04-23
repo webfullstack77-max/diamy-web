@@ -173,7 +173,6 @@ export default function MassiveGallery({
   whatsappNumber,
   showModelGuide,
 }: Props) {
-  const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
 
   // Construir lista de diseños con nombre derivado
@@ -182,15 +181,8 @@ export default function MassiveGallery({
     [images]
   );
 
-  // Filtrar por búsqueda
-  const filtered = useMemo(() => {
-    if (!query.trim()) return designs;
-    const q = query.toLowerCase();
-    return designs.filter((d) => d.name.toLowerCase().includes(q));
-  }, [designs, query]);
-
-  const openModal = useCallback((filteredIdx: number) => {
-    setSelected(filteredIdx);
+  const openModal = useCallback((idx: number) => {
+    setSelected(idx);
   }, []);
 
   const closeModal = useCallback(() => setSelected(null), []);
@@ -200,10 +192,10 @@ export default function MassiveGallery({
   }, []);
 
   const goNext = useCallback(() => {
-    setSelected((s) => (s !== null && s < filtered.length - 1 ? s + 1 : s));
-  }, [filtered.length]);
+    setSelected((s) => (s !== null && s < designs.length - 1 ? s + 1 : s));
+  }, [designs.length]);
 
-  const current = selected !== null ? filtered[selected] : null;
+  const current = selected !== null ? designs[selected] : null;
 
   return (
     <>
@@ -322,68 +314,37 @@ export default function MassiveGallery({
 
         {/* Galería masiva */}
         <div className="bg-surface rounded-2xl border border-outline-variant overflow-hidden">
-          {/* Barra de búsqueda */}
-          <div className="p-4 border-b border-outline-variant flex items-center gap-3">
-            <div className="relative flex-1">
-              <span className="material-symbol absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" style={{ fontSize: "18px" }}>search</span>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Buscar diseño..."
-                className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container text-sm text-on-surface placeholder:text-on-surface-muted focus:outline-none focus:border-primary transition"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-muted hover:text-on-surface transition"
-                >
-                  <span className="material-symbol" style={{ fontSize: "16px" }}>close</span>
-                </button>
-              )}
-            </div>
-            <span className="text-xs text-on-surface-muted whitespace-nowrap shrink-0">
-              {filtered.length} de {images.length}
+          {/* Contador */}
+          <div className="p-4 border-b border-outline-variant flex items-center justify-end">
+            <span className="text-xs text-on-surface-muted">
+              {images.length} diseños
             </span>
           </div>
 
           {/* Grid de diseños */}
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <span className="material-symbol text-outline mb-3" style={{ fontSize: "48px" }}>search_off</span>
-              <p className="font-medium text-on-surface">Sin resultados para &ldquo;{query}&rdquo;</p>
-              <button onClick={() => setQuery("")} className="mt-2 text-sm text-primary hover:underline">
-                Ver todos los diseños
-              </button>
-            </div>
-          ) : (
-            <div className="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {filtered.map((design, i) => (
-                <button
-                  key={design.index}
-                  onClick={() => openModal(i)}
-                  className="group flex flex-col items-center gap-1.5 text-center"
-                >
-                  <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-surface-container border border-outline-variant group-hover:border-primary group-hover:shadow-md transition-all duration-200 group-hover:-translate-y-0.5">
-                    <Image
-                      src={design.url}
-                      alt={design.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
-                    />
-                    {/* Overlay al hover */}
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
-                      <span className="material-symbol text-white opacity-0 group-hover:opacity-100 transition drop-shadow" style={{ fontSize: "28px", fontVariationSettings: "'FILL' 1" }}>zoom_in</span>
-                    </div>
+          <div className="p-4 grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+            {designs.map((design, i) => (
+              <button
+                key={design.index}
+                onClick={() => openModal(i)}
+                className="group block"
+              >
+                <div className="relative w-full aspect-square rounded-xl overflow-hidden bg-surface-container border border-outline-variant group-hover:border-primary group-hover:shadow-md transition-all duration-200 group-hover:-translate-y-0.5">
+                  <Image
+                    src={design.url}
+                    alt={design.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 20vw, 16vw"
+                  />
+                  {/* Overlay al hover */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition flex items-center justify-center">
+                    <span className="material-symbol text-white opacity-0 group-hover:opacity-100 transition drop-shadow" style={{ fontSize: "28px", fontVariationSettings: "'FILL' 1" }}>zoom_in</span>
                   </div>
-                  <span className="text-xs text-on-surface-muted group-hover:text-primary transition line-clamp-1 w-full">
-                    {design.name}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -399,7 +360,7 @@ export default function MassiveGallery({
           onPrev={goPrev}
           onNext={goNext}
           hasPrev={selected! > 0}
-          hasNext={selected! < filtered.length - 1}
+          hasNext={selected! < designs.length - 1}
         />
       )}
     </>
