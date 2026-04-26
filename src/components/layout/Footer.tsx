@@ -3,9 +3,9 @@ import Link from "next/link";
 export default function Footer() {
   return (
     <footer className="bg-surface border-t border-outline-variant mt-auto pb-20 md:pb-0">
-      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
         {/* Brand */}
-        <div>
+        <div className="col-span-2 md:col-span-1">
           <span className="font-serif text-2xl font-bold text-primary">Diamy</span>
           <p className="mt-2 text-sm text-on-surface-muted leading-relaxed">
             Corte láser y grabado personalizado. Creamos piezas únicas con
@@ -13,7 +13,7 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Links */}
+        {/* Catálogo */}
         <div>
           <h3 className="font-semibold text-on-surface mb-3">Catálogo</h3>
           <ul className="space-y-2 text-sm text-on-surface-muted">
@@ -35,6 +35,33 @@ export default function Footer() {
             <li>
               <Link href="/catalogo?categoria=MDF" prefetch={false} className="hover:text-primary transition">
                 Productos MDF
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        {/* Información */}
+        <div>
+          <h3 className="font-semibold text-on-surface mb-3">Información</h3>
+          <ul className="space-y-2 text-sm text-on-surface-muted">
+            <li>
+              <Link href="/sobre-nosotros" prefetch={false} className="hover:text-primary transition">
+                Quiénes somos
+              </Link>
+            </li>
+            <li>
+              <Link href="/faq" prefetch={false} className="hover:text-primary transition">
+                Preguntas frecuentes
+              </Link>
+            </li>
+            <li>
+              <Link href="/contacto" prefetch={false} className="hover:text-primary transition">
+                Contacto
+              </Link>
+            </li>
+            <li>
+              <Link href="/privacidad" prefetch={false} className="hover:text-primary transition">
+                Política de privacidad
               </Link>
             </li>
           </ul>

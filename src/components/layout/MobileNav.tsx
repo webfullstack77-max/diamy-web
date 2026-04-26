@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const navItems = [
   { href: "/catalogo", icon: "grid_view", label: "Catálogo" },
   { href: "/contacto", icon: "chat", label: "Contacto" },
-  { href: "/#nosotros", icon: "person", label: "Nosotros" },
+  { href: "/sobre-nosotros", icon: "person", label: "Nosotros" },
 ];
 
 export default function MobileNav() {
