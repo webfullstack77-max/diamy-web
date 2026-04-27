@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Image from "next/image";
 
 const fases = [
   {
@@ -130,7 +131,16 @@ export default function SobreNosotrosPage() {
 
       {/* Hero */}
       <div className="text-center">
-        <div className="text-6xl mb-4">⚡</div>
+        <div className="flex justify-center mb-6">
+          <Image
+            src="/logo.png"
+            alt="Diamy Laser Cut"
+            width={120}
+            height={120}
+            priority
+            className="object-contain"
+          />
+        </div>
         <h1 className="font-serif text-4xl font-bold text-on-surface mb-3">
           Diamy Laser Cut
         </h1>
