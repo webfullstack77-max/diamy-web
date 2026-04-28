@@ -43,8 +43,26 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState("");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  function openLightbox() {
+    if (!canvasRef.current) return;
+    setLightboxImage(canvasRef.current.toDataURL("image/png"));
+    setLightboxOpen(true);
+  }
+
+  useEffect(() => {
+    function handleKeydown(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxOpen(false);
+    }
+    if (lightboxOpen) {
+      document.addEventListener("keydown", handleKeydown);
+      return () => document.removeEventListener("keydown", handleKeydown);
+    }
+  }, [lightboxOpen]);
 
   async function uploadDesign(files: File[]) {
     if (files.length === 0) return;
@@ -112,11 +130,46 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
           // Layer 1: Dibujar modelo
           ctx.drawImage(modelImg, 0, 0);
 
-          // Layer 2: Overlay de color con blend multiply
-          ctx.globalCompositeOperation = "multiply";
-          ctx.fillStyle = selectedColor;
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
-          ctx.globalCompositeOperation = "source-over";
+          // Layer 2: Cambiar color solo de píxeles blancos (la prenda)
+          // Solo aplicar si el color seleccionado no es blanco
+          if (selectedColor.toUpperCase() !== "#FFFFFF") {
+            const targetRgb = hexToRgb(selectedColor);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i + 1];
+              const b = data[i + 2];
+
+              // Detectar si es blanco/claro (la prenda)
+              const max = Math.max(r, g, b);
+              const min = Math.min(r, g, b);
+              const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+              const saturation = max === 0 ? 0 : (max - min) / max;
+
+              // Es "blanco" si tiene alta luminancia Y baja saturación
+              if (luminance > 0.55 && saturation < 0.22) {
+                // Factor de mezcla basado en qué tan blanco es (transición suave)
+                const whiteness = Math.min(
+                  1,
+                  (luminance - 0.55) / 0.3 + (0.22 - saturation) / 0.22
+                );
+                const blendStrength = Math.min(1, whiteness);
+
+                // Multiplicar color seleccionado por luminance original (preserva sombras)
+                const newR = (targetRgb.r * luminance) / 0.85;
+                const newG = (targetRgb.g * luminance) / 0.85;
+                const newB = (targetRgb.b * luminance) / 0.85;
+
+                data[i] = Math.min(255, newR * blendStrength + r * (1 - blendStrength));
+                data[i + 1] = Math.min(255, newG * blendStrength + g * (1 - blendStrength));
+                data[i + 2] = Math.min(255, newB * blendStrength + b * (1 - blendStrength));
+              }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+          }
 
           // Layer 3: Dibujar diseño con perspectiva
           const cp = selectedTemplate.controlPoints;
@@ -381,11 +434,19 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
           {selectedTemplate && designUrl ? (
             <>
               <div className="bg-surface rounded-2xl border border-outline-variant p-6">
-                <div className="flex justify-center bg-surface-container rounded-lg p-6">
+                <div className="flex flex-col items-center justify-center bg-surface-container rounded-lg p-6 gap-2">
                   <canvas
                     ref={canvasRef}
-                    className="max-w-full max-h-96 rounded-lg shadow-lg"
+                    onClick={openLightbox}
+                    className="max-w-full max-h-96 rounded-lg shadow-lg cursor-zoom-in hover:opacity-90 transition"
+                    title="Click para ver en grande"
                   />
+                  <p className="text-xs text-on-surface-muted flex items-center gap-1">
+                    <span className="material-symbol" style={{ fontSize: "14px" }}>
+                      zoom_in
+                    </span>
+                    Click en la imagen para ver en grande
+                  </p>
                 </div>
               </div>
 
@@ -430,8 +491,44 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
           )}
         </div>
       </div>
+
+      {/* Lightbox modal */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxOpen(false)}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center"
+            title="Cerrar (Esc)"
+          >
+            <span className="material-symbol" style={{ fontSize: "24px" }}>
+              close
+            </span>
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxImage}
+            alt="Mockup en grande"
+            className="max-w-full max-h-full object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } {
+  const cleaned = hex.replace("#", "");
+  const bigint = parseInt(cleaned, 16);
+  return {
+    r: (bigint >> 16) & 255,
+    g: (bigint >> 8) & 255,
+    b: bigint & 255,
+  };
 }
 
 function lerp2D(
