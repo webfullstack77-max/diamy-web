@@ -94,14 +94,17 @@ export default function GarmentTemplateForm({ template }: Props) {
   useEffect(() => {
     if (!dragging || !containerRef.current) return;
 
+    const draggingPoint: keyof ControlPoints = dragging;
+    const container = containerRef.current;
+
     function handleMouseMove(e: MouseEvent) {
-      const rect = containerRef.current!.getBoundingClientRect();
+      const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
 
       setControlPoints((prev) => ({
         ...prev,
-        [dragging]: {
+        [draggingPoint]: {
           x: Math.max(0, Math.min(100, x)),
           y: Math.max(0, Math.min(100, y)),
         },
