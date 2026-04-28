@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function EditPlantillaPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   try {
     await requireAdmin();
@@ -16,8 +16,9 @@ export default async function EditPlantillaPage({
     redirect("/admin/login");
   }
 
+  const { id } = await params;
   const template = await prisma.garmentTemplate.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!template) {

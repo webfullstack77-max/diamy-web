@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin();
@@ -12,8 +12,9 @@ export async function GET(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const { id } = await params;
   const template = await prisma.garmentTemplate.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!template) {
@@ -28,7 +29,7 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin();
@@ -36,11 +37,12 @@ export async function PUT(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const { id } = await params;
   const data = await request.json();
   const { name, category, imageUrl, controlPoints } = data;
 
   const template = await prisma.garmentTemplate.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       ...(name && { name }),
       ...(category && { category }),
@@ -54,7 +56,7 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await requireAdmin();
@@ -62,8 +64,9 @@ export async function DELETE(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
+  const { id } = await params;
   await prisma.garmentTemplate.delete({
-    where: { id: params.id },
+    where: { id },
   });
 
   return NextResponse.json({ success: true });
