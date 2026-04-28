@@ -50,12 +50,18 @@ export async function POST(request: NextRequest) {
 
   // Imágenes: comprimir y redimensionar, conservar nombre original
   const raw = Buffer.from(await file.arrayBuffer());
-  const isDesignPng = new URL(request.url).searchParams.get("design") === "true" && file.type === "image/png";
 
-  const compressed = isDesignPng
+  // Detectar automáticamente si la imagen tiene canal alpha (transparencia)
+  // Si tiene transparencia, preservar como PNG. Si no, comprimir como JPEG.
+  const metadata = await sharp(raw).metadata();
+  const hasAlpha = metadata.hasAlpha === true && file.type === "image/png";
+  const requestedDesign = new URL(request.url).searchParams.get("design") === "true";
+  const preservePng = hasAlpha || (requestedDesign && file.type === "image/png");
+
+  const compressed = preservePng
     ? await sharp(raw)
         .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
-        .png()
+        .png({ compressionLevel: 9 })
         .toBuffer()
     : await sharp(raw)
         .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
@@ -69,7 +75,7 @@ export async function POST(request: NextRequest) {
     .replace(/-+/g, "-")               // colapsar guiones dobles
     .slice(0, 80);                     // máximo 80 chars
 
-  const ext = isDesignPng ? "png" : "jpg";
+  const ext = preservePng ? "png" : "jpg";
 
   // Si ya existe un archivo con ese nombre, agregar sufijo corto para evitar colisión
   const { existsSync } = await import("fs");

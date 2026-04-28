@@ -114,13 +114,11 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
     const renderMockup = async () => {
       // Cargar imagen del modelo
       const modelImg = new window.Image();
-      modelImg.crossOrigin = "anonymous";
       modelImg.src = selectedTemplate.imageUrl;
 
       modelImg.onload = async () => {
         // Cargar diseño transparente
         const designImg = new window.Image();
-        designImg.crossOrigin = "anonymous";
         designImg.src = designUrl;
 
         designImg.onload = () => {
@@ -461,21 +459,42 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
         <div className="lg:col-span-2 space-y-4">
           {selectedTemplate && designUrl ? (
             <>
-              <div className="bg-surface rounded-2xl border border-outline-variant p-6">
-                <div className="flex flex-col items-center justify-center bg-surface-container rounded-lg p-6 gap-2">
+              <div className="bg-surface rounded-2xl border border-outline-variant p-4">
+                <div className="flex flex-col items-center justify-center bg-surface-container rounded-lg p-4 gap-3">
                   <canvas
                     ref={canvasRef}
                     onClick={openLightbox}
-                    className="max-w-full max-h-96 rounded-lg shadow-lg cursor-zoom-in hover:opacity-90 transition"
+                    className="w-full max-w-2xl rounded-lg shadow-lg cursor-zoom-in hover:opacity-95 transition"
+                    style={{ height: "auto" }}
                     title="Click para ver en grande"
                   />
-                  <p className="text-xs text-on-surface-muted flex items-center gap-1">
-                    <span className="material-symbol" style={{ fontSize: "14px" }}>
+                  <button
+                    type="button"
+                    onClick={openLightbox}
+                    className="text-sm text-primary hover:underline flex items-center gap-1.5 font-medium"
+                  >
+                    <span className="material-symbol" style={{ fontSize: "18px" }}>
                       zoom_in
                     </span>
-                    Click en la imagen para ver en grande
-                  </p>
+                    Ver mockup en pantalla completa
+                  </button>
                 </div>
+              </div>
+
+              {/* Info del diseño actual para debug */}
+              <div className="bg-surface rounded-xl border border-outline-variant p-3 text-xs space-y-1">
+                <p className="text-on-surface-muted">
+                  <span className="font-medium">Diseño:</span>{" "}
+                  <a href={designUrl} target="_blank" rel="noopener" className="text-primary hover:underline break-all">
+                    {designUrl}
+                  </a>
+                </p>
+                <p className="text-on-surface-muted">
+                  <span className="font-medium">Plantilla:</span> {selectedTemplate.name}
+                  {!selectedTemplate.garmentArea && (
+                    <span className="ml-2 text-orange-600">⚠ Sin área de prenda definida — el color no se aplicará</span>
+                  )}
+                </p>
               </div>
 
               <div className="flex flex-col gap-3">
