@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import MockupGenerator from "@/components/admin/MockupGenerator";
 
 export const dynamic = "force-dynamic";
