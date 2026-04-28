@@ -19,6 +19,7 @@ interface Props {
     imageUrl: string;
     controlPoints: ControlPoints;
     garmentArea?: ControlPoints | null;
+    maskUrl?: string | null;
   };
 }
 
@@ -60,6 +61,30 @@ export default function GarmentTemplateForm({ template }: Props) {
   const [dragging, setDragging] = useState<keyof ControlPoints | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageDims, setImageDims] = useState({ width: 0, height: 0 });
+  const [maskUrl, setMaskUrl] = useState<string | null>(template?.maskUrl ?? null);
+  const [generatingMask, setGeneratingMask] = useState(false);
+
+  async function handleGenerateMask() {
+    if (!imageUrl) return;
+    setGeneratingMask(true);
+    setError("");
+    try {
+      const res = await fetch("/api/admin/segment-garment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      });
+      const data = await res.json();
+      if (res.ok && data.maskUrl) {
+        setMaskUrl(data.maskUrl);
+      } else {
+        setError(data.error ?? "Error generando máscara con IA");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error generando máscara");
+    }
+    setGeneratingMask(false);
+  }
 
   const activePoints = editingMode === "print" ? controlPoints : garmentArea;
   const setActivePoints = editingMode === "print" ? setControlPoints : setGarmentArea;
@@ -158,6 +183,7 @@ export default function GarmentTemplateForm({ template }: Props) {
       imageUrl,
       controlPoints,
       garmentArea,
+      maskUrl,
     };
 
     const url = isEdit
@@ -288,6 +314,46 @@ export default function GarmentTemplateForm({ template }: Props) {
           </label>
         )}
       </div>
+
+      {/* Máscara IA */}
+      {imageUrl && (
+        <div className="bg-surface rounded-2xl border border-outline-variant p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-on-surface flex items-center gap-2">
+                <span className="material-symbol text-primary" style={{ fontSize: "20px" }}>
+                  auto_awesome
+                </span>
+                Máscara con IA
+              </h2>
+              <p className="text-xs text-on-surface-muted mt-1">
+                Detecta automáticamente la prenda para que el cambio de color se vea perfecto
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerateMask}
+              disabled={generatingMask}
+              className="px-4 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition disabled:opacity-60 flex items-center gap-2"
+            >
+              <span className="material-symbol" style={{ fontSize: "18px" }}>
+                {generatingMask ? "hourglass_empty" : "auto_fix_high"}
+              </span>
+              {generatingMask ? "Procesando..." : maskUrl ? "Regenerar" : "Generar máscara"}
+            </button>
+          </div>
+
+          {maskUrl && (
+            <div className="space-y-2">
+              <p className="text-xs text-on-surface-muted">Máscara generada (blanco = prenda):</p>
+              <div className="relative w-full max-w-sm mx-auto bg-checkered rounded-lg overflow-hidden border border-outline-variant">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={maskUrl} alt="máscara" className="w-full" />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Editor de puntos de control */}
       {imageUrl && (

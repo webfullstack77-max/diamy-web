@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   const data = await request.json();
 
-  const { name, category, imageUrl, controlPoints, garmentArea } = data;
+  const { name, category, imageUrl, controlPoints, garmentArea, maskUrl } = data;
 
   if (!name || !category || !imageUrl || !controlPoints) {
     return NextResponse.json(
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
       imageUrl,
       controlPoints,
       garmentArea: garmentArea ?? null,
+      maskUrl: maskUrl ?? null,
     },
   });
 

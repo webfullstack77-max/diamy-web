@@ -139,6 +139,7 @@ model GarmentTemplate {
   imageUrl      String
   controlPoints Json
   garmentArea   Json?
+  maskUrl       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

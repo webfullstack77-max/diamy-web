@@ -18,6 +18,7 @@ interface Template {
   category: string;
   controlPoints: ControlPoints;
   garmentArea?: ControlPoints | null;
+  maskUrl?: string | null;
 }
 
 const COLOR_PALETTE = [
@@ -116,6 +117,20 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
       const modelImg = new window.Image();
       modelImg.src = selectedTemplate.imageUrl;
 
+      // Cargar máscara IA si existe
+      let maskImg: HTMLImageElement | null = null;
+      if (selectedTemplate.maskUrl) {
+        await new Promise<void>((resolve) => {
+          maskImg = new window.Image();
+          maskImg.onload = () => resolve();
+          maskImg.onerror = () => {
+            maskImg = null;
+            resolve();
+          };
+          maskImg.src = selectedTemplate.maskUrl!;
+        });
+      }
+
       modelImg.onload = async () => {
         // Cargar diseño transparente
         const designImg = new window.Image();
@@ -129,8 +144,52 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
           // Layer 1: Dibujar modelo
           ctx.drawImage(modelImg, 0, 0);
 
-          // Layer 2: Cambiar color solo de píxeles blancos DENTRO del área de la prenda
+          // Layer 2: Cambiar color usando máscara IA si está disponible
           if (
+            selectedColor.toUpperCase() !== "#FFFFFF" &&
+            maskImg
+          ) {
+            const targetRgb = hexToRgb(selectedColor);
+
+            // Renderizar la máscara en un canvas auxiliar al tamaño correcto
+            const maskCanvas = document.createElement("canvas");
+            maskCanvas.width = canvas.width;
+            maskCanvas.height = canvas.height;
+            const maskCtx = maskCanvas.getContext("2d");
+            if (maskCtx) {
+              maskCtx.drawImage(maskImg, 0, 0, canvas.width, canvas.height);
+              const maskData = maskCtx.getImageData(0, 0, canvas.width, canvas.height);
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
+              const mData = maskData.data;
+
+              for (let i = 0; i < data.length; i += 4) {
+                // La máscara es blanco (255) donde está la prenda
+                // Usamos el canal R como intensidad de máscara
+                const maskValue = mData[i] / 255;
+
+                if (maskValue > 0.1) {
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
+
+                  const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+
+                  // Aplicar color preservando luminance (sombras y pliegues)
+                  const newR = targetRgb.r * luminance * 1.15;
+                  const newG = targetRgb.g * luminance * 1.15;
+                  const newB = targetRgb.b * luminance * 1.15;
+
+                  // Mezclar usando la máscara como factor (transición suave en bordes)
+                  data[i] = Math.min(255, newR * maskValue + r * (1 - maskValue));
+                  data[i + 1] = Math.min(255, newG * maskValue + g * (1 - maskValue));
+                  data[i + 2] = Math.min(255, newB * maskValue + b * (1 - maskValue));
+                }
+              }
+
+              ctx.putImageData(imageData, 0, 0);
+            }
+          } else if (
             selectedColor.toUpperCase() !== "#FFFFFF" &&
             selectedTemplate.garmentArea
           ) {
