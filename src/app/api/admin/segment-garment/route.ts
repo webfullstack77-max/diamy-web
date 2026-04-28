@@ -5,10 +5,10 @@ import { v4 as uuidv4 } from "uuid";
 import Replicate from "replicate";
 import { requireAdmin } from "@/lib/auth";
 
-// Modelo por defecto: SegFormer B2 Clothes
-// Ver lista de modelos: https://replicate.com/explore?type=image-to-image&query=clothes
+// Modelo por defecto: naklecha/clothing-segmentation
+// https://replicate.com/naklecha/clothing-segmentation
 const DEFAULT_MODEL =
-  "mattmdjaga/segformer_b2_clothes:1d0ff7eb91f12bce75ab6f8f5a0e3f1c0e5b4e7a4f1c0e5b4e7a4f1c0e5b4e7a";
+  "naklecha/clothing-segmentation:501aa8488496fffc6bbee9544729dc28654649f2e3c80de0bf08fb9fe71898f8";
 
 export async function POST(request: NextRequest) {
   try {
