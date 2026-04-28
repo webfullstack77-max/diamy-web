@@ -4,6 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Product } from "@/types";
+import {
+  DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent
+} from "@dnd-kit/core";
+import {
+  SortableContext, rectSortingStrategy, useSortable, arrayMove
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Category {
   id: string;
@@ -63,6 +70,19 @@ export default function ProductForm({ categories, product }: Props) {
   const [urlInput, setUrlInput] = useState("");
   const [generating, setGenerating] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = form.images.indexOf(active.id as string);
+      const newIndex = form.images.indexOf(over.id as string);
+      if (oldIndex !== -1 && newIndex !== -1) {
+        set("images", arrayMove(form.images, oldIndex, newIndex));
+      }
+    }
+  }
 
   function set(key: string, value: string | boolean | string[]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -355,27 +375,21 @@ export default function ProductForm({ categories, product }: Props) {
           </div>
         )}
         {form.images.length > 0 && (
-          <div className="flex flex-wrap gap-3">
-            {form.images.map((img, i) => (
-              <div key={i} className="relative w-20 h-20">
-                {isVideo(img) ? (
-                  <div className="w-full h-full rounded-lg bg-surface-container border border-outline-variant flex flex-col items-center justify-center gap-1">
-                    <span className="material-symbol text-primary" style={{ fontSize: "28px", fontVariationSettings: "'FILL' 1" }}>play_circle</span>
-                    <span className="text-[9px] text-on-surface-muted font-medium">VIDEO</span>
-                  </div>
-                ) : (
-                  <Image src={img} alt={`img ${i}`} fill className="object-cover rounded-lg" sizes="80px" />
-                )}
-                <button
-                  type="button"
-                  onClick={() => removeImage(i)}
-                  className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-full flex items-center justify-center text-xs hover:bg-red-700 transition"
-                >
-                  ×
-                </button>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={form.images} strategy={rectSortingStrategy}>
+              <div className="flex flex-wrap gap-3">
+                {form.images.map((img, i) => (
+                  <SortableImage
+                    key={img}
+                    url={img}
+                    index={i}
+                    onRemove={() => removeImage(i)}
+                    isVideo={isVideo(img)}
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+            </SortableContext>
+          </DndContext>
         )}
 
         {/* Pegar URL */}
@@ -480,6 +494,49 @@ export default function ProductForm({ categories, product }: Props) {
         )}
       </div>
     </form>
+  );
+}
+
+function SortableImage({ url, index, onRemove, isVideo: isVideoUrl }: {
+  url: string; index: number; onRemove: () => void; isVideo: boolean;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: url });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    cursor: isDragging ? "grabbing" : "grab",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="relative w-20 h-20"
+    >
+      {isVideoUrl ? (
+        <div className="w-full h-full rounded-lg bg-surface-container border border-outline-variant flex flex-col items-center justify-center gap-1">
+          <span className="material-symbol text-primary" style={{ fontSize: "28px", fontVariationSettings: "'FILL' 1" }}>play_circle</span>
+          <span className="text-[9px] text-on-surface-muted font-medium">VIDEO</span>
+        </div>
+      ) : (
+        <Image src={url} alt={`img ${index}`} fill className="object-cover rounded-lg" sizes="80px" />
+      )}
+      <div className="absolute top-0 left-0 text-xs px-1.5 py-0.5 bg-black/50 text-white rounded-bl text-xs font-semibold">
+        {index + 1}
+      </div>
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={onRemove}
+        className="absolute -top-1 -right-1 w-5 h-5 bg-error text-white rounded-full flex items-center justify-center text-xs hover:bg-red-700 transition"
+      >
+        ×
+      </button>
+    </div>
   );
 }
 
