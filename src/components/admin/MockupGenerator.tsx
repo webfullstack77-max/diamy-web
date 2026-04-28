@@ -17,6 +17,7 @@ interface Template {
   imageUrl: string;
   category: string;
   controlPoints: ControlPoints;
+  garmentArea?: ControlPoints | null;
 }
 
 const COLOR_PALETTE = [
@@ -130,48 +131,75 @@ export default function MockupGenerator({ templates }: { templates: Template[] }
           // Layer 1: Dibujar modelo
           ctx.drawImage(modelImg, 0, 0);
 
-          // Layer 2: Cambiar color solo de píxeles blancos (la prenda)
-          // Solo aplicar si el color seleccionado no es blanco
-          if (selectedColor.toUpperCase() !== "#FFFFFF") {
+          // Layer 2: Cambiar color solo de píxeles blancos DENTRO del área de la prenda
+          if (
+            selectedColor.toUpperCase() !== "#FFFFFF" &&
+            selectedTemplate.garmentArea
+          ) {
             const targetRgb = hexToRgb(selectedColor);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const ga = selectedTemplate.garmentArea;
+            // Convertir % a píxeles del polígono de la prenda
+            const polygon: Array<[number, number]> = [
+              [(ga.tl.x / 100) * canvas.width, (ga.tl.y / 100) * canvas.height],
+              [(ga.tr.x / 100) * canvas.width, (ga.tr.y / 100) * canvas.height],
+              [(ga.br.x / 100) * canvas.width, (ga.br.y / 100) * canvas.height],
+              [(ga.bl.x / 100) * canvas.width, (ga.bl.y / 100) * canvas.height],
+            ];
+
+            // Bounding box para optimizar (no checar todos los píxeles)
+            const minX = Math.max(0, Math.floor(Math.min(...polygon.map((p) => p[0]))));
+            const maxX = Math.min(canvas.width, Math.ceil(Math.max(...polygon.map((p) => p[0]))));
+            const minY = Math.max(0, Math.floor(Math.min(...polygon.map((p) => p[1]))));
+            const maxY = Math.min(canvas.height, Math.ceil(Math.max(...polygon.map((p) => p[1]))));
+
+            const imageData = ctx.getImageData(minX, minY, maxX - minX, maxY - minY);
             const data = imageData.data;
+            const w = maxX - minX;
 
-            for (let i = 0; i < data.length; i += 4) {
-              const r = data[i];
-              const g = data[i + 1];
-              const b = data[i + 2];
+            for (let py = 0; py < maxY - minY; py++) {
+              for (let px = 0; px < w; px++) {
+                const absX = px + minX;
+                const absY = py + minY;
 
-              // Detectar si es blanco/claro (la prenda)
-              const max = Math.max(r, g, b);
-              const min = Math.min(r, g, b);
-              const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-              const saturation = max === 0 ? 0 : (max - min) / max;
+                if (!pointInPolygon(absX, absY, polygon)) continue;
 
-              // Es "blanco" si tiene alta luminancia Y baja saturación
-              if (luminance > 0.55 && saturation < 0.22) {
-                // Factor de mezcla basado en qué tan blanco es (transición suave)
-                const whiteness = Math.min(
-                  1,
-                  (luminance - 0.55) / 0.3 + (0.22 - saturation) / 0.22
-                );
-                const blendStrength = Math.min(1, whiteness);
+                const i = (py * w + px) * 4;
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
 
-                // Multiplicar color seleccionado por luminance original (preserva sombras)
-                const newR = (targetRgb.r * luminance) / 0.85;
-                const newG = (targetRgb.g * luminance) / 0.85;
-                const newB = (targetRgb.b * luminance) / 0.85;
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                const luminance = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
+                const saturation = max === 0 ? 0 : (max - min) / max;
 
-                data[i] = Math.min(255, newR * blendStrength + r * (1 - blendStrength));
-                data[i + 1] = Math.min(255, newG * blendStrength + g * (1 - blendStrength));
-                data[i + 2] = Math.min(255, newB * blendStrength + b * (1 - blendStrength));
+                // Detectar píxeles blancos/claros dentro del polígono de la prenda
+                if (luminance > 0.5 && saturation < 0.25) {
+                  const whiteness = Math.min(
+                    1,
+                    (luminance - 0.5) / 0.3 + (0.25 - saturation) / 0.25
+                  );
+                  const blendStrength = Math.min(1, whiteness);
+
+                  const newR = (targetRgb.r * luminance) / 0.85;
+                  const newG = (targetRgb.g * luminance) / 0.85;
+                  const newB = (targetRgb.b * luminance) / 0.85;
+
+                  data[i] = Math.min(255, newR * blendStrength + r * (1 - blendStrength));
+                  data[i + 1] = Math.min(255, newG * blendStrength + g * (1 - blendStrength));
+                  data[i + 2] = Math.min(255, newB * blendStrength + b * (1 - blendStrength));
+                }
               }
             }
 
-            ctx.putImageData(imageData, 0, 0);
+            ctx.putImageData(imageData, minX, minY);
           }
 
           // Layer 3: Dibujar diseño con perspectiva
+          // Asegurar que el contexto está en estado limpio
+          ctx.globalCompositeOperation = "source-over";
+          ctx.globalAlpha = 1;
+
           const cp = selectedTemplate.controlPoints;
 
           // Convertir % a píxeles
@@ -529,6 +557,26 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
     g: (bigint >> 8) & 255,
     b: bigint & 255,
   };
+}
+
+// Ray-casting algorithm para verificar si un punto está dentro de un polígono
+function pointInPolygon(
+  x: number,
+  y: number,
+  polygon: Array<[number, number]>
+): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0],
+      yi = polygon[i][1];
+    const xj = polygon[j][0],
+      yj = polygon[j][1];
+
+    const intersect =
+      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+    if (intersect) inside = !inside;
+  }
+  return inside;
 }
 
 function lerp2D(

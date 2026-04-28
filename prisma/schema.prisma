@@ -138,6 +138,7 @@ model GarmentTemplate {
   category      String
   imageUrl      String
   controlPoints Json
+  garmentArea   Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

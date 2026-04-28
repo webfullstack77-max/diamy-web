@@ -18,8 +18,11 @@ interface Props {
     category: string;
     imageUrl: string;
     controlPoints: ControlPoints;
+    garmentArea?: ControlPoints | null;
   };
 }
+
+type EditingMode = "print" | "garment";
 
 const CATEGORIES = ["hombre", "mujer", "niño", "niña", "sudadera"];
 
@@ -37,16 +40,29 @@ export default function GarmentTemplateForm({ template }: Props) {
 
   const [controlPoints, setControlPoints] = useState<ControlPoints>(
     template?.controlPoints ?? {
-      tl: { x: 20, y: 20 },
-      tr: { x: 80, y: 20 },
-      br: { x: 80, y: 80 },
-      bl: { x: 20, y: 80 },
+      tl: { x: 35, y: 25 },
+      tr: { x: 65, y: 25 },
+      br: { x: 65, y: 50 },
+      bl: { x: 35, y: 50 },
     }
   );
 
+  const [garmentArea, setGarmentArea] = useState<ControlPoints>(
+    template?.garmentArea ?? {
+      tl: { x: 25, y: 15 },
+      tr: { x: 75, y: 15 },
+      br: { x: 78, y: 65 },
+      bl: { x: 22, y: 65 },
+    }
+  );
+
+  const [editingMode, setEditingMode] = useState<EditingMode>("print");
   const [dragging, setDragging] = useState<keyof ControlPoints | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageDims, setImageDims] = useState({ width: 0, height: 0 });
+
+  const activePoints = editingMode === "print" ? controlPoints : garmentArea;
+  const setActivePoints = editingMode === "print" ? setControlPoints : setGarmentArea;
 
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.currentTarget;
@@ -96,13 +112,14 @@ export default function GarmentTemplateForm({ template }: Props) {
 
     const draggingPoint: keyof ControlPoints = dragging;
     const container = containerRef.current;
+    const updateFn = setActivePoints;
 
     function handleMouseMove(e: MouseEvent) {
       const rect = container.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
 
-      setControlPoints((prev) => ({
+      updateFn((prev) => ({
         ...prev,
         [draggingPoint]: {
           x: Math.max(0, Math.min(100, x)),
@@ -122,7 +139,7 @@ export default function GarmentTemplateForm({ template }: Props) {
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [dragging]);
+  }, [dragging, setActivePoints]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -140,6 +157,7 @@ export default function GarmentTemplateForm({ template }: Props) {
       category,
       imageUrl,
       controlPoints,
+      garmentArea,
     };
 
     const url = isEdit
@@ -274,11 +292,38 @@ export default function GarmentTemplateForm({ template }: Props) {
       {/* Editor de puntos de control */}
       {imageUrl && (
         <div className="bg-surface rounded-2xl border border-outline-variant p-6 space-y-4">
-          <h2 className="font-semibold text-on-surface">
-            Área de estampado
-          </h2>
+          {/* Tabs */}
+          <div className="flex gap-2 border-b border-outline-variant">
+            <button
+              type="button"
+              onClick={() => setEditingMode("print")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+                editingMode === "print"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-on-surface-muted hover:text-on-surface"
+              }`}
+            >
+              <span className="inline-block w-3 h-3 rounded-sm mr-2 align-middle" style={{ backgroundColor: "#6366F1" }} />
+              Área del estampado
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingMode("garment")}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
+                editingMode === "garment"
+                  ? "border-primary text-primary"
+                  : "border-transparent text-on-surface-muted hover:text-on-surface"
+              }`}
+            >
+              <span className="inline-block w-3 h-3 rounded-sm mr-2 align-middle" style={{ backgroundColor: "#10B981" }} />
+              Área de la prenda (para color)
+            </button>
+          </div>
+
           <p className="text-xs text-on-surface-muted">
-            Arrastra los 4 puntos para definir el área donde irá el diseño. Orden: ↖ → ↗ → ↘ → ↙
+            {editingMode === "print"
+              ? "Arrastra los 4 puntos azules para definir dónde irá el diseño. Orden: ↖ → ↗ → ↘ → ↙"
+              : "Arrastra los 4 puntos verdes para marcar el contorno de la prenda. El cambio de color SOLO se aplicará dentro de esta área."}
           </p>
 
           <div
@@ -293,29 +338,40 @@ export default function GarmentTemplateForm({ template }: Props) {
               onLoad={handleImageLoad}
             />
 
-            {/* SVG para dibujar el polígono */}
+            {/* SVG con ambos polígonos */}
             <svg
               className="absolute inset-0 w-full h-full"
               style={{ pointerEvents: "none" }}
             >
+              {/* Polígono de prenda (verde) */}
+              <polygon
+                points={`${garmentArea.tl.x}%,${garmentArea.tl.y}% ${garmentArea.tr.x}%,${garmentArea.tr.y}% ${garmentArea.br.x}%,${garmentArea.br.y}% ${garmentArea.bl.x}%,${garmentArea.bl.y}%`}
+                fill={editingMode === "garment" ? "rgba(16, 185, 129, 0.15)" : "rgba(16, 185, 129, 0.05)"}
+                stroke="rgb(16, 185, 129)"
+                strokeWidth={editingMode === "garment" ? "2" : "1.5"}
+                strokeDasharray={editingMode === "garment" ? "0" : "4 2"}
+              />
+              {/* Polígono de estampado (azul) */}
               <polygon
                 points={`${controlPoints.tl.x}%,${controlPoints.tl.y}% ${controlPoints.tr.x}%,${controlPoints.tr.y}% ${controlPoints.br.x}%,${controlPoints.br.y}% ${controlPoints.bl.x}%,${controlPoints.bl.y}%`}
-                fill="rgba(99, 102, 241, 0.1)"
+                fill={editingMode === "print" ? "rgba(99, 102, 241, 0.15)" : "rgba(99, 102, 241, 0.05)"}
                 stroke="rgb(99, 102, 241)"
-                strokeWidth="2"
+                strokeWidth={editingMode === "print" ? "2" : "1.5"}
+                strokeDasharray={editingMode === "print" ? "0" : "4 2"}
               />
             </svg>
 
-            {/* Puntos arrastrables */}
+            {/* Puntos arrastrables del área activa */}
             {pointOrder.map((point) => (
               <div
                 key={point}
                 onMouseDown={() => handleMouseDown(point)}
-                className="absolute w-6 h-6 bg-primary border-2 border-white rounded-full cursor-grab active:cursor-grabbing shadow-lg hover:w-8 hover:h-8 transition"
+                className="absolute w-6 h-6 border-2 border-white rounded-full cursor-grab active:cursor-grabbing shadow-lg hover:w-8 hover:h-8 transition"
                 style={{
-                  left: `${controlPoints[point].x}%`,
-                  top: `${controlPoints[point].y}%`,
+                  left: `${activePoints[point].x}%`,
+                  top: `${activePoints[point].y}%`,
                   transform: "translate(-50%, -50%)",
+                  backgroundColor: editingMode === "print" ? "rgb(99, 102, 241)" : "rgb(16, 185, 129)",
                 }}
                 title={pointLabels[point]}
               />
@@ -328,7 +384,7 @@ export default function GarmentTemplateForm({ template }: Props) {
               <div key={point}>
                 <span className="font-medium">{pointLabels[point]}:</span>
                 <br />
-                {controlPoints[point].x.toFixed(1)}%, {controlPoints[point].y.toFixed(1)}%
+                {activePoints[point].x.toFixed(1)}%, {activePoints[point].y.toFixed(1)}%
               </div>
             ))}
           </div>

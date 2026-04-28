@@ -39,7 +39,7 @@ export async function PUT(
 
   const { id } = await params;
   const data = await request.json();
-  const { name, category, imageUrl, controlPoints } = data;
+  const { name, category, imageUrl, controlPoints, garmentArea } = data;
 
   const template = await prisma.garmentTemplate.update({
     where: { id },
@@ -48,6 +48,7 @@ export async function PUT(
       ...(category && { category }),
       ...(imageUrl && { imageUrl }),
       ...(controlPoints && { controlPoints }),
+      ...(garmentArea !== undefined && { garmentArea }),
     },
   });
 
