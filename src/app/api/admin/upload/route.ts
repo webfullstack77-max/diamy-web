@@ -50,23 +50,32 @@ export async function POST(request: NextRequest) {
 
   // Imágenes: comprimir y redimensionar, conservar nombre original
   const raw = Buffer.from(await file.arrayBuffer());
-  const compressed = await sharp(raw)
-    .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
-    .jpeg({ quality: 85 })
-    .toBuffer();
+  const isDesignPng = new URL(request.url).searchParams.get("design") === "true" && file.type === "image/png";
 
-  // Limpiar nombre original: quitar caracteres especiales, conservar extensión como .jpg
+  const compressed = isDesignPng
+    ? await sharp(raw)
+        .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
+        .png()
+        .toBuffer()
+    : await sharp(raw)
+        .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 85 })
+        .toBuffer();
+
+  // Limpiar nombre original: quitar caracteres especiales
   const originalName = file.name
     .replace(/\.[^.]+$/, "")           // quitar extensión
     .replace(/[^a-zA-Z0-9._-]/g, "-") // reemplazar espacios/chars especiales con -
     .replace(/-+/g, "-")               // colapsar guiones dobles
     .slice(0, 80);                     // máximo 80 chars
 
+  const ext = isDesignPng ? "png" : "jpg";
+
   // Si ya existe un archivo con ese nombre, agregar sufijo corto para evitar colisión
   const { existsSync } = await import("fs");
-  let filename = `${originalName}.jpg`;
+  let filename = `${originalName}.${ext}`;
   if (existsSync(join(uploadDir, filename))) {
-    filename = `${originalName}-${uuidv4().slice(0, 6)}.jpg`;
+    filename = `${originalName}-${uuidv4().slice(0, 6)}.${ext}`;
   }
 
   await writeFile(join(uploadDir, filename), compressed);

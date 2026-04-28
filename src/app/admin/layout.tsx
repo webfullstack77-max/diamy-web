@@ -17,6 +17,8 @@ function AdminNav() {
         {[
           { href: "/admin", icon: "dashboard", label: "Dashboard" },
           { href: "/admin/productos", icon: "inventory_2", label: "Productos" },
+          { href: "/admin/plantillas", icon: "checkroom", label: "Plantillas" },
+          { href: "/admin/mockups", icon: "imagesearch_roller", label: "Mockups" },
           { href: "/admin/categorias", icon: "category", label: "Categorías" },
           { href: "/admin/publicidad", icon: "campaign", label: "Publicidad" },
           { href: "/admin/producto-del-mes", icon: "star", label: "Producto del mes" },
