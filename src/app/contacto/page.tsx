@@ -67,7 +67,7 @@ export default function ContactoPage() {
       {/* Info rápida */}
       <div className="flex gap-3 mb-8">
         <a
-          href="https://wa.me/527777961193"
+          href="https://wa.me/523211144447"
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-2 flex-1 bg-[#25D366]/10 text-[#128c4a] rounded-xl px-4 py-3 text-sm font-medium hover:bg-[#25D366]/20 transition"

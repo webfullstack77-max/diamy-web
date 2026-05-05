@@ -342,7 +342,7 @@ export default function SobreNosotrosPage() {
             Ver catálogo
           </Link>
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "527777961193"}?text=${encodeURIComponent("Hola, me interesa un producto de Diamy")}`}
+            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "523211144447"}?text=${encodeURIComponent("Hola, me interesa un producto de Diamy")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border border-outline-variant text-on-surface text-sm font-medium hover:bg-surface-container transition"

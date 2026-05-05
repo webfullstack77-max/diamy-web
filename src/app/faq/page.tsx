@@ -98,7 +98,7 @@ export default function FaqPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "527777961193"}?text=${encodeURIComponent("Hola, tengo una pregunta sobre sus productos")}`}
+            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "523211144447"}?text=${encodeURIComponent("Hola, tengo una pregunta sobre sus productos")}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#25D366] text-white text-sm font-medium hover:bg-[#1ebe57] transition"
