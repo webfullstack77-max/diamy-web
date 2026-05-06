@@ -22,6 +22,9 @@ interface AdRecord {
   status: string;
   sentAt: string | null;
   createdAt: string;
+  errorLog: string | null;
+  fbPostId: string | null;
+  igPostId: string | null;
 }
 
 const CHANNEL_ICONS: Record<Channel, string> = {
@@ -70,6 +73,9 @@ export default function PublicidadPage() {
 
   const [history, setHistory] = useState<AdRecord[]>([]);
 
+  const [igTest, setIgTest] = useState<{ ok: boolean; username?: string; accountType?: string; error?: string } | null>(null);
+  const [testingIg, setTestingIg] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -94,6 +100,15 @@ export default function PublicidadPage() {
     const res = await fetch(`/api/admin/ads/${id}/resend`, { method: "POST" });
     if (res.ok) await loadHistory();
     setBusyId(null);
+  }
+
+  async function handleTestIg() {
+    setTestingIg(true);
+    setIgTest(null);
+    const res = await fetch("/api/admin/test-instagram");
+    const d = await res.json();
+    setIgTest(d);
+    setTestingIg(false);
   }
 
   async function handleDelete(id: string) {
@@ -357,6 +372,24 @@ export default function PublicidadPage() {
             </div>
           </div>
 
+          {channels.includes("instagram") && (
+            <div className="mb-4 flex items-center gap-3">
+              <button
+                onClick={handleTestIg}
+                disabled={testingIg}
+                className="flex items-center gap-1.5 text-xs text-on-surface-muted hover:text-primary transition disabled:opacity-50"
+              >
+                <span className="material-symbol" style={{ fontSize: "16px" }}>verified</span>
+                {testingIg ? "Verificando..." : "Probar conexión IG"}
+              </button>
+              {igTest && (
+                <span className={`text-xs font-medium ${igTest.ok ? "text-green-600" : "text-red-600"}`}>
+                  {igTest.ok ? `✓ @${igTest.username}` : `✗ ${igTest.error}`}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="mb-5">
             <p className="text-sm font-medium text-on-surface mb-2">Hora de envío:</p>
             <div className="flex gap-3">
@@ -427,11 +460,22 @@ export default function PublicidadPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-on-surface truncate">{ad.title}</p>
-                      <p className="text-xs text-on-surface-muted">
-                        {adChannels.map((c) => CHANNEL_LABELS[c as Channel] ?? c).join(", ")}
-                        {" · "}
-                        {new Date(ad.scheduleTime).toLocaleDateString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      <p className="text-xs text-on-surface-muted flex flex-wrap gap-x-1">
+                        {adChannels.map((c) => {
+                          const hasSuccess =
+                            (c === "facebook" && ad.fbPostId) ||
+                            (c === "instagram" && ad.igPostId);
+                          return (
+                            <span key={c} className={hasSuccess ? "text-green-600" : ""}>
+                              {hasSuccess ? "✓ " : ""}{CHANNEL_LABELS[c as Channel] ?? c}
+                            </span>
+                          );
+                        })}
+                        <span>· {new Date(ad.scheduleTime).toLocaleDateString("es-MX", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                       </p>
+                      {ad.errorLog && (
+                        <p className="text-xs text-red-500 mt-0.5 truncate" title={ad.errorLog}>{ad.errorLog}</p>
+                      )}
                     </div>
                     <span className={`shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full border ${STATUS_STYLES[ad.status] ?? STATUS_STYLES.scheduled}`}>
                       {STATUS_LABELS[ad.status] ?? ad.status}
