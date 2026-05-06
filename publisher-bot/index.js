@@ -3,6 +3,10 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const cron = require('node-cron');
 const { Pool } = require('pg');
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
+const { randomUUID } = require('crypto');
 
 // ── PostgreSQL ──────────────────────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -108,11 +112,11 @@ async function publishFacebook(ad, fullText) {
   }
 
   const imgUrl = buildImageUrl(ad.imageUrl);
-  const endpoint = `https://graph.facebook.com/v21.0/${pageId}/photos`;
+  const endpoint = `https://graph.facebook.com/v21.0/${pageId}/feed`;
   const params = new URLSearchParams({
     message: fullText,
     access_token: token,
-    ...(imgUrl ? { url: imgUrl } : {}),
+    ...(imgUrl ? { link: imgUrl } : {}),
   });
 
   try {
@@ -129,6 +133,35 @@ async function publishFacebook(ad, fullText) {
   }
 }
 
+// Instagram requires aspect ratio between 4:5 (0.8) and 1.91:1 (1.91).
+// If the image is outside that range, resize to 1080x1080 square and save temporarily.
+async function prepareImageForInstagram(imgUrl) {
+  const res = await fetch(imgUrl);
+  if (!res.ok) throw new Error(`No se pudo descargar la imagen: ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+
+  const meta = await sharp(buf).metadata();
+  const ratio = meta.width / meta.height;
+
+  if (ratio >= 0.8 && ratio <= 1.91) {
+    return { url: imgUrl, tempFile: null };
+  }
+
+  console.log(`[IG] Relación de aspecto ${ratio.toFixed(2)} fuera de rango, redimensionando a 1080x1080`);
+  const resized = await sharp(buf)
+    .resize(1080, 1080, { fit: 'cover', position: 'center' })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+
+  const filename = `_ig_${randomUUID()}.jpg`;
+  const uploadDir = path.join(__dirname, '../public/uploads');
+  const filePath = path.join(uploadDir, filename);
+  fs.writeFileSync(filePath, resized);
+
+  const base = (process.env.APP_URL || 'https://diamylasercut.com.mx').replace(/\/$/, '');
+  return { url: `${base}/uploads/${filename}`, tempFile: filePath };
+}
+
 async function publishInstagram(ad, fullText) {
   const igUserId = process.env.IG_USER_ID;
   const token = process.env.FB_PAGE_ACCESS_TOKEN;
@@ -137,8 +170,15 @@ async function publishInstagram(ad, fullText) {
     return { ok: false, error: 'Credenciales IG no configuradas' };
   }
 
-  const imgUrl = buildImageUrl(ad.imageUrl);
-  if (!imgUrl) return { ok: false, error: 'Se requiere imagen para Instagram' };
+  const rawImgUrl = buildImageUrl(ad.imageUrl);
+  if (!rawImgUrl) return { ok: false, error: 'Se requiere imagen para Instagram' };
+
+  let imgUrl, tempFile;
+  try {
+    ({ url: imgUrl, tempFile } = await prepareImageForInstagram(rawImgUrl));
+  } catch (err) {
+    return { ok: false, error: `Error preparando imagen: ${err.message}` };
+  }
 
   try {
     // Paso 1: crear contenedor
@@ -169,6 +209,10 @@ async function publishInstagram(ad, fullText) {
     return { ok: true, postId: publishData.id };
   } catch (err) {
     return { ok: false, error: err.message };
+  } finally {
+    if (tempFile) {
+      try { fs.unlinkSync(tempFile); } catch {}
+    }
   }
 }
 
