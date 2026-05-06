@@ -188,9 +188,32 @@ async function publishInstagram(ad, fullText) {
       { method: 'POST' }
     );
     const createData = await createRes.json();
+    console.log('[IG] Respuesta contenedor:', JSON.stringify(createData));
     if (createData.error) {
       console.error('[IG] Error al crear contenedor:', createData.error.message);
       return { ok: false, error: createData.error.message };
+    }
+    if (!createData.id) {
+      return { ok: false, error: `Contenedor sin ID: ${JSON.stringify(createData)}` };
+    }
+
+    // Paso 1b: esperar a que el contenedor esté listo
+    let statusCode = 'IN_PROGRESS';
+    for (let i = 0; i < 8; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const stRes = await fetch(
+        `https://graph.facebook.com/v21.0/${createData.id}?fields=status_code,status&access_token=${token}`
+      );
+      const stData = await stRes.json();
+      statusCode = stData.status_code || 'UNKNOWN';
+      console.log(`[IG] Estado contenedor (intento ${i + 1}): ${statusCode}`);
+      if (statusCode !== 'IN_PROGRESS') break;
+    }
+    if (statusCode === 'ERROR') {
+      return { ok: false, error: 'El contenedor IG falló al procesar la imagen (revisa dimensiones o formato)' };
+    }
+    if (statusCode !== 'FINISHED') {
+      return { ok: false, error: `Contenedor IG en estado inesperado: ${statusCode}` };
     }
 
     // Paso 2: publicar
