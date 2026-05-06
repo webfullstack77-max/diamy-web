@@ -77,6 +77,45 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+
+        {/* Redes sociales */}
+        <div className="relative mt-8 flex items-center justify-center gap-4">
+          <span className="text-on-surface-muted text-sm font-medium">Síguenos:</span>
+          <a
+            href="https://www.facebook.com/profile.php?id=61553822224871"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Facebook de Diamy"
+            className="hover:scale-110 transition-transform"
+          >
+            <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="8" fill="#1877F2"/>
+              <path d="M22 16C22 12.686 19.314 10 16 10C12.686 10 10 12.686 10 16C10 18.994 12.122 21.49 14.938 22V17.75H13.25V16H14.938V14.55C14.938 12.883 15.931 11.968 17.448 11.968C18.175 11.968 18.937 12.097 18.937 12.097V13.734H18.096C17.267 13.734 17.062 14.239 17.062 14.757V16H18.859L18.549 17.75H17.062V22C19.878 21.49 22 18.994 22 16Z" fill="white"/>
+            </svg>
+          </a>
+          <a
+            href="https://www.instagram.com/diamy2026/"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Instagram de Diamy"
+            className="hover:scale-110 transition-transform"
+          >
+            <svg width="36" height="36" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="ig-hero-grad" x1="0" y1="32" x2="32" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#FFC107"/>
+                  <stop offset="30%" stopColor="#F44336"/>
+                  <stop offset="70%" stopColor="#9C27B0"/>
+                  <stop offset="100%" stopColor="#3F51B5"/>
+                </linearGradient>
+              </defs>
+              <rect width="32" height="32" rx="8" fill="url(#ig-hero-grad)"/>
+              <rect x="10" y="10" width="12" height="12" rx="3.5" stroke="white" strokeWidth="1.8" fill="none"/>
+              <circle cx="16" cy="16" r="2.8" stroke="white" strokeWidth="1.8" fill="none"/>
+              <circle cx="20" cy="12" r="0.8" fill="white"/>
+            </svg>
+          </a>
+        </div>
       </section>
 
       {/* Stats bar */}
