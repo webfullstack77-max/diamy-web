@@ -19,13 +19,13 @@ export async function GET() {
 
   try {
     const res = await fetch(
-      `https://graph.facebook.com/v21.0/${igUserId}?fields=id,username,account_type&access_token=${token}`
+      `https://graph.facebook.com/v21.0/${igUserId}?fields=id,username&access_token=${token}`
     );
     const data = await res.json();
     if (data.error) {
       return NextResponse.json({ ok: false, error: data.error.message });
     }
-    return NextResponse.json({ ok: true, username: data.username, accountType: data.account_type });
+    return NextResponse.json({ ok: true, username: data.username });
   } catch {
     return NextResponse.json({ ok: false, error: "Error de red al contactar Meta" });
   }
