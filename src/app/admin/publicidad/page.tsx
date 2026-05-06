@@ -29,6 +29,15 @@ interface AdRecord {
   imageUrls: string | null;
 }
 
+interface AutoConfig {
+  id: string;
+  enabled: boolean;
+  channels: string;
+  nextPublishDate: string | null;
+  lastPublishedAt: string | null;
+  lastProductTitle: string | null;
+}
+
 const CHANNEL_ICONS: Record<Channel, string> = {
   whatsapp: "chat",
   facebook: "thumb_up",
@@ -87,6 +96,14 @@ export default function PublicidadPage() {
   const [igTest, setIgTest] = useState<{ ok: boolean; username?: string; accountType?: string; error?: string } | null>(null);
   const [testingIg, setTestingIg] = useState(false);
 
+  const [autoEnabled, setAutoEnabled] = useState(false);
+  const [autoChannels, setAutoChannels] = useState<Channel[]>(["whatsapp"]);
+  const [autoNextPublishDate, setAutoNextPublishDate] = useState<string | null>(null);
+  const [autoLastPublishedAt, setAutoLastPublishedAt] = useState<string | null>(null);
+  const [autoLastProductTitle, setAutoLastProductTitle] = useState<string | null>(null);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [autoConfigId, setAutoConfigId] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const carouselInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,7 +112,42 @@ export default function PublicidadPage() {
       .then((r) => r.json())
       .then((d) => setProducts(Array.isArray(d) ? d : []));
     loadHistory();
+    loadAutoConfig();
   }, []);
+
+  async function loadAutoConfig() {
+    const res = await fetch("/api/admin/auto-publish");
+    if (!res.ok) return;
+    const d = await res.json();
+    const c: AutoConfig = d.config;
+    setAutoConfigId(c.id);
+    setAutoEnabled(c.enabled);
+    try { setAutoChannels(JSON.parse(c.channels) as Channel[]); } catch { setAutoChannels(["whatsapp"]); }
+    setAutoNextPublishDate(c.nextPublishDate);
+    setAutoLastPublishedAt(c.lastPublishedAt);
+    setAutoLastProductTitle(c.lastProductTitle);
+  }
+
+  async function handleSaveAutoConfig() {
+    setAutoSaving(true);
+    let nextDate = autoNextPublishDate;
+    if (autoEnabled && !nextDate) {
+      nextDate = new Date().toISOString().split("T")[0];
+    }
+    await fetch("/api/admin/auto-publish", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: autoEnabled, channels: autoChannels, nextPublishDate: nextDate }),
+    });
+    await loadAutoConfig();
+    setAutoSaving(false);
+  }
+
+  function toggleAutoChannel(ch: Channel) {
+    setAutoChannels((prev) =>
+      prev.includes(ch) ? prev.filter((c) => c !== ch) : [...prev, ch]
+    );
+  }
 
   async function loadHistory() {
     const res = await fetch("/api/admin/ads");
@@ -304,6 +356,78 @@ export default function PublicidadPage() {
       </p>
 
       <div className="space-y-6">
+        {/* Autopiloto */}
+        <section className="bg-surface rounded-2xl border border-outline-variant p-6">
+          <h2 className="font-semibold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbol" style={{ fontSize: "22px" }}>smart_toy</span>
+            Autopiloto de Publicación
+          </h2>
+
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <p className="text-sm font-medium text-on-surface">Publicación automática</p>
+              <p className="text-xs text-on-surface-muted mt-0.5">
+                Publica un producto al azar en días alternos a las 9 PM
+              </p>
+            </div>
+            <button
+              onClick={() => setAutoEnabled((v) => !v)}
+              className={`relative w-12 h-6 rounded-full transition-colors ${autoEnabled ? "bg-primary" : "bg-outline-variant"}`}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${autoEnabled ? "translate-x-6" : "translate-x-0"}`} />
+            </button>
+          </div>
+
+          <div className="mb-5">
+            <p className="text-sm font-medium text-on-surface mb-2">Canales:</p>
+            <div className="flex flex-wrap gap-2">
+              {(["whatsapp", "facebook", "instagram"] as Channel[]).map((ch) => (
+                <button
+                  key={ch}
+                  onClick={() => toggleAutoChannel(ch)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-sm font-medium transition ${
+                    autoChannels.includes(ch)
+                      ? "bg-primary/10 text-primary border-primary"
+                      : "border-outline-variant text-on-surface-muted hover:bg-surface-container"
+                  }`}
+                >
+                  <span className="material-symbol" style={{ fontSize: "16px" }}>{CHANNEL_ICONS[ch]}</span>
+                  {CHANNEL_LABELS[ch]}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs text-on-surface-muted mb-5">
+            {autoNextPublishDate ? (
+              <span className="flex items-center gap-1">
+                <span className="material-symbol" style={{ fontSize: "14px" }}>event</span>
+                Próxima: {new Date(autoNextPublishDate + "T12:00:00").toLocaleDateString("es-MX", { day: "2-digit", month: "long", year: "numeric" })}
+              </span>
+            ) : (
+              <span className="flex items-center gap-1 text-on-surface-muted/60">
+                <span className="material-symbol" style={{ fontSize: "14px" }}>event</span>
+                Sin fecha programada
+              </span>
+            )}
+            {autoLastProductTitle && autoLastPublishedAt && (
+              <span className="flex items-center gap-1">
+                <span className="material-symbol" style={{ fontSize: "14px" }}>check_circle</span>
+                Última: &ldquo;{autoLastProductTitle}&rdquo; — {new Date(autoLastPublishedAt).toLocaleDateString("es-MX", { day: "2-digit", month: "short" })}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={handleSaveAutoConfig}
+            disabled={autoSaving || !autoConfigId}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-semibold text-sm hover:bg-primary-dark transition disabled:opacity-50"
+          >
+            <span className="material-symbol" style={{ fontSize: "18px" }}>save</span>
+            {autoSaving ? "Guardando..." : "Guardar configuración"}
+          </button>
+        </section>
+
         {/* Paso 1 */}
         <section className="bg-surface rounded-2xl border border-outline-variant p-6">
           <h2 className="font-semibold text-on-surface mb-4 flex items-center gap-2">

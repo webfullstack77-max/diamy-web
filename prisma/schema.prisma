@@ -119,6 +119,19 @@ model AdsQueue {
   @@map("ads_queue")
 }
 
+model AutoPublishConfig {
+  id               String    @id @default(cuid())
+  enabled          Boolean   @default(false)
+  channels         String    @default("[\"whatsapp\"]")
+  nextPublishDate  String?
+  lastPublishedAt  DateTime?
+  lastProductId    String?
+  lastProductTitle String?
+  updatedAt        DateTime  @updatedAt
+
+  @@map("auto_publish_config")
+}
+
 model PageView {
   id        String   @id @default(cuid())
   path      String

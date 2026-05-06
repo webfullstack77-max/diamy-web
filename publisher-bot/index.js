@@ -501,4 +501,90 @@ cron.schedule('* * * * *', async () => {
   }
 });
 
+// ── Auto-publish cron: 3 AM UTC = 9 PM México CDT (UTC-6) ──────────────────
+// En invierno (CST, UTC-7): cambiar a '0 4 * * *'
+cron.schedule('0 3 * * *', async () => {
+  console.log('[AUTO] Revisando configuración de autopiloto...');
+
+  let config;
+  try {
+    const rows = await query('SELECT * FROM auto_publish_config LIMIT 1');
+    config = rows[0];
+  } catch (err) {
+    console.error('[AUTO] Error leyendo config:', err.message);
+    return;
+  }
+
+  if (!config || !config.enabled) {
+    console.log('[AUTO] Autopiloto desactivado, omitiendo.');
+    return;
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  if (config.nextPublishDate && today < config.nextPublishDate) {
+    console.log(`[AUTO] Día de descanso. Próxima publicación: ${config.nextPublishDate}`);
+    return;
+  }
+
+  let product;
+  try {
+    const rows = await query(`SELECT * FROM "Product" WHERE "isActive"=true ORDER BY random() LIMIT 1`);
+    product = rows[0];
+  } catch (err) {
+    console.error('[AUTO] Error consultando producto:', err.message);
+    return;
+  }
+
+  if (!product) {
+    console.log('[AUTO] No hay productos activos disponibles.');
+    return;
+  }
+
+  const imgs = (product.images || []).slice(0, 5);
+  if (!imgs.length) {
+    console.log(`[AUTO] Producto "${product.title}" no tiene imágenes, omitiendo.`);
+    return;
+  }
+
+  const price = product.variablePrice ? 'Precio variable' : `$${product.price}`;
+  const caption = `🛍️ ${product.title}\n\n${product.description}\n\n💰 ${price}`;
+  const productUrl = `/producto/${product.slug}`;
+  const channels = config.channels || '["whatsapp"]';
+  const now = new Date().toISOString();
+
+  try {
+    await query(
+      `INSERT INTO ads_queue (id, title, "imageUrl", "imageUrls", caption, channels, "productUrl", "scheduleTime", status, "createdAt")
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'scheduled',$9)`,
+      [
+        randomUUID(),
+        product.title,
+        imgs[0],
+        imgs.length > 1 ? JSON.stringify(imgs) : null,
+        caption,
+        channels,
+        productUrl,
+        now,
+        now,
+      ]
+    );
+    console.log(`[AUTO] Anuncio creado para "${product.title}" (${imgs.length} imagen(es))`);
+  } catch (err) {
+    console.error('[AUTO] Error insertando anuncio:', err.message);
+    return;
+  }
+
+  const nextDate = new Date();
+  nextDate.setDate(nextDate.getDate() + 2);
+  try {
+    await query(
+      `UPDATE auto_publish_config SET "nextPublishDate"=$1, "lastPublishedAt"=$2, "lastProductId"=$3, "lastProductTitle"=$4, "updatedAt"=$5 WHERE id=$6`,
+      [nextDate.toISOString().split('T')[0], now, product.id, product.title, now, config.id]
+    );
+    console.log(`[AUTO] Config actualizada. Próxima publicación: ${nextDate.toISOString().split('T')[0]}`);
+  } catch (err) {
+    console.error('[AUTO] Error actualizando config:', err.message);
+  }
+});
+
 console.log('Publisher Bot iniciado. Esperando a WhatsApp...');
