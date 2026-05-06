@@ -239,6 +239,186 @@ async function publishInstagram(ad, fullText) {
   }
 }
 
+// ── Instagram Carousel ──────────────────────────────────────────────────────
+async function publishInstagramCarousel(ad, fullText) {
+  const igUserId = process.env.IG_USER_ID;
+  const token = process.env.FB_PAGE_ACCESS_TOKEN;
+  if (!igUserId || !token) return { ok: false, error: 'Credenciales IG no configuradas' };
+
+  let images;
+  try { images = JSON.parse(ad.imageUrls); } catch { return { ok: false, error: 'imageUrls inválido' }; }
+
+  const itemIds = [];
+  for (const imgUrl of images) {
+    const url = buildImageUrl(imgUrl);
+    if (!url) continue;
+    try {
+      const { url: preparedUrl, tempFile } = await prepareImageForInstagram(url);
+      const res = await fetch(
+        `https://graph.facebook.com/v21.0/${igUserId}/media?` +
+          new URLSearchParams({ image_url: preparedUrl, is_carousel_item: 'true', access_token: token }),
+        { method: 'POST' }
+      );
+      const data = await res.json();
+      if (data.id) itemIds.push(data.id);
+      if (tempFile) { try { fs.unlinkSync(tempFile); } catch {} }
+    } catch (err) {
+      console.warn(`[IG Carousel] Error en imagen ${imgUrl}: ${err.message}`);
+    }
+  }
+
+  if (itemIds.length < 2) return { ok: false, error: `Solo ${itemIds.length} imagen(es) válidas para carrusel (mínimo 2)` };
+
+  try {
+    const carouselRes = await fetch(
+      `https://graph.facebook.com/v21.0/${igUserId}/media?` +
+        new URLSearchParams({ media_type: 'CAROUSEL', caption: fullText, children: itemIds.join(','), access_token: token }),
+      { method: 'POST' }
+    );
+    const carouselData = await carouselRes.json();
+    if (carouselData.error) return { ok: false, error: carouselData.error.message };
+    if (!carouselData.id) return { ok: false, error: 'No se obtuvo ID del contenedor carrusel' };
+
+    // Polling status
+    let statusCode = 'IN_PROGRESS';
+    for (let i = 0; i < 8; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const stRes = await fetch(`https://graph.facebook.com/v21.0/${carouselData.id}?fields=status_code&access_token=${token}`);
+      const stData = await stRes.json();
+      statusCode = stData.status_code || 'UNKNOWN';
+      if (statusCode !== 'IN_PROGRESS') break;
+    }
+    if (statusCode !== 'FINISHED') return { ok: false, error: `Estado carrusel: ${statusCode}` };
+
+    const pubRes = await fetch(
+      `https://graph.facebook.com/v21.0/${igUserId}/media_publish?` +
+        new URLSearchParams({ creation_id: carouselData.id, access_token: token }),
+      { method: 'POST' }
+    );
+    const pubData = await pubRes.json();
+    if (pubData.error) return { ok: false, error: pubData.error.message };
+    console.log(`[IG Carousel] Publicado, media_id: ${pubData.id}`);
+    return { ok: true, postId: pubData.id };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ── Facebook Album (multi-foto) ─────────────────────────────────────────────
+async function publishFacebookAlbum(ad, fullText) {
+  const pageId = process.env.FB_PAGE_ID;
+  const token = process.env.FB_PAGE_ACCESS_TOKEN;
+  if (!pageId || !token) return { ok: false, error: 'Credenciales FB no configuradas' };
+
+  let images;
+  try { images = JSON.parse(ad.imageUrls); } catch { return { ok: false, error: 'imageUrls inválido' }; }
+
+  const photoIds = [];
+  for (const imgUrl of images) {
+    const url = buildImageUrl(imgUrl);
+    if (!url) continue;
+    try {
+      const res = await fetch(
+        `https://graph.facebook.com/v21.0/${pageId}/photos?` +
+          new URLSearchParams({ url, published: 'false', access_token: token }),
+        { method: 'POST' }
+      );
+      const data = await res.json();
+      if (data.id) photoIds.push(data.id);
+    } catch (err) {
+      console.warn(`[FB Album] Error subiendo imagen ${imgUrl}: ${err.message}`);
+    }
+  }
+
+  if (photoIds.length < 2) return { ok: false, error: `Solo ${photoIds.length} foto(s) subidas (mínimo 2)` };
+
+  try {
+    const attachedMedia = photoIds.map((id) => JSON.stringify({ media_fbid: id })).join(',');
+    const feedRes = await fetch(
+      `https://graph.facebook.com/v21.0/${pageId}/feed?` +
+        new URLSearchParams({ message: fullText, attached_media: `[${attachedMedia}]`, access_token: token }),
+      { method: 'POST' }
+    );
+    const feedData = await feedRes.json();
+    if (feedData.error) return { ok: false, error: feedData.error.message };
+    console.log(`[FB Album] Publicado, post_id: ${feedData.id}`);
+    return { ok: true, postId: feedData.id };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ── Instagram Reel (video) ──────────────────────────────────────────────────
+async function publishInstagramReel(ad, fullText) {
+  const igUserId = process.env.IG_USER_ID;
+  const token = process.env.FB_PAGE_ACCESS_TOKEN;
+  if (!igUserId || !token) return { ok: false, error: 'Credenciales IG no configuradas' };
+
+  const videoUrl = buildImageUrl(ad.videoUrl);
+  if (!videoUrl) return { ok: false, error: 'videoUrl no disponible' };
+
+  try {
+    const createRes = await fetch(
+      `https://graph.facebook.com/v21.0/${igUserId}/media?` +
+        new URLSearchParams({ media_type: 'REELS', video_url: videoUrl, caption: fullText, share_to_feed: 'true', access_token: token }),
+      { method: 'POST' }
+    );
+    const createData = await createRes.json();
+    console.log('[IG Reel] Respuesta contenedor:', JSON.stringify(createData));
+    if (createData.error) return { ok: false, error: createData.error.message };
+    if (!createData.id) return { ok: false, error: `Contenedor sin ID: ${JSON.stringify(createData)}` };
+
+    // Videos tardan más — hasta 8 min (50 intentos × 10s)
+    let statusCode = 'IN_PROGRESS';
+    for (let i = 0; i < 50; i++) {
+      await new Promise((r) => setTimeout(r, 10000));
+      const stRes = await fetch(`https://graph.facebook.com/v21.0/${createData.id}?fields=status_code,status&access_token=${token}`);
+      const stData = await stRes.json();
+      statusCode = stData.status_code || 'UNKNOWN';
+      console.log(`[IG Reel] Estado (intento ${i + 1}): ${statusCode}`);
+      if (statusCode !== 'IN_PROGRESS') break;
+    }
+    if (statusCode === 'ERROR') return { ok: false, error: 'El Reel falló al procesarse en Instagram' };
+    if (statusCode !== 'FINISHED') return { ok: false, error: `Estado Reel inesperado: ${statusCode}` };
+
+    const pubRes = await fetch(
+      `https://graph.facebook.com/v21.0/${igUserId}/media_publish?` +
+        new URLSearchParams({ creation_id: createData.id, access_token: token }),
+      { method: 'POST' }
+    );
+    const pubData = await pubRes.json();
+    if (pubData.error) return { ok: false, error: pubData.error.message };
+    console.log(`[IG Reel] Publicado, media_id: ${pubData.id}`);
+    return { ok: true, postId: pubData.id };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+// ── Facebook Video ──────────────────────────────────────────────────────────
+async function publishFacebookVideo(ad, fullText) {
+  const pageId = process.env.FB_PAGE_ID;
+  const token = process.env.FB_PAGE_ACCESS_TOKEN;
+  if (!pageId || !token) return { ok: false, error: 'Credenciales FB no configuradas' };
+
+  const videoUrl = buildImageUrl(ad.videoUrl);
+  if (!videoUrl) return { ok: false, error: 'videoUrl no disponible' };
+
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v21.0/${pageId}/videos?` +
+        new URLSearchParams({ file_url: videoUrl, description: fullText, access_token: token }),
+      { method: 'POST' }
+    );
+    const data = await res.json();
+    if (data.error) return { ok: false, error: data.error.message };
+    console.log(`[FB Video] Publicado, id: ${data.id}`);
+    return { ok: true, postId: data.id };
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
 // ── Cron: cada minuto ───────────────────────────────────────────────────────
 cron.schedule('* * * * *', async () => {
   const now = new Date().toISOString();
@@ -267,6 +447,9 @@ cron.schedule('* * * * *', async () => {
     let fbPostId = null;
     let igPostId = null;
 
+    const hasVideo = !!ad.videoUrl;
+    const hasCarousel = (() => { try { return ad.imageUrls && JSON.parse(ad.imageUrls).length > 1; } catch { return false; } })();
+
     if (channels.includes('whatsapp')) {
       console.log(`[AD ${ad.id}] Enviando a WhatsApp...`);
       const r = await sendWhatsApp(ad, fullText);
@@ -274,15 +457,23 @@ cron.schedule('* * * * *', async () => {
     }
 
     if (channels.includes('facebook')) {
-      console.log(`[AD ${ad.id}] Publicando en Facebook...`);
-      const r = await publishFacebook(ad, fullText);
+      console.log(`[AD ${ad.id}] Publicando en Facebook (${hasVideo ? 'video' : hasCarousel ? 'álbum' : 'imagen'})...`);
+      const r = hasVideo
+        ? await publishFacebookVideo(ad, fullText)
+        : hasCarousel
+          ? await publishFacebookAlbum(ad, fullText)
+          : await publishFacebook(ad, fullText);
       if (r.ok) fbPostId = r.postId;
       else errors.push(`FB: ${r.error}`);
     }
 
     if (channels.includes('instagram')) {
-      console.log(`[AD ${ad.id}] Publicando en Instagram...`);
-      const r = await publishInstagram(ad, fullText);
+      console.log(`[AD ${ad.id}] Publicando en Instagram (${hasVideo ? 'reel' : hasCarousel ? 'carrusel' : 'imagen'})...`);
+      const r = hasVideo
+        ? await publishInstagramReel(ad, fullText)
+        : hasCarousel
+          ? await publishInstagramCarousel(ad, fullText)
+          : await publishInstagram(ad, fullText);
       if (r.ok) igPostId = r.postId;
       else errors.push(`IG: ${r.error}`);
     }

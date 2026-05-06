@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const { title, imageUrl, caption, hashtags, channels, scheduleTime, productUrl } = await request.json();
+  const { title, imageUrl, caption, hashtags, channels, scheduleTime, productUrl, videoUrl, imageUrls } = await request.json();
 
   if (!title || !imageUrl || !caption) {
     return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
@@ -39,6 +39,8 @@ export async function POST(request: NextRequest) {
       channels: JSON.stringify(channels ?? ["whatsapp"]),
       scheduleTime: scheduleTime ? new Date(scheduleTime) : new Date(),
       productUrl: productUrl ?? null,
+      videoUrl: videoUrl ?? null,
+      imageUrls: imageUrls && imageUrls.length > 1 ? JSON.stringify(imageUrls) : null,
     },
   });
 

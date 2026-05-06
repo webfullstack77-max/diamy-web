@@ -25,6 +25,8 @@ interface AdRecord {
   errorLog: string | null;
   fbPostId: string | null;
   igPostId: string | null;
+  videoUrl: string | null;
+  imageUrls: string | null;
 }
 
 const CHANNEL_ICONS: Record<Channel, string> = {
@@ -58,7 +60,16 @@ export default function PublicidadPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [imageUrl, setImageUrl] = useState<string>("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoGenerating, setVideoGenerating] = useState(false);
+  const [videoPredictionId, setVideoPredictionId] = useState<string | null>(null);
+  const [useVideo, setUseVideo] = useState(false);
+  const [videoError, setVideoError] = useState<string | null>(null);
+
+  const videoPollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [tone, setTone] = useState<Tone>("promocional");
   const [caption, setCaption] = useState("");
@@ -77,6 +88,7 @@ export default function PublicidadPage() {
   const [testingIg, setTestingIg] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const carouselInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/admin/products")
@@ -126,8 +138,10 @@ export default function PublicidadPage() {
     const img = p.images?.[0] ?? "";
     setImageUrl(img);
     setImagePreview(img);
+    setImageUrls([]);
     setCaption("");
     setHashtags("");
+    resetVideo();
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -139,11 +153,75 @@ export default function PublicidadPage() {
     const res = await fetch("/api/admin/upload", { method: "POST", body: form });
     if (res.ok) {
       const { url } = await res.json();
-      setImageUrl(url);
-      setImagePreview(url);
-      setSelectedProduct(null);
+      if (!imageUrl) {
+        setImageUrl(url);
+        setImagePreview(url);
+        setSelectedProduct(null);
+      } else {
+        // Agregar al carrusel (máx 10)
+        setImageUrls((prev) => prev.length < 9 ? [...prev, url] : prev);
+      }
     }
     setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleCarouselUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch("/api/admin/upload", { method: "POST", body: form });
+    if (res.ok) {
+      const { url } = await res.json();
+      setImageUrls((prev) => prev.length < 9 ? [...prev, url] : prev);
+    }
+    setUploading(false);
+    if (carouselInputRef.current) carouselInputRef.current.value = "";
+  }
+
+  function resetVideo() {
+    if (videoPollingRef.current) clearInterval(videoPollingRef.current);
+    setVideoUrl(null);
+    setVideoPredictionId(null);
+    setVideoGenerating(false);
+    setUseVideo(false);
+    setVideoError(null);
+  }
+
+  async function handleGenerateVideo() {
+    if (!imageUrl) return;
+    resetVideo();
+    setVideoGenerating(true);
+    setVideoError(null);
+    const res = await fetch("/api/admin/generate-video", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ imageUrl }),
+    });
+    const d = await res.json();
+    if (!res.ok || !d.predictionId) {
+      setVideoError(d.error ?? "Error al iniciar la generación");
+      setVideoGenerating(false);
+      return;
+    }
+    setVideoPredictionId(d.predictionId);
+    // Polling cada 5 segundos
+    videoPollingRef.current = setInterval(async () => {
+      const poll = await fetch(`/api/admin/generate-video/${d.predictionId}`);
+      const pd = await poll.json();
+      if (pd.status === "done") {
+        clearInterval(videoPollingRef.current!);
+        setVideoUrl(pd.videoUrl);
+        setVideoGenerating(false);
+        setUseVideo(true);
+      } else if (pd.status === "error") {
+        clearInterval(videoPollingRef.current!);
+        setVideoError(pd.error ?? "La generación falló");
+        setVideoGenerating(false);
+      }
+    }, 5000);
   }
 
   async function handleGenerate() {
@@ -177,6 +255,7 @@ export default function PublicidadPage() {
   async function handleSubmit() {
     if (!imageUrl || !caption || channels.length === 0) return;
     setSubmitting(true);
+    const allImages = [imageUrl, ...imageUrls].filter(Boolean);
     const body = {
       title: selectedProduct?.title ?? "Anuncio personalizado",
       imageUrl,
@@ -185,6 +264,8 @@ export default function PublicidadPage() {
       channels,
       scheduleTime: scheduleNow ? null : scheduleTime || null,
       productUrl: selectedProduct?.slug ? `/producto/${selectedProduct.slug}` : null,
+      videoUrl: useVideo && videoUrl ? videoUrl : null,
+      imageUrls: allImages.length > 1 ? allImages : null,
     };
     const res = await fetch("/api/admin/ads", {
       method: "POST",
@@ -200,10 +281,12 @@ export default function PublicidadPage() {
         setHashtags("");
         setImageUrl("");
         setImagePreview("");
+        setImageUrls([]);
         setSelectedProduct(null);
         setChannels(["whatsapp"]);
         setScheduleNow(true);
         setScheduleTime("");
+        resetVideo();
       }, 2500);
     }
     setSubmitting(false);
@@ -246,13 +329,8 @@ export default function PublicidadPage() {
 
           <div className="relative">
             <div className="text-xs text-on-surface-muted text-center mb-2">— o sube una foto —</div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+            <input ref={carouselInputRef} type="file" accept="image/*" className="hidden" onChange={handleCarouselUpload} />
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
@@ -267,14 +345,88 @@ export default function PublicidadPage() {
             </button>
           </div>
 
+          {/* Vista previa imagen principal */}
           {imagePreview && (
-            <div className="mt-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imagePreview}
-                alt="Vista previa"
-                className="w-40 h-40 object-cover rounded-xl border border-outline-variant"
-              />
+            <div className="mt-4 space-y-3">
+              <div className="flex items-start gap-3 flex-wrap">
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imagePreview} alt="Principal" className="w-20 h-20 object-cover rounded-xl border-2 border-primary" />
+                  <span className="absolute -top-1.5 -left-1.5 bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
+                </div>
+                {imageUrls.map((u, i) => (
+                  <div key={u} className="relative">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={u} alt={`img ${i + 2}`} className="w-20 h-20 object-cover rounded-xl border border-outline-variant" />
+                    <button
+                      onClick={() => setImageUrls((prev) => prev.filter((_, idx) => idx !== i))}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600"
+                    >✕</button>
+                  </div>
+                ))}
+                {[...Array(imageUrl), ...imageUrls].length < 10 && (
+                  <button
+                    onClick={() => carouselInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-20 h-20 rounded-xl border-2 border-dashed border-outline-variant text-on-surface-muted hover:border-primary hover:text-primary transition flex flex-col items-center justify-center gap-1 text-xs disabled:opacity-50"
+                  >
+                    <span className="material-symbol" style={{ fontSize: "22px" }}>add_photo_alternate</span>
+                    Añadir
+                  </button>
+                )}
+              </div>
+              {imageUrls.length > 0 && (
+                <p className="text-xs text-primary font-medium flex items-center gap-1">
+                  <span className="material-symbol" style={{ fontSize: "14px" }}>view_carousel</span>
+                  Carrusel ({1 + imageUrls.length} imágenes)
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Video IA */}
+          {imageUrl && (
+            <div className="mt-4 pt-4 border-t border-outline-variant">
+              <p className="text-sm font-medium text-on-surface mb-2 flex items-center gap-1.5">
+                <span className="material-symbol" style={{ fontSize: "18px" }}>movie</span>
+                Generar Video IA (Reel)
+              </p>
+              {!videoGenerating && !videoUrl && (
+                <button
+                  onClick={handleGenerateVideo}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary text-sm font-semibold hover:bg-primary/10 transition"
+                >
+                  <span className="material-symbol" style={{ fontSize: "18px" }}>auto_awesome</span>
+                  Generar Video con IA (~3 min)
+                </button>
+              )}
+              {videoGenerating && (
+                <div className="flex items-center gap-3 text-sm text-on-surface-muted">
+                  <span className="material-symbol animate-spin" style={{ fontSize: "20px" }}>progress_activity</span>
+                  <span>Generando video con IA… puede tardar 2-4 minutos</span>
+                </div>
+              )}
+              {videoError && (
+                <p className="text-xs text-red-500 mt-1">{videoError}</p>
+              )}
+              {videoUrl && (
+                <div className="space-y-2">
+                  <video src={videoUrl} controls className="w-full max-w-xs rounded-xl border border-outline-variant" />
+                  <div className="flex gap-3">
+                    <label className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input type="radio" name="mediaType" checked={!useVideo} onChange={() => setUseVideo(false)} />
+                      Usar imagen
+                    </label>
+                    <label className="flex items-center gap-2 text-sm cursor-pointer text-primary font-medium">
+                      <input type="radio" name="mediaType" checked={useVideo} onChange={() => setUseVideo(true)} />
+                      Usar video (Reel)
+                    </label>
+                  </div>
+                  <button onClick={handleGenerateVideo} className="text-xs text-on-surface-muted hover:text-primary transition">
+                    Regenerar video
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -452,12 +604,24 @@ export default function PublicidadPage() {
                 })();
                 return (
                   <div key={ad.id} className="bg-surface rounded-xl border border-outline-variant p-4 flex items-center gap-4">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={ad.imageUrl.startsWith("/") ? ad.imageUrl : `/${ad.imageUrl}`}
-                      alt={ad.title}
-                      className="w-12 h-12 object-cover rounded-lg shrink-0"
-                    />
+                    <div className="relative shrink-0">
+                      {ad.videoUrl ? (
+                        <video src={ad.videoUrl} className="w-12 h-12 object-cover rounded-lg" muted />
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={ad.imageUrl.startsWith("/") ? ad.imageUrl : `/${ad.imageUrl}`} alt={ad.title} className="w-12 h-12 object-cover rounded-lg" />
+                      )}
+                      {ad.videoUrl && (
+                        <span className="absolute bottom-0 right-0 bg-primary text-on-primary rounded-full p-0.5">
+                          <span className="material-symbol" style={{ fontSize: "10px" }}>play_arrow</span>
+                        </span>
+                      )}
+                      {ad.imageUrls && !ad.videoUrl && (
+                        <span className="absolute bottom-0 right-0 bg-primary text-on-primary rounded-full p-0.5">
+                          <span className="material-symbol" style={{ fontSize: "10px" }}>view_carousel</span>
+                        </span>
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-on-surface truncate">{ad.title}</p>
                       <p className="text-xs text-on-surface-muted flex flex-wrap gap-x-1">

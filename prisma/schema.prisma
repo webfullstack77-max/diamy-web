@@ -112,6 +112,8 @@ model AdsQueue {
   errorLog     String?
   fbPostId     String?
   igPostId     String?
+  videoUrl     String?
+  imageUrls    String?
   createdAt    DateTime  @default(now())
 
   @@map("ads_queue")

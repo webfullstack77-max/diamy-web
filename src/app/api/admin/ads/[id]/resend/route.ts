@@ -26,6 +26,8 @@ export async function POST(
       hashtags: original.hashtags,
       channels: original.channels,
       productUrl: original.productUrl,
+      videoUrl: original.videoUrl,
+      imageUrls: original.imageUrls,
       scheduleTime: new Date(),
       status: "scheduled",
     },
