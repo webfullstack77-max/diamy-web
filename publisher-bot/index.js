@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.production') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env.production'), override: true });
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const cron = require('node-cron');
