@@ -231,7 +231,7 @@ export default function FloatingWhatsApp() {
   const buttons = step !== "done" ? (FLOW[step]?.buttons ?? []) : [];
 
   return (
-    <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex flex-col items-end">
+    <div className="fixed bottom-24 right-4 md:bottom-6 md:right-6 z-40 flex flex-col items-end pointer-events-none">
       {/* Chat window */}
       <div
         className={`mb-3 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 flex flex-col overflow-hidden transition-all duration-300 origin-bottom-right ${
@@ -319,7 +319,7 @@ export default function FloatingWhatsApp() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? "Cerrar chat" : "Chatear por WhatsApp"}
-        className="flex items-center justify-center w-14 h-14 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200"
+        className="flex items-center justify-center w-14 h-14 rounded-full text-white shadow-lg hover:scale-110 transition-all duration-200 pointer-events-auto"
         style={{ background: open ? "#1ebe57" : "#25D366" }}
       >
         {open ? (
