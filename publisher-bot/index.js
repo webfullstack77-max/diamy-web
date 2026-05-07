@@ -249,6 +249,7 @@ async function publishInstagramCarousel(ad, fullText) {
   try { images = JSON.parse(ad.imageUrls); } catch { return { ok: false, error: 'imageUrls inválido' }; }
 
   const itemIds = [];
+  const igApiErrors = [];
   for (const imgUrl of images) {
     const url = buildImageUrl(imgUrl);
     if (!url) continue;
@@ -260,14 +261,21 @@ async function publishInstagramCarousel(ad, fullText) {
         { method: 'POST' }
       );
       const data = await res.json();
-      if (data.id) itemIds.push(data.id);
+      if (data.id) {
+        itemIds.push(data.id);
+      } else {
+        const errMsg = data.error ? `${data.error.message} (code ${data.error.code})` : JSON.stringify(data);
+        igApiErrors.push(errMsg);
+        console.warn(`[IG Carousel] Meta rechazó imagen ${imgUrl}: ${errMsg}`);
+      }
       if (tempFile) { try { fs.unlinkSync(tempFile); } catch {} }
     } catch (err) {
+      igApiErrors.push(err.message);
       console.warn(`[IG Carousel] Error en imagen ${imgUrl}: ${err.message}`);
     }
   }
 
-  if (itemIds.length < 2) return { ok: false, error: `Solo ${itemIds.length} imagen(es) válidas para carrusel (mínimo 2)` };
+  if (itemIds.length < 2) return { ok: false, error: `Solo ${itemIds.length} imagen(es) válidas para carrusel (mínimo 2). Error Meta: ${igApiErrors[0] ?? 'desconocido'}` };
 
   try {
     const carouselRes = await fetch(
@@ -314,6 +322,7 @@ async function publishFacebookAlbum(ad, fullText) {
   try { images = JSON.parse(ad.imageUrls); } catch { return { ok: false, error: 'imageUrls inválido' }; }
 
   const photoIds = [];
+  const fbApiErrors = [];
   for (const imgUrl of images) {
     const url = buildImageUrl(imgUrl);
     if (!url) continue;
@@ -324,13 +333,20 @@ async function publishFacebookAlbum(ad, fullText) {
         { method: 'POST' }
       );
       const data = await res.json();
-      if (data.id) photoIds.push(data.id);
+      if (data.id) {
+        photoIds.push(data.id);
+      } else {
+        const errMsg = data.error ? `${data.error.message} (code ${data.error.code})` : JSON.stringify(data);
+        fbApiErrors.push(errMsg);
+        console.warn(`[FB Album] Meta rechazó imagen ${imgUrl}: ${errMsg}`);
+      }
     } catch (err) {
+      fbApiErrors.push(err.message);
       console.warn(`[FB Album] Error subiendo imagen ${imgUrl}: ${err.message}`);
     }
   }
 
-  if (photoIds.length < 2) return { ok: false, error: `Solo ${photoIds.length} foto(s) subidas (mínimo 2)` };
+  if (photoIds.length < 2) return { ok: false, error: `Solo ${photoIds.length} foto(s) subidas (mínimo 2). Error Meta: ${fbApiErrors[0] ?? 'desconocido'}` };
 
   try {
     const attachedMedia = photoIds.map((id) => JSON.stringify({ media_fbid: id })).join(',');
