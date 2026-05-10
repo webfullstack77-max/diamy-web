@@ -5,6 +5,7 @@ import CategoryGrid from "@/components/home/CategoryGrid";
 import TestimonialsSection from "@/components/home/TestimonialsSection";
 import FeaturedCarousel from "@/components/home/FeaturedCarousel";
 import ProductOfMonth from "@/components/home/ProductOfMonth";
+import DailyPromoModal from "@/components/home/DailyPromoModal";
 
 export const revalidate = 60;
 
@@ -27,6 +28,7 @@ export default async function HomePage() {
 
   return (
     <>
+      <DailyPromoModal />
       {/* Logo flotante fijo en toda la página */}
       <div
         className="fixed inset-0 bg-center bg-no-repeat bg-contain opacity-[0.04] pointer-events-none"

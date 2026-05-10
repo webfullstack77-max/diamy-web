@@ -22,6 +22,7 @@ function AdminNav() {
           { href: "/admin/categorias", icon: "category", label: "Categorías" },
           { href: "/admin/publicidad", icon: "campaign", label: "Publicidad" },
           { href: "/admin/producto-del-mes", icon: "star", label: "Producto del mes" },
+          { href: "/admin/imagen-del-dia", icon: "today", label: "Imagen del día" },
           { href: "/admin/testimonios", icon: "rate_review", label: "Testimonios" },
         ].map((item) => (
           <li key={item.href}>

@@ -132,6 +132,16 @@ model AutoPublishConfig {
   @@map("auto_publish_config")
 }
 
+model DailyPromo {
+  id         String   @id @default(cuid())
+  imageUrl   String
+  activeDate DateTime
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  @@map("daily_promo")
+}
+
 model PageView {
   id        String   @id @default(cuid())
   path      String
