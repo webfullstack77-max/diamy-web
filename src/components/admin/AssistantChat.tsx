@@ -292,12 +292,13 @@ export default function AssistantChat() {
 
   return (
     <>
-      {/* Botón flotante */}
+      {/* Botón flotante — posicionado sobre el bottom nav móvil */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 ${
+        className={`fixed right-4 z-40 w-14 h-14 rounded-full shadow-xl flex items-center justify-center transition-all duration-200 hover:scale-110 ${
           open ? "bg-surface-container text-on-surface border border-outline-variant" : "bg-primary text-on-primary"
         }`}
+        style={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px))" }}
         title="Asistente IA"
       >
         <span className="material-symbol" style={{ fontSize: 24 }}>
@@ -308,8 +309,11 @@ export default function AssistantChat() {
       {/* Panel de chat */}
       {open && (
         <div
-          className="fixed bottom-24 right-4 z-40 w-full max-w-sm bg-surface rounded-2xl shadow-2xl border border-outline-variant flex flex-col"
-          style={{ height: "min(540px, calc(100vh - 140px))" }}
+          className="fixed right-4 z-40 w-full max-w-sm bg-surface rounded-2xl shadow-2xl border border-outline-variant flex flex-col"
+          style={{
+            bottom: "calc(9rem + env(safe-area-inset-bottom, 0px))",
+            height: "min(520px, calc(100vh - 200px))",
+          }}
         >
           {/* Header */}
           <div className="flex items-center gap-2 px-3 py-3 border-b border-outline-variant shrink-0">

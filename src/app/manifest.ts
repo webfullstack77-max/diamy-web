@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Diamy Admin",
     short_name: "Diamy",
     description: "Panel de administración Diamy Laser Cut",
-    start_url: "/admin",
+    start_url: "/admin/pedidos",
     display: "standalone",
     background_color: "#fffbfe",
     theme_color: "#6750A4",
