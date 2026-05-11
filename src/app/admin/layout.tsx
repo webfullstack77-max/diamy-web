@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import LogoutButton from "@/components/admin/LogoutButton";
+import PushSetup from "@/components/admin/PushSetup";
+import AssistantChat from "@/components/admin/AssistantChat";
 
 export const metadata = { title: "Admin | Diamy" };
 
@@ -24,6 +26,7 @@ function AdminNav() {
           { href: "/admin/producto-del-mes", icon: "star", label: "Producto del mes" },
           { href: "/admin/imagen-del-dia", icon: "today", label: "Imagen del día" },
           { href: "/admin/testimonios", icon: "rate_review", label: "Testimonios" },
+          { href: "/admin/pedidos", icon: "receipt_long", label: "Pedidos" },
         ].map((item) => (
           <li key={item.href}>
             <Link
@@ -56,9 +59,13 @@ function AdminNav() {
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-surface-container">
-      <AdminNav />
-      <main className="flex-1 p-8 overflow-auto">{children}</main>
-    </div>
+    <>
+      <PushSetup />
+      <div className="flex min-h-screen bg-surface-container">
+        <AdminNav />
+        <main className="flex-1 p-8 overflow-auto">{children}</main>
+      </div>
+      <AssistantChat />
+    </>
   );
 }

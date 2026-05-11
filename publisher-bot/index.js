@@ -7,6 +7,16 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 const { randomUUID } = require('crypto');
+const webpush = require('web-push');
+
+// ── Web Push (VAPID) ─────────────────────────────────────────────────────────
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:webfullstack77@gmail.com',
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 // ── PostgreSQL ──────────────────────────────────────────────────────────────
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -600,6 +610,89 @@ cron.schedule('0 3 * * *', async () => {
     console.log(`[AUTO] Config actualizada. Próxima publicación: ${nextDate.toISOString().split('T')[0]}`);
   } catch (err) {
     console.error('[AUTO] Error actualizando config:', err.message);
+  }
+});
+
+// ── Cron: alertas de entregas — 8 AM hora México (14:00 UTC) ─────────────────
+cron.schedule('0 14 * * *', async () => {
+  console.log('[ORDERS] Revisando entregas próximas...');
+
+  const today = new Date().toISOString().split('T')[0];
+  const dayAfterTomorrow = new Date();
+  dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+  dayAfterTomorrow.setHours(23, 59, 59, 999);
+
+  let orders;
+  try {
+    orders = await query(
+      `SELECT * FROM orders WHERE status NOT IN ('DELIVERED', 'CANCELLED') AND "deliveryDate" <= $1 AND ("alertSentDate" IS NULL OR "alertSentDate" < $2)`,
+      [dayAfterTomorrow.toISOString(), today]
+    );
+  } catch (err) {
+    console.error('[ORDERS] Error consultando pedidos:', err.message);
+    return;
+  }
+
+  if (orders.length === 0) {
+    console.log('[ORDERS] Sin alertas pendientes.');
+    return;
+  }
+
+  console.log(`[ORDERS] ${orders.length} pedido(s) requieren alerta.`);
+
+  let subscriptions = [];
+  try {
+    subscriptions = await query('SELECT * FROM push_subscriptions');
+  } catch (err) {
+    console.error('[ORDERS] Error obteniendo suscripciones push:', err.message);
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://diamylasercut.com.mx';
+  const adminWaNumber = process.env.ADMIN_WA_NUMBER;
+
+  for (const order of orders) {
+    const deliveryStr = new Date(order.deliveryDate).toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+    const isOverdue = new Date(order.deliveryDate) < new Date();
+    const title = isOverdue ? '⚠️ Entrega vencida' : '🔔 Entrega próxima';
+    const body = `${order.clientName} — ${(order.description || '').substring(0, 60)} (${deliveryStr})`;
+    const url = `${siteUrl}/admin/pedidos/${order.id}`;
+
+    // 1. Push notification
+    if (process.env.VAPID_PUBLIC_KEY && subscriptions.length > 0) {
+      for (const sub of subscriptions) {
+        try {
+          await webpush.sendNotification(
+            { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+            JSON.stringify({ title, body, url })
+          );
+        } catch (err) {
+          if (err.statusCode === 410) {
+            await query('DELETE FROM push_subscriptions WHERE endpoint = $1', [sub.endpoint]).catch(() => {});
+          } else {
+            console.error('[ORDERS] Push error:', err.message);
+          }
+        }
+      }
+    }
+
+    // 2. WhatsApp al admin
+    if (adminWaNumber && waReady) {
+      try {
+        const chatId = `${adminWaNumber}@c.us`;
+        const msg = `${title}\n\n📦 *${order.clientName}*\n${(order.description || '').substring(0, 80)}\n📅 Entrega: ${deliveryStr}\n\n${url}`;
+        await waClient.sendMessage(chatId, msg);
+        console.log(`[ORDERS] WA enviado a admin para pedido ${order.id}`);
+      } catch (err) {
+        console.error('[ORDERS] WA error:', err.message);
+      }
+    }
+
+    // 3. Actualizar alertSentDate
+    try {
+      await query('UPDATE orders SET "alertSentDate" = $1 WHERE id = $2', [today, order.id]);
+    } catch (err) {
+      console.error('[ORDERS] Error actualizando alertSentDate:', err.message);
+    }
   }
 });
 

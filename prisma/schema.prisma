@@ -170,3 +170,58 @@ model GarmentTemplate {
 
   @@map("garment_templates")
 }
+
+enum OrderStatus {
+  PENDING
+  PRODUCTION
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  TRANSFER
+  CARD
+  OTHER
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  clientName    String
+  clientPhone   String?
+  description   String
+  totalAmount   Float
+  deliveryDate  DateTime
+  status        OrderStatus @default(PENDING)
+  notes         String?
+  alertSentDate String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  payments      Payment[]
+
+  @@map("orders")
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  orderId    String
+  order      Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  amount     Float
+  method     PaymentMethod @default(TRANSFER)
+  receiptUrl String?
+  note       String?
+  createdAt  DateTime      @default(now())
+
+  @@map("payments")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@map("push_subscriptions")
+}
