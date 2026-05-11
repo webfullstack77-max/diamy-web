@@ -3,8 +3,8 @@ import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-// Rachel — voz premade ElevenLabs, disponible en plan gratuito, multilingual
-const VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+// Charlotte — multilingual v2, requiere plan Starter o superior
+const VOICE_ID = "XB0fDUnXU5powFXDhCwa";
 
 export async function POST(req: NextRequest) {
   try { await requireAdmin(); } catch {

@@ -41,17 +41,14 @@ export default function AssistantChat() {
   const [handsFree, setHandsFree] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [hasMic, setHasMic] = useState(false);
-  // null = sin audio pendiente; { buffer } = audio ElevenLabs listo; { text } = usar speechSynthesis al tap
-  const [pendingTts, setPendingTts] = useState<{ buffer?: ArrayBuffer; text?: string } | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const handsFreeRef = useRef(false);
   const loadingRef = useRef(false);
-  const speakingRef = useRef(false); // true mientras el TTS está reproduciendo — bloquea restart del mic
+  const speakingRef = useRef(false);
 
   useEffect(() => {
     const hasSR = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
@@ -70,7 +67,6 @@ export default function AssistantChat() {
     return () => {
       recognitionRef.current?.stop();
       try { sourceNodeRef.current?.stop(); } catch { /* ignorar */ }
-      audioRef.current?.pause();
       audioCtxRef.current?.close();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     };
@@ -131,9 +127,7 @@ export default function AssistantChat() {
       }
     };
 
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    // Intentar ElevenLabs
+    // AudioContext keepalive garantiza que el contexto siempre está "running" en iOS
     try {
       const res = await fetch("/api/admin/tts", {
         method: "POST",
@@ -143,45 +137,20 @@ export default function AssistantChat() {
       if (!res.ok) throw new Error("no-elevenlabs");
       const arrayBuffer = await res.arrayBuffer();
 
-      if (isIOS) {
-        setPendingTts({ buffer: arrayBuffer });
+      const ctx = audioCtxRef.current;
+      if (ctx && ctx.state === "running") {
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(ctx.destination);
+        sourceNodeRef.current = source;
+        source.addEventListener("ended", () => { sourceNodeRef.current = null; restartMic(); });
+        source.start();
         return;
       }
+    } catch { /* ElevenLabs no disponible — fallback */ }
 
-      // Desktop/Android — auto-play
-      const ctx = audioCtxRef.current;
-      if (ctx && ctx.state !== "closed") {
-        try {
-          await ctx.resume();
-          if (ctx.state === "running") {
-            const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-            const source = ctx.createBufferSource();
-            source.buffer = audioBuffer;
-            source.connect(ctx.destination);
-            sourceNodeRef.current = source;
-            source.addEventListener("ended", () => { sourceNodeRef.current = null; restartMic(); });
-            source.start();
-            return;
-          }
-        } catch { /* probar HTMLAudioElement */ }
-      }
-      const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
-      audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
-      await audio.play();
-      return;
-    } catch { /* ElevenLabs no disponible */ }
-
-    if (isIOS) {
-      // ElevenLabs falló en iOS — tap button usará speechSynthesis directamente
-      setPendingTts({ text: clean });
-      return;
-    }
-
-    // Desktop/Android — Web Speech API directo
+    // Fallback: Web Speech API
     if (!("speechSynthesis" in window)) { restartMic(); return; }
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.lang = "es-MX";
@@ -192,45 +161,6 @@ export default function AssistantChat() {
     utterance.onend = restartMic;
     utterance.onerror = restartMic;
     window.speechSynthesis.speak(utterance);
-  }
-
-  // Reproducir audio pendiente — llamado desde tap del usuario (iOS requiere gesto directo)
-  function playPendingTts() {
-    const pending = pendingTts;
-    if (!pending) return;
-    setPendingTts(null);
-
-    const done = () => {
-      speakingRef.current = false;
-      audioRef.current = null;
-      if (handsFreeRef.current) {
-        setTimeout(() => { if (handsFreeRef.current) startHandsFreeRecognition(); }, 400);
-      }
-    };
-
-    if (pending.buffer) {
-      // Audio ElevenLabs — crear Audio dentro del gesto → iOS lo permite
-      const blob = new Blob([pending.buffer], { type: "audio/mpeg" });
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      audio.onended = () => { URL.revokeObjectURL(url); done(); };
-      audio.onerror = () => { URL.revokeObjectURL(url); done(); };
-      audio.play().catch(done);
-    } else if (pending.text && "speechSynthesis" in window) {
-      // Fallback: Web Speech API — llamado desde gesto → iOS lo permite
-      const utterance = new SpeechSynthesisUtterance(pending.text);
-      utterance.lang = "es-MX";
-      utterance.rate = 1.1;
-      utterance.pitch = 1.1;
-      const voice = pickFemaleVoice();
-      if (voice) utterance.voice = voice;
-      utterance.onend = done;
-      utterance.onerror = done;
-      window.speechSynthesis.speak(utterance);
-    } else {
-      done();
-    }
   }
 
   const sendMessage = useCallback(async (text: string) => {
@@ -327,10 +257,10 @@ export default function AssistantChat() {
       recognitionRef.current?.stop();
       try { sourceNodeRef.current?.stop(); } catch { /* ignorar */ }
       sourceNodeRef.current = null;
-      audioRef.current?.pause();
-      audioRef.current = null;
       speakingRef.current = false;
-      setPendingTts(null);
+      // Cerrar AudioContext — el keepalive loop se detiene solo al ver state==="closed"
+      audioCtxRef.current?.close();
+      audioCtxRef.current = null;
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
       setHandsFree(false);
       handsFreeRef.current = false;
@@ -338,25 +268,28 @@ export default function AssistantChat() {
       setInterimText("");
     } else {
       if (typeof window !== "undefined") {
-        // Unlock 1: AudioContext — desbloquear durante gesto para poder usar decodeAudioData después
         const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         if (AC) {
-          if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
-            audioCtxRef.current = new AC();
-          }
-          audioCtxRef.current.resume();
-        }
+          const ctx = new AC();
+          audioCtxRef.current = ctx;
 
-        // Unlock 2: HTMLAudioElement — patrón más confiable en iOS PWA
-        // Llamar play() con src vacío durante el gesto; falla silenciosamente pero desbloquea el elemento
-        if (!audioRef.current) {
-          audioRef.current = new Audio();
+          // Keepalive: reproducir silencio en loop para que iOS nunca suspenda el contexto.
+          // Mientras haya audio activo (aunque sea silencio), el contexto permanece "running"
+          // y source.start() produce sonido sin requerir nuevo gesto del usuario.
+          const silentBuf = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate);
+          const tick = () => {
+            if (!audioCtxRef.current || audioCtxRef.current.state === "closed") return;
+            const src = ctx.createBufferSource();
+            src.buffer = silentBuf;
+            src.connect(ctx.destination);
+            src.onended = tick;
+            src.start();
+          };
+          tick();
         }
-        audioRef.current.play().catch(() => {});
       }
       setHandsFree(true);
       handsFreeRef.current = true;
-      // Iniciar mic solo si está disponible (no en iOS PWA sin SpeechRecognition)
       if (hasMic) startHandsFreeRecognition();
     }
   }
@@ -470,19 +403,6 @@ export default function AssistantChat() {
             )}
             <div ref={bottomRef} />
           </div>
-
-          {/* Tap-to-play — aparece en iOS cuando el autoplay es bloqueado */}
-          {pendingTts && (
-            <div className="border-t border-orange-200 bg-orange-50 px-3 py-2 shrink-0">
-              <button
-                onClick={playPendingTts}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-semibold active:scale-95 transition-all"
-              >
-                <span className="material-symbol" style={{ fontSize: 20 }}>volume_up</span>
-                Toca para escuchar la respuesta
-              </button>
-            </div>
-          )}
 
           {/* Input */}
           <div className="border-t border-outline-variant px-3 py-2.5 shrink-0">
