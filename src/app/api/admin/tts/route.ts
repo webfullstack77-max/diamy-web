@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         text: text.slice(0, 500),
-        model_id: "eleven_multilingual_v2",
-        voice_settings: { stability: 0.45, similarity_boost: 0.80, style: 0.15, use_speaker_boost: true, speed: 1.2 },
+        model_id: "eleven_flash_v2_5",
+        voice_settings: { stability: 0.50, similarity_boost: 0.75, style: 0.0, use_speaker_boost: false, speed: 1.0 },
       }),
     }
   );

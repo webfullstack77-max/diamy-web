@@ -68,6 +68,34 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
   {
+    name: "edit_order",
+    description: "Edita uno o varios campos de un pedido existente. Solo envía los campos que cambian.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        orderId: { type: "string", description: "ID del pedido" },
+        clientName: { type: "string", description: "Nuevo nombre del cliente" },
+        clientPhone: { type: "string", description: "Nuevo teléfono" },
+        description: { type: "string", description: "Nueva descripción del pedido" },
+        totalAmount: { type: "number", description: "Nuevo total en pesos MXN" },
+        deliveryDate: { type: "string", description: "Nueva fecha de entrega YYYY-MM-DD" },
+        notes: { type: "string", description: "Nuevas notas internas" },
+      },
+      required: ["orderId"],
+    },
+  },
+  {
+    name: "delete_order",
+    description: "Elimina permanentemente un pedido y todos sus pagos. Usar solo cuando el usuario confirma que quiere borrar, no cancelar.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        orderId: { type: "string", description: "ID del pedido a eliminar" },
+      },
+      required: ["orderId"],
+    },
+  },
+  {
     name: "get_stats",
     description: "Obtiene estadísticas de pedidos: totales del mes, pedidos activos, próximas entregas.",
     input_schema: { type: "object" as const, properties: {} },
@@ -150,6 +178,29 @@ async function executeTool(name: string, input: Record<string, unknown>): Promis
       return { ok: true, orderId: order.id, status: order.status };
     }
 
+    case "edit_order": {
+      const data: Record<string, unknown> = {};
+      if (input.clientName !== undefined) data.clientName = input.clientName;
+      if (input.clientPhone !== undefined) data.clientPhone = (input.clientPhone as string) || null;
+      if (input.description !== undefined) data.description = input.description;
+      if (input.totalAmount !== undefined) data.totalAmount = Number(input.totalAmount);
+      if (input.deliveryDate !== undefined) data.deliveryDate = new Date(input.deliveryDate as string);
+      if (input.notes !== undefined) data.notes = (input.notes as string) || null;
+
+      const order = await prisma.order.update({
+        where: { id: input.orderId as string },
+        data,
+        include: { payments: true },
+      });
+      const totalPaid = order.payments.reduce((s, p) => s + p.amount, 0);
+      return { ok: true, orderId: order.id, clientName: order.clientName, totalAmount: order.totalAmount, balance: order.totalAmount - totalPaid };
+    }
+
+    case "delete_order": {
+      await prisma.order.delete({ where: { id: input.orderId as string } });
+      return { ok: true, deleted: input.orderId };
+    }
+
     case "get_stats": {
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -188,7 +239,9 @@ export async function POST(req: NextRequest) {
     weekday: "long", year: "numeric", month: "long", day: "numeric",
   });
 
-  const systemPrompt = `Eres el asistente de pedidos de Diamy Laser Cut, empresa mexicana de corte láser y grabado personalizado. El administrador te habla por voz mientras trabaja o maneja, y tú le respondes en voz alta.
+  const systemPrompt = `Eres el asistente de pedidos de Diamy Laser Cut, empresa mexicana de corte láser y grabado personalizado. El administrador te habla por voz mientras trabaja, y tú le respondes en voz alta.
+
+Puedes: registrar pedidos, buscar pedidos, anotar pagos, cambiar estado, editar cualquier campo de un pedido, y borrar pedidos permanentemente.
 
 Reglas estrictas de formato:
 - NUNCA uses markdown: sin asteriscos, sin guiones de lista, sin negritas, sin encabezados.
@@ -197,6 +250,7 @@ Reglas estrictas de formato:
 - Si algo salió mal, dilo en una oración simple.
 - Si el usuario menciona precio unitario y cantidad, multiplica antes de llamar register_order.
 - Si no tienes el orderId, usa find_order primero.
+- Para borrar: confirma verbalmente antes de llamar delete_order. Ejemplo: "Voy a borrar el pedido de Juan, ¿confirmas?" — si el usuario dice sí, entonces borra.
 - Español mexicano informal. Sin emojis.
 - Hoy es ${today}.`;
 

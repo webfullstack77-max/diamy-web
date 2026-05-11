@@ -50,17 +50,25 @@ export default function PedidosPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [showStats, setShowStats] = useState(true);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
+  const load = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     const url = tab === "ALL" ? "/api/admin/orders" : `/api/admin/orders?status=${tab}`;
     const [ordRes, statsRes] = await Promise.all([fetch(url), fetch("/api/admin/orders/stats")]);
     if (ordRes.ok) setOrders(await ordRes.json());
     if (statsRes.ok) setStats(await statsRes.json());
-    setLoading(false);
+    setLastUpdate(new Date());
+    if (!silent) setLoading(false);
   }, [tab]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Polling cada 30 s para mostrar nuevos pedidos sin refrescar manualmente
+  useEffect(() => {
+    const id = setInterval(() => load(true), 30_000);
+    return () => clearInterval(id);
+  }, [load]);
 
   const maxSale = stats ? Math.max(...stats.dailySales.map((d) => d.amount), 1) : 1;
 
@@ -68,7 +76,15 @@ export default function PedidosPage() {
     <div className="max-w-2xl mx-auto space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-on-surface font-serif">Pedidos</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-on-surface font-serif">Pedidos</h1>
+          {lastUpdate && (
+            <p className="text-xs text-on-surface-muted mt-0.5">
+              Actualizado {lastUpdate.toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" })}
+              <button onClick={() => load()} className="ml-2 text-primary hover:underline">actualizar</button>
+            </p>
+          )}
+        </div>
         <Link
           href="/admin/pedidos/nuevo"
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90"
