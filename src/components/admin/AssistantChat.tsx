@@ -130,7 +130,10 @@ export default function AssistantChat() {
       }
     };
 
-    // Intentar ElevenLabs (voz natural en español)
+    // iOS bloquea todo audio.play() desde contexto async sin importar el workaround —
+    // detectar explícitamente y usar siempre el tap button en lugar de intentar auto-play
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
     try {
       const res = await fetch("/api/admin/tts", {
         method: "POST",
@@ -141,7 +144,13 @@ export default function AssistantChat() {
 
       const arrayBuffer = await res.arrayBuffer();
 
-      // Intento 1: AudioContext (desktop/Android)
+      if (isIOS) {
+        // En iOS no intentamos auto-play — guardamos para que el usuario toque el botón
+        setPendingTts(arrayBuffer);
+        return; // speakingRef sigue true; mic reinicia después del tap
+      }
+
+      // Desktop / Android: AudioContext → HTMLAudioElement → speechSynthesis
       const ctx = audioCtxRef.current;
       if (ctx && ctx.state !== "closed") {
         try {
@@ -156,31 +165,20 @@ export default function AssistantChat() {
             source.start();
             return;
           }
-        } catch { /* ctx falló — probar siguiente */ }
+        } catch { /* probar HTMLAudioElement */ }
       }
 
-      // Intento 2: HTMLAudioElement
       const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
-      const audio = audioRef.current ?? new Audio();
-      audio.src = url;
+      const audio = new Audio(url);
       audioRef.current = audio;
-      try {
-        await audio.play();
-        audio.onended = () => { URL.revokeObjectURL(url); restartMic(); };
-        audio.onerror = () => { URL.revokeObjectURL(url); restartMic(); };
-        return;
-      } catch {
-        // iOS bloqueó el autoplay — guardar audio para que el usuario toque "reproducir"
-        URL.revokeObjectURL(url);
-        audioRef.current = null;
-        setPendingTts(arrayBuffer);
-        // speakingRef.current sigue true — el mic no reinicia hasta que el usuario toque play
-        return;
-      }
-    } catch { /* ElevenLabs no disponible */ }
+      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
+      await audio.play();
+      return;
+    } catch { /* ElevenLabs no disponible o auto-play falló */ }
 
-    // Fallback: Web Speech API (funciona en desktop/Android)
+    // Fallback: Web Speech API
     if (!("speechSynthesis" in window)) { restartMic(); return; }
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.lang = "es-MX";
