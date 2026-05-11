@@ -64,12 +64,71 @@ export default function AssistantChat() {
     };
   }, []);
 
+  // Quita asteriscos, guiones de lista y otros símbolos markdown para que TTS no los lea
+  function stripMarkdown(text: string): string {
+    return text
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1")
+      .replace(/^[-*•]\s+/gm, "")
+      .replace(/^#{1,6}\s+/gm, "")
+      .replace(/`([^`]+)`/g, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
+  // Selecciona la mejor voz femenina en español disponible en el dispositivo
+  function pickFemaleVoice(): SpeechSynthesisVoice | null {
+    const voices = window.speechSynthesis.getVoices();
+    if (!voices.length) return null;
+    const priority = [
+      // Google voices (más naturales en Android Chrome)
+      (v: SpeechSynthesisVoice) => v.lang === "es-MX" && v.name.toLowerCase().includes("google"),
+      (v: SpeechSynthesisVoice) => v.lang === "es-US" && v.name.toLowerCase().includes("google"),
+      (v: SpeechSynthesisVoice) => v.lang.startsWith("es") && v.name.toLowerCase().includes("google"),
+      // Voces femeninas por nombre (iOS: Siri, Paulina, Monica; Windows: Sabina)
+      (v: SpeechSynthesisVoice) => v.lang.startsWith("es") && /sabina|paulina|monica|lucia|laura|female/i.test(v.name),
+      // Cualquier voz es-MX
+      (v: SpeechSynthesisVoice) => v.lang === "es-MX",
+      // Cualquier voz en español
+      (v: SpeechSynthesisVoice) => v.lang.startsWith("es"),
+    ];
+    for (const match of priority) {
+      const found = voices.find(match);
+      if (found) return found;
+    }
+    return null;
+  }
+
   function speakText(text: string) {
     if (!handsFreeRef.current || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+
+    // Pausar el micrófono mientras habla el asistente — evita que se grabe a sí mismo
+    try { recognitionRef.current?.stop(); } catch { /* ignorar */ }
+
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const clean = stripMarkdown(text);
+    const utterance = new SpeechSynthesisUtterance(clean);
     utterance.lang = "es-MX";
-    utterance.rate = 1.05;
+    utterance.rate = 1.0;
+    utterance.pitch = 1.15; // voz más femenina y natural
+
+    const voice = pickFemaleVoice();
+    if (voice) utterance.voice = voice;
+
+    // Reiniciar el micrófono DESPUÉS de que termina de hablar
+    utterance.onend = () => {
+      if (handsFreeRef.current) {
+        setTimeout(() => {
+          if (handsFreeRef.current) startHandsFreeRecognition();
+        }, 400); // pequeña pausa para que el audio se estabilice
+      }
+    };
+
+    utterance.onerror = () => {
+      if (handsFreeRef.current) startHandsFreeRecognition();
+    };
+
     window.speechSynthesis.speak(utterance);
   }
 
@@ -146,12 +205,14 @@ export default function AssistantChat() {
     };
 
     r.onend = () => {
-      if (handsFreeRef.current) {
+      if (handsFreeRef.current && !loadingRef.current) {
+        // Solo reiniciar si no estamos esperando respuesta de Claude ni hablando el TTS
         try { r.start(); } catch { /* ya corriendo */ }
-      } else {
+      } else if (!handsFreeRef.current) {
         setRecording(false);
         setInterimText("");
       }
+      // Si loadingRef.current=true, el mic se reiniciará desde utterance.onend
     };
 
     r.start();
