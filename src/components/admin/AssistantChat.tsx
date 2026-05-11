@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 interface Message {
   role: "user" | "assistant";
@@ -17,12 +17,14 @@ interface SpeechRecognition extends EventTarget {
   lang: string; continuous: boolean; interimResults: boolean;
   start(): void; stop(): void;
   onresult: ((e: SpeechRecognitionEvent) => void) | null;
-  onerror: ((e: Event) => void) | null;
+  onerror: ((e: SpeechRecognitionErrorEvent) => void) | null;
   onend: (() => void) | null;
 }
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
+  resultIndex: number;
 }
+interface SpeechRecognitionErrorEvent extends Event { error: string; }
 interface SpeechRecognitionResultList { [index: number]: SpeechRecognitionResult; length: number; }
 interface SpeechRecognitionResult { [index: number]: SpeechRecognitionAlternative; isFinal: boolean; }
 interface SpeechRecognitionAlternative { transcript: string; confidence: number; }
@@ -36,48 +38,147 @@ export default function AssistantChat() {
   const [loading, setLoading] = useState(false);
   const [recording, setRecording] = useState(false);
   const [hasSpeech, setHasSpeech] = useState(false);
+  const [handsFree, setHandsFree] = useState(false);
+  const [interimText, setInterimText] = useState("");
+
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const handsFreeRef = useRef(false);
+  const loadingRef = useRef(false);
 
   useEffect(() => {
     setHasSpeech(typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window));
   }, []);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  useEffect(() => { handsFreeRef.current = handsFree; }, [handsFree]);
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
 
-  async function sendMessage(text: string) {
-    if (!text.trim() || loading) return;
-    const userMsg: Message = { role: "user", content: text.trim() };
-    const next = [...messages, userMsg];
-    setMessages(next);
-    setInput("");
+  // Cleanup al desmontar
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.stop();
+      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+    };
+  }, []);
+
+  function speakText(text: string) {
+    if (!handsFreeRef.current || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "es-MX";
+    utterance.rate = 1.05;
+    window.speechSynthesis.speak(utterance);
+  }
+
+  const sendMessage = useCallback(async (text: string) => {
+    if (!text.trim() || loadingRef.current) return;
+    loadingRef.current = true;
     setLoading(true);
+    setInput("");
+    setInterimText("");
 
-    // Convertir a formato Anthropic (solo los mensajes sin el inicial del asistente si es el primer mensaje)
-    const apiMessages = next
-      .filter((_, i) => !(i === 0 && next[0].role === "assistant")) // quitar saludo inicial si es el primero
-      .map((m) => ({ role: m.role, content: m.content }));
+    const userMsg: Message = { role: "user", content: text.trim() };
+    setMessages((prev) => {
+      const next = [...prev, userMsg];
 
-    try {
-      const res = await fetch("/api/admin/assistant", {
+      const apiMessages = next
+        .filter((_, i) => !(i === 0 && next[0].role === "assistant"))
+        .map((m) => ({ role: m.role, content: m.content }));
+
+      fetch("/api/admin/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: apiMessages }),
-      });
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.response ?? "No pude procesar tu solicitud." }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Error de conexión. Intenta de nuevo." }]);
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          const response = data.response ?? "No pude procesar tu solicitud.";
+          setMessages((p) => [...p, { role: "assistant", content: response }]);
+          speakText(response);
+        })
+        .catch(() => {
+          setMessages((p) => [...p, { role: "assistant", content: "Error de conexión. Intenta de nuevo." }]);
+        })
+        .finally(() => {
+          loadingRef.current = false;
+          setLoading(false);
+        });
+
+      return next;
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function startHandsFreeRecognition() {
+    const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    if (!SR) return;
+    const r = new SR();
+    r.lang = "es-MX";
+    r.continuous = true;
+    r.interimResults = true;
+
+    r.onresult = (e) => {
+      let interim = "";
+      let final = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          final += e.results[i][0].transcript;
+        } else {
+          interim += e.results[i][0].transcript;
+        }
+      }
+      setInterimText(interim);
+      if (final && !loadingRef.current) {
+        sendMessage(final);
+      }
+    };
+
+    r.onerror = (e) => {
+      if (e.error !== "no-speech") {
+        setRecording(false);
+        setHandsFree(false);
+        handsFreeRef.current = false;
+        setInterimText("");
+      }
+    };
+
+    r.onend = () => {
+      if (handsFreeRef.current) {
+        try { r.start(); } catch { /* ya corriendo */ }
+      } else {
+        setRecording(false);
+        setInterimText("");
+      }
+    };
+
+    r.start();
+    recognitionRef.current = r;
+    setRecording(true);
+  }
+
+  function toggleHandsFree() {
+    if (handsFree) {
+      recognitionRef.current?.stop();
+      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+      setHandsFree(false);
+      handsFreeRef.current = false;
+      setRecording(false);
+      setInterimText("");
+    } else {
+      setHandsFree(true);
+      handsFreeRef.current = true;
+      startHandsFreeRecognition();
     }
-    setLoading(false);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
   }
 
+  // Modo normal: press-and-hold
   function startRecording() {
     const SR = window.SpeechRecognition ?? window.webkitSpeechRecognition;
     if (!SR) return;
@@ -85,17 +186,13 @@ export default function AssistantChat() {
     r.lang = "es-MX";
     r.continuous = false;
     r.interimResults = false;
-    r.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      setInput(transcript);
-    };
+    r.onresult = (e) => { setInput(e.results[0][0].transcript); };
     r.onerror = () => setRecording(false);
     r.onend = () => setRecording(false);
     r.start();
     recognitionRef.current = r;
     setRecording(true);
   }
-
   function stopRecording() {
     recognitionRef.current?.stop();
     setRecording(false);
@@ -104,6 +201,8 @@ export default function AssistantChat() {
   function clearHistory() {
     setMessages([{ role: "assistant", content: "¡Hola de nuevo! ¿En qué te ayudo?" }]);
   }
+
+  const displayText = interimText || input;
 
   return (
     <>
@@ -122,18 +221,37 @@ export default function AssistantChat() {
 
       {/* Panel de chat */}
       {open && (
-        <div className="fixed bottom-24 right-4 z-40 w-full max-w-sm bg-surface rounded-2xl shadow-2xl border border-outline-variant flex flex-col"
-          style={{ height: "min(520px, calc(100vh - 140px))" }}>
+        <div
+          className="fixed bottom-24 right-4 z-40 w-full max-w-sm bg-surface rounded-2xl shadow-2xl border border-outline-variant flex flex-col"
+          style={{ height: "min(540px, calc(100vh - 140px))" }}
+        >
           {/* Header */}
-          <div className="flex items-center gap-2.5 px-4 py-3 border-b border-outline-variant shrink-0">
-            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="flex items-center gap-2 px-3 py-3 border-b border-outline-variant shrink-0">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
               <span className="material-symbol text-primary" style={{ fontSize: 18 }}>smart_toy</span>
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-on-surface">Asistente Diamy</p>
               <p className="text-xs text-on-surface-muted">Claude · Responde en español</p>
             </div>
-            <button onClick={clearHistory} className="text-on-surface-muted hover:text-on-surface" title="Limpiar conversación">
+            {/* Toggle manos libres */}
+            {hasSpeech && (
+              <button
+                onClick={toggleHandsFree}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
+                  handsFree
+                    ? "bg-red-500 text-white"
+                    : "bg-surface-container text-on-surface-muted hover:bg-primary/10"
+                }`}
+                title={handsFree ? "Desactivar manos libres" : "Activar manos libres"}
+              >
+                <span className={`material-symbol ${handsFree ? "animate-pulse" : ""}`} style={{ fontSize: 14 }}>
+                  {handsFree ? "mic" : "mic_none"}
+                </span>
+                {handsFree ? "Activo" : "Manos libres"}
+              </button>
+            )}
+            <button onClick={clearHistory} className="text-on-surface-muted hover:text-on-surface shrink-0" title="Limpiar conversación">
               <span className="material-symbol" style={{ fontSize: 18 }}>restart_alt</span>
             </button>
           </div>
@@ -169,16 +287,29 @@ export default function AssistantChat() {
             <div className="flex items-end gap-2">
               <textarea
                 rows={1}
-                value={input}
-                onChange={(e) => { setInput(e.target.value); e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 80) + "px"; }}
+                value={displayText}
+                onChange={(e) => {
+                  if (!handsFree) {
+                    setInput(e.target.value);
+                    e.target.style.height = "auto";
+                    e.target.style.height = Math.min(e.target.scrollHeight, 80) + "px";
+                  }
+                }}
                 onKeyDown={handleKeyDown}
-                placeholder="Escribe o mantén el micrófono..."
-                className="flex-1 resize-none bg-surface-container rounded-xl px-3 py-2 text-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[36px] max-h-20 leading-relaxed"
+                readOnly={handsFree}
+                placeholder={
+                  handsFree
+                    ? recording ? "Escuchando... habla con naturalidad" : "Iniciando micrófono..."
+                    : "Escribe o mantén el micrófono..."
+                }
+                className={`flex-1 resize-none bg-surface-container rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[36px] max-h-20 leading-relaxed ${
+                  interimText ? "text-on-surface-muted italic" : "text-on-surface"
+                } ${handsFree ? "cursor-default" : ""}`}
                 style={{ height: 36 }}
-                disabled={loading}
+                disabled={loading && !handsFree}
               />
-              {/* Mic button */}
-              {hasSpeech ? (
+              {/* Mic press-and-hold — solo en modo normal */}
+              {hasSpeech && !handsFree && (
                 <button
                   onMouseDown={startRecording} onMouseUp={stopRecording}
                   onTouchStart={startRecording} onTouchEnd={stopRecording}
@@ -191,17 +322,19 @@ export default function AssistantChat() {
                     {recording ? "mic" : "mic_none"}
                   </span>
                 </button>
-              ) : null}
+              )}
               <button
                 onClick={() => sendMessage(input)}
-                disabled={loading || !input.trim()}
+                disabled={loading || (!input.trim() && !interimText)}
                 className="w-9 h-9 rounded-full bg-primary text-on-primary flex items-center justify-center shrink-0 hover:opacity-90 disabled:opacity-40"
               >
                 <span className="material-symbol" style={{ fontSize: 18 }}>send</span>
               </button>
             </div>
             <p className="text-xs text-on-surface-muted mt-1.5 text-center">
-              Enter para enviar · Mantén 🎙 para hablar
+              {handsFree
+                ? "🎙 Habla con naturalidad — envía al pausar · responde en voz alta"
+                : "Enter para enviar · Mantén 🎙 para hablar"}
             </p>
           </div>
         </div>
