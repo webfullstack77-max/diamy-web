@@ -41,7 +41,7 @@ export default function AssistantChat() {
   const [handsFree, setHandsFree] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [hasMic, setHasMic] = useState(false);
-  const [ttsDebug, setTtsDebug] = useState("");
+  const [pendingTts, setPendingTts] = useState<ArrayBuffer | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -132,63 +132,87 @@ export default function AssistantChat() {
 
     // Intentar ElevenLabs (voz natural en español)
     try {
-      setTtsDebug("⏳ llamando ElevenLabs...");
       const res = await fetch("/api/admin/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: clean }),
       });
-      if (!res.ok) { setTtsDebug(`❌ API ${res.status}`); throw new Error("no-elevenlabs"); }
+      if (!res.ok) throw new Error("no-elevenlabs");
 
-      setTtsDebug("✅ audio recibido");
       const arrayBuffer = await res.arrayBuffer();
 
-      // Intento 1: AudioContext
+      // Intento 1: AudioContext (desktop/Android)
       const ctx = audioCtxRef.current;
-      setTtsDebug(`🔊 ctx=${ctx?.state ?? "null"}`);
       if (ctx && ctx.state !== "closed") {
         try {
           await ctx.resume();
-          setTtsDebug(`🔊 ctx resumed → ${ctx.state}`);
-          const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-          const source = ctx.createBufferSource();
-          source.buffer = audioBuffer;
-          source.connect(ctx.destination);
-          sourceNodeRef.current = source;
-          source.addEventListener("ended", () => { sourceNodeRef.current = null; setTtsDebug(""); restartMic(); });
-          source.start();
-          setTtsDebug("▶️ ctx playing");
-          return;
-        } catch (e) { setTtsDebug(`❌ ctx: ${e}`); }
+          if (ctx.state === "running") {
+            const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(ctx.destination);
+            sourceNodeRef.current = source;
+            source.addEventListener("ended", () => { sourceNodeRef.current = null; restartMic(); });
+            source.start();
+            return;
+          }
+        } catch { /* ctx falló — probar siguiente */ }
       }
 
-      // Intento 2: HTMLAudioElement pre-desbloqueado
-      setTtsDebug("🔊 probando HTMLAudio...");
+      // Intento 2: HTMLAudioElement
       const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       const audio = audioRef.current ?? new Audio();
-      audio.onended = () => { URL.revokeObjectURL(url); setTtsDebug(""); restartMic(); };
-      audio.onerror = (e) => { URL.revokeObjectURL(url); setTtsDebug(`❌ audio.onerror: ${e}`); restartMic(); };
       audio.src = url;
       audioRef.current = audio;
-      await audio.play();
-      setTtsDebug("▶️ html playing");
-      return;
-    } catch (e) { setTtsDebug(`❌ catch: ${e}`); }
+      try {
+        await audio.play();
+        audio.onended = () => { URL.revokeObjectURL(url); restartMic(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); restartMic(); };
+        return;
+      } catch {
+        // iOS bloqueó el autoplay — guardar audio para que el usuario toque "reproducir"
+        URL.revokeObjectURL(url);
+        audioRef.current = null;
+        setPendingTts(arrayBuffer);
+        // speakingRef.current sigue true — el mic no reinicia hasta que el usuario toque play
+        return;
+      }
+    } catch { /* ElevenLabs no disponible */ }
 
-    // Fallback final: Web Speech API
-    setTtsDebug("🗣 speechSynthesis...");
-    if (!("speechSynthesis" in window)) { setTtsDebug("❌ no speechSynthesis"); restartMic(); return; }
+    // Fallback: Web Speech API (funciona en desktop/Android)
+    if (!("speechSynthesis" in window)) { restartMic(); return; }
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.lang = "es-MX";
     utterance.rate = 1.1;
     utterance.pitch = 1.1;
     const voice = pickFemaleVoice();
     if (voice) utterance.voice = voice;
-    utterance.onend = () => { setTtsDebug(""); restartMic(); };
-    utterance.onerror = (e) => { setTtsDebug(`❌ speech: ${e.error}`); restartMic(); };
+    utterance.onend = restartMic;
+    utterance.onerror = restartMic;
     window.speechSynthesis.speak(utterance);
-    setTtsDebug("▶️ speech spoken");
+  }
+
+  // Reproducir audio pendiente desde gesto del usuario (único método que iOS permite)
+  function playPendingTts() {
+    const buffer = pendingTts;
+    if (!buffer) return;
+    setPendingTts(null);
+    const blob = new Blob([buffer], { type: "audio/mpeg" });
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url); // nuevo elemento creado dentro del gesto → iOS lo permite
+    audioRef.current = audio;
+    const done = () => {
+      URL.revokeObjectURL(url);
+      audioRef.current = null;
+      speakingRef.current = false;
+      if (handsFreeRef.current) {
+        setTimeout(() => { if (handsFreeRef.current) startHandsFreeRecognition(); }, 400);
+      }
+    };
+    audio.onended = done;
+    audio.onerror = done;
+    audio.play().catch(done);
   }
 
   const sendMessage = useCallback(async (text: string) => {
@@ -288,6 +312,7 @@ export default function AssistantChat() {
       audioRef.current?.pause();
       audioRef.current = null;
       speakingRef.current = false;
+      setPendingTts(null);
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
       setHandsFree(false);
       handsFreeRef.current = false;
@@ -428,10 +453,16 @@ export default function AssistantChat() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Debug TTS — temporal */}
-          {ttsDebug && (
-            <div className="px-3 py-1 text-xs font-mono bg-yellow-50 border-t border-yellow-200 text-yellow-800 shrink-0 truncate">
-              {ttsDebug}
+          {/* Tap-to-play — aparece en iOS cuando el autoplay es bloqueado */}
+          {pendingTts && (
+            <div className="border-t border-orange-200 bg-orange-50 px-3 py-2 shrink-0">
+              <button
+                onClick={playPendingTts}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-orange-500 text-white rounded-xl text-sm font-semibold active:scale-95 transition-all"
+              >
+                <span className="material-symbol" style={{ fontSize: 20 }}>volume_up</span>
+                Toca para escuchar la respuesta
+              </button>
             </div>
           )}
 
