@@ -196,7 +196,9 @@ export default function AssistantChat() {
     };
 
     r.onerror = (e) => {
-      if (e.error !== "no-speech") {
+      // "no-speech": silencio normal. "aborted": ocurre cuando .stop() se llama explícitamente (p.ej. antes de TTS).
+      // Ninguno de los dos debe matar el modo manos libres.
+      if (e.error !== "no-speech" && e.error !== "aborted") {
         setRecording(false);
         setHandsFree(false);
         handsFreeRef.current = false;
@@ -206,8 +208,8 @@ export default function AssistantChat() {
 
     r.onend = () => {
       if (handsFreeRef.current && !loadingRef.current) {
-        // Solo reiniciar si no estamos esperando respuesta de Claude ni hablando el TTS
-        try { r.start(); } catch { /* ya corriendo */ }
+        // Crear instancia limpia en lugar de reusar la misma
+        startHandsFreeRecognition();
       } else if (!handsFreeRef.current) {
         setRecording(false);
         setInterimText("");
