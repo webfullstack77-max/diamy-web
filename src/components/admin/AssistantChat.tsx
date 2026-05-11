@@ -44,6 +44,8 @@ export default function AssistantChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const handsFreeRef = useRef(false);
   const loadingRef = useRef(false);
   const speakingRef = useRef(false); // true mientras el TTS está reproduciendo — bloquea restart del mic
@@ -62,7 +64,9 @@ export default function AssistantChat() {
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
+      try { sourceNodeRef.current?.stop(); } catch { /* ignorar */ }
       audioRef.current?.pause();
+      audioCtxRef.current?.close();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     };
   }, []);
@@ -129,11 +133,27 @@ export default function AssistantChat() {
       });
       if (!res.ok) throw new Error("no-elevenlabs");
 
-      const blob = await res.blob();
+      const arrayBuffer = await res.arrayBuffer();
+      const ctx = audioCtxRef.current;
+
+      if (ctx) {
+        // AudioContext path: iOS-safe (el contexto fue desbloqueado en el gesto del usuario)
+        await ctx.resume();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+        const source = ctx.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(ctx.destination);
+        sourceNodeRef.current = source;
+        source.onended = () => { sourceNodeRef.current = null; restartMic(); };
+        source.start();
+        return;
+      }
+
+      // Fallback HTMLAudioElement (desktop / Android sin AudioContext)
+      const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
-
       audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
       audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
       await audio.play();
@@ -245,6 +265,8 @@ export default function AssistantChat() {
   function toggleHandsFree() {
     if (handsFree) {
       recognitionRef.current?.stop();
+      try { sourceNodeRef.current?.stop(); } catch { /* ignorar */ }
+      sourceNodeRef.current = null;
       audioRef.current?.pause();
       audioRef.current = null;
       speakingRef.current = false;
@@ -254,6 +276,17 @@ export default function AssistantChat() {
       setRecording(false);
       setInterimText("");
     } else {
+      // Desbloquear AudioContext durante el gesto del usuario — requerido por iOS para
+      // que audio.play() funcione desde callbacks async (fetch, decodeAudioData, etc.)
+      if (typeof window !== "undefined") {
+        const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        if (AC) {
+          if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+            audioCtxRef.current = new AC();
+          }
+          audioCtxRef.current.resume();
+        }
+      }
       setHandsFree(true);
       handsFreeRef.current = true;
       startHandsFreeRecognition();
