@@ -4,6 +4,7 @@ import Header from "@/components/layout/Header";
 import MobileNav from "@/components/layout/MobileNav";
 import Footer from "@/components/layout/Footer";
 import FloatingWhatsApp from "@/components/layout/FloatingWhatsApp";
+import PublicOnly from "@/components/layout/PublicOnly";
 import AutoRefresh from "@/components/AutoRefresh";
 import PageTracker from "@/components/analytics/PageTracker";
 import "./globals.css";
@@ -35,14 +36,7 @@ export const metadata: Metadata = {
       "Productos artesanales de corte láser y grabado personalizado. Regalos únicos, decoración y piezas a medida.",
     url: "https://diamylasercut.com.mx",
     siteName: "Diamy Laser Cut",
-    images: [
-      {
-        url: "/og-image.jpg",
-        width: 1200,
-        height: 630,
-        alt: "Diamy Laser Cut",
-      },
-    ],
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: "Diamy Laser Cut" }],
     locale: "es_MX",
     type: "website",
   },
@@ -54,11 +48,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={`${notoSerif.variable} ${manrope.variable}`}>
       <head>
@@ -82,11 +72,21 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col bg-background text-on-surface antialiased">
         <AutoRefresh />
         <PageTracker />
-        <Header />
-        <main className="flex-1 pt-16">{children}</main>
-        <FloatingWhatsApp />
-        <Footer />
-        <MobileNav />
+        <PublicOnly>
+          <Header />
+        </PublicOnly>
+        <main className="flex-1">
+          {/* Spacer que compensa el Header fijo solo en páginas públicas */}
+          <PublicOnly>
+            <div className="h-16" />
+          </PublicOnly>
+          {children}
+        </main>
+        <PublicOnly>
+          <FloatingWhatsApp />
+          <Footer />
+          <MobileNav />
+        </PublicOnly>
       </body>
     </html>
   );
