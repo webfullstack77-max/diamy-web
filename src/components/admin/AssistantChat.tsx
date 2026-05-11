@@ -40,6 +40,7 @@ export default function AssistantChat() {
   const [hasSpeech, setHasSpeech] = useState(false);
   const [handsFree, setHandsFree] = useState(false);
   const [interimText, setInterimText] = useState("");
+  const [hasMic, setHasMic] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -51,7 +52,9 @@ export default function AssistantChat() {
   const speakingRef = useRef(false); // true mientras el TTS está reproduciendo — bloquea restart del mic
 
   useEffect(() => {
-    setHasSpeech(typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window));
+    const hasSR = typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window);
+    setHasSpeech(hasSR);
+    setHasMic(hasSR);
   }, []);
 
   useEffect(() => { handsFreeRef.current = handsFree; }, [handsFree]);
@@ -110,9 +113,11 @@ export default function AssistantChat() {
   async function speakText(text: string) {
     if (!handsFreeRef.current || typeof window === "undefined") return;
 
-    // Marcar como "hablando" ANTES de stop() — así r.onend no reinicia el mic prematuramente
     speakingRef.current = true;
-    try { recognitionRef.current?.stop(); } catch { /* ignorar */ }
+    // Solo detener mic si está disponible
+    if (recognitionRef.current) {
+      try { recognitionRef.current.stop(); } catch { /* ignorar */ }
+    }
     window.speechSynthesis?.cancel();
 
     const clean = stripMarkdown(text);
@@ -289,7 +294,8 @@ export default function AssistantChat() {
       }
       setHandsFree(true);
       handsFreeRef.current = true;
-      startHandsFreeRecognition();
+      // Iniciar mic solo si está disponible (no en iOS PWA)
+      if (hasMic) startHandsFreeRecognition();
     }
   }
 
@@ -357,23 +363,21 @@ export default function AssistantChat() {
               <p className="text-sm font-semibold text-on-surface">Asistente Diamy</p>
               <p className="text-xs text-on-surface-muted">Claude + ElevenLabs · Responde en español</p>
             </div>
-            {/* Toggle manos libres */}
-            {hasSpeech && (
-              <button
-                onClick={toggleHandsFree}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
-                  handsFree
-                    ? "bg-red-500 text-white"
-                    : "bg-surface-container text-on-surface-muted hover:bg-primary/10"
-                }`}
-                title={handsFree ? "Desactivar manos libres" : "Activar manos libres"}
-              >
-                <span className={`material-symbol ${handsFree ? "animate-pulse" : ""}`} style={{ fontSize: 14 }}>
-                  {handsFree ? "mic" : "mic_none"}
-                </span>
-                {handsFree ? "Activo" : "Manos libres"}
-              </button>
-            )}
+            {/* Toggle voz — siempre visible; mic solo si disponible */}
+            <button
+              onClick={toggleHandsFree}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold transition-all shrink-0 ${
+                handsFree
+                  ? "bg-red-500 text-white"
+                  : "bg-surface-container text-on-surface-muted hover:bg-primary/10"
+              }`}
+              title={handsFree ? "Desactivar voz" : "Activar voz"}
+            >
+              <span className={`material-symbol ${handsFree ? "animate-pulse" : ""}`} style={{ fontSize: 14 }}>
+                {handsFree ? (hasMic ? "mic" : "volume_up") : (hasMic ? "mic_none" : "volume_off")}
+              </span>
+              {handsFree ? "Activo" : "Voz"}
+            </button>
             <button onClick={clearHistory} className="text-on-surface-muted hover:text-on-surface shrink-0" title="Limpiar conversación">
               <span className="material-symbol" style={{ fontSize: 18 }}>restart_alt</span>
             </button>
@@ -422,7 +426,9 @@ export default function AssistantChat() {
                 readOnly={handsFree}
                 placeholder={
                   handsFree
-                    ? recording ? "Escuchando... habla con naturalidad" : "Iniciando micrófono..."
+                    ? hasMic
+                      ? recording ? "Escuchando... habla con naturalidad" : "Iniciando micrófono..."
+                      : "Voz activa — escribe y escucha las respuestas"
                     : "Escribe o mantén el micrófono..."
                 }
                 className={`flex-1 resize-none bg-surface-container rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[36px] max-h-20 leading-relaxed ${
@@ -431,8 +437,8 @@ export default function AssistantChat() {
                 style={{ height: 36 }}
                 disabled={loading && !handsFree}
               />
-              {/* Mic press-and-hold — solo en modo normal */}
-              {hasSpeech && !handsFree && (
+              {/* Mic press-and-hold — solo en modo normal y si hay mic */}
+              {hasMic && !handsFree && (
                 <button
                   onMouseDown={startRecording} onMouseUp={stopRecording}
                   onTouchStart={startRecording} onTouchEnd={stopRecording}
@@ -456,8 +462,10 @@ export default function AssistantChat() {
             </div>
             <p className="text-xs text-on-surface-muted mt-1.5 text-center">
               {handsFree
-                ? "🎙 Habla con naturalidad — envía al pausar · responde en voz alta"
-                : "Enter para enviar · Mantén 🎙 para hablar"}
+                ? hasMic
+                  ? "Habla con naturalidad — envía al pausar · responde en voz alta"
+                  : "Escribe tu mensaje — las respuestas se escuchan en voz alta"
+                : "Enter para enviar · Mantén el mic para hablar"}
             </p>
           </div>
         </div>
