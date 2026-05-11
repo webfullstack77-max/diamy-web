@@ -41,6 +41,7 @@ export default function AssistantChat() {
   const [handsFree, setHandsFree] = useState(false);
   const [interimText, setInterimText] = useState("");
   const [hasMic, setHasMic] = useState(false);
+  const [ttsDebug, setTtsDebug] = useState("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -131,55 +132,63 @@ export default function AssistantChat() {
 
     // Intentar ElevenLabs (voz natural en español)
     try {
+      setTtsDebug("⏳ llamando ElevenLabs...");
       const res = await fetch("/api/admin/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: clean }),
       });
-      if (!res.ok) throw new Error("no-elevenlabs");
+      if (!res.ok) { setTtsDebug(`❌ API ${res.status}`); throw new Error("no-elevenlabs"); }
 
+      setTtsDebug("✅ audio recibido");
       const arrayBuffer = await res.arrayBuffer();
 
-      // Intento 1: AudioContext (iOS-safe cuando fue desbloqueado en el gesto del usuario)
+      // Intento 1: AudioContext
       const ctx = audioCtxRef.current;
+      setTtsDebug(`🔊 ctx=${ctx?.state ?? "null"}`);
       if (ctx && ctx.state !== "closed") {
         try {
           await ctx.resume();
+          setTtsDebug(`🔊 ctx resumed → ${ctx.state}`);
           const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
           const source = ctx.createBufferSource();
           source.buffer = audioBuffer;
           source.connect(ctx.destination);
           sourceNodeRef.current = source;
-          source.addEventListener("ended", () => { sourceNodeRef.current = null; restartMic(); });
+          source.addEventListener("ended", () => { sourceNodeRef.current = null; setTtsDebug(""); restartMic(); });
           source.start();
+          setTtsDebug("▶️ ctx playing");
           return;
-        } catch { /* AudioContext falló — probar HTMLAudioElement */ }
+        } catch (e) { setTtsDebug(`❌ ctx: ${e}`); }
       }
 
-      // Intento 2: HTMLAudioElement pre-desbloqueado (patrón más fiable en iOS)
-      // audioRef.current fue creado y "play()" fue llamado durante el gesto del usuario en toggleHandsFree
+      // Intento 2: HTMLAudioElement pre-desbloqueado
+      setTtsDebug("🔊 probando HTMLAudio...");
       const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       const audio = audioRef.current ?? new Audio();
-      audio.onended = () => { URL.revokeObjectURL(url); restartMic(); };
-      audio.onerror = () => { URL.revokeObjectURL(url); restartMic(); };
+      audio.onended = () => { URL.revokeObjectURL(url); setTtsDebug(""); restartMic(); };
+      audio.onerror = (e) => { URL.revokeObjectURL(url); setTtsDebug(`❌ audio.onerror: ${e}`); restartMic(); };
       audio.src = url;
       audioRef.current = audio;
       await audio.play();
+      setTtsDebug("▶️ html playing");
       return;
-    } catch { /* todos los intentos ElevenLabs fallaron */ }
+    } catch (e) { setTtsDebug(`❌ catch: ${e}`); }
 
     // Fallback final: Web Speech API
-    if (!("speechSynthesis" in window)) { restartMic(); return; }
+    setTtsDebug("🗣 speechSynthesis...");
+    if (!("speechSynthesis" in window)) { setTtsDebug("❌ no speechSynthesis"); restartMic(); return; }
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.lang = "es-MX";
     utterance.rate = 1.1;
     utterance.pitch = 1.1;
     const voice = pickFemaleVoice();
     if (voice) utterance.voice = voice;
-    utterance.onend = restartMic;
-    utterance.onerror = restartMic;
+    utterance.onend = () => { setTtsDebug(""); restartMic(); };
+    utterance.onerror = (e) => { setTtsDebug(`❌ speech: ${e.error}`); restartMic(); };
     window.speechSynthesis.speak(utterance);
+    setTtsDebug("▶️ speech spoken");
   }
 
   const sendMessage = useCallback(async (text: string) => {
@@ -418,6 +427,13 @@ export default function AssistantChat() {
             )}
             <div ref={bottomRef} />
           </div>
+
+          {/* Debug TTS — temporal */}
+          {ttsDebug && (
+            <div className="px-3 py-1 text-xs font-mono bg-yellow-50 border-t border-yellow-200 text-yellow-800 shrink-0 truncate">
+              {ttsDebug}
+            </div>
+          )}
 
           {/* Input */}
           <div className="border-t border-outline-variant px-3 py-2.5 shrink-0">
