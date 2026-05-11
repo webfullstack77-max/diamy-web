@@ -139,38 +139,42 @@ export default function AssistantChat() {
       if (!res.ok) throw new Error("no-elevenlabs");
 
       const arrayBuffer = await res.arrayBuffer();
-      const ctx = audioCtxRef.current;
 
-      if (ctx) {
-        // AudioContext path: iOS-safe (el contexto fue desbloqueado en el gesto del usuario)
-        await ctx.resume();
-        const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
-        const source = ctx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(ctx.destination);
-        sourceNodeRef.current = source;
-        source.onended = () => { sourceNodeRef.current = null; restartMic(); };
-        source.start();
-        return;
+      // Intento 1: AudioContext (iOS-safe cuando fue desbloqueado en el gesto del usuario)
+      const ctx = audioCtxRef.current;
+      if (ctx && ctx.state !== "closed") {
+        try {
+          await ctx.resume();
+          const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+          const source = ctx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(ctx.destination);
+          sourceNodeRef.current = source;
+          source.addEventListener("ended", () => { sourceNodeRef.current = null; restartMic(); });
+          source.start();
+          return;
+        } catch { /* AudioContext falló — probar HTMLAudioElement */ }
       }
 
-      // Fallback HTMLAudioElement (desktop / Android sin AudioContext)
+      // Intento 2: HTMLAudioElement pre-desbloqueado (patrón más fiable en iOS)
+      // audioRef.current fue creado y "play()" fue llamado durante el gesto del usuario en toggleHandsFree
       const blob = new Blob([arrayBuffer], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
+      const audio = audioRef.current ?? new Audio();
+      audio.onended = () => { URL.revokeObjectURL(url); restartMic(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); restartMic(); };
+      audio.src = url;
       audioRef.current = audio;
-      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
-      audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
       await audio.play();
       return;
-    } catch { /* fallback */ }
+    } catch { /* todos los intentos ElevenLabs fallaron */ }
 
-    // Fallback: Web Speech API
+    // Fallback final: Web Speech API
     if (!("speechSynthesis" in window)) { restartMic(); return; }
     const utterance = new SpeechSynthesisUtterance(clean);
     utterance.lang = "es-MX";
-    utterance.rate = 1.0;
-    utterance.pitch = 1.15;
+    utterance.rate = 1.1;
+    utterance.pitch = 1.1;
     const voice = pickFemaleVoice();
     if (voice) utterance.voice = voice;
     utterance.onend = restartMic;
@@ -281,9 +285,8 @@ export default function AssistantChat() {
       setRecording(false);
       setInterimText("");
     } else {
-      // Desbloquear AudioContext durante el gesto del usuario — requerido por iOS para
-      // que audio.play() funcione desde callbacks async (fetch, decodeAudioData, etc.)
       if (typeof window !== "undefined") {
+        // Unlock 1: AudioContext — desbloquear durante gesto para poder usar decodeAudioData después
         const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         if (AC) {
           if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
@@ -291,10 +294,17 @@ export default function AssistantChat() {
           }
           audioCtxRef.current.resume();
         }
+
+        // Unlock 2: HTMLAudioElement — patrón más confiable en iOS PWA
+        // Llamar play() con src vacío durante el gesto; falla silenciosamente pero desbloquea el elemento
+        if (!audioRef.current) {
+          audioRef.current = new Audio();
+        }
+        audioRef.current.play().catch(() => {});
       }
       setHandsFree(true);
       handsFreeRef.current = true;
-      // Iniciar mic solo si está disponible (no en iOS PWA)
+      // Iniciar mic solo si está disponible (no en iOS PWA sin SpeechRecognition)
       if (hasMic) startHandsFreeRecognition();
     }
   }
