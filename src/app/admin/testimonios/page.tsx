@@ -68,8 +68,23 @@ export default function TestimoniosAdminPage() {
     load();
   }
 
+  const waMessage = `¡Hola! 😊 Esperamos que estés disfrutando mucho tu producto personalizado de Diamy Laser Cut.
+
+Nos encantaría conocer tu opinión sobre tu compra. Tu experiencia es muy importante para nosotros y nos ayuda a seguir mejorando y a brindar confianza a nuevos clientes.
+
+Si tienes un momento, ¿podrías compartirnos:
+⭐ Qué te pareció el producto
+⭐ Cómo fue tu experiencia de compra
+⭐ Una foto del producto (opcional)
+
+Tu comentario significa muchísimo para nosotros. 💖
+
+¡Muchas gracias por confiar en Diamy Laser Cut! ✨
+
+${generatedUrl}`;
+
   async function handleCopy() {
-    await navigator.clipboard.writeText(generatedUrl);
+    await navigator.clipboard.writeText(waMessage);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
@@ -122,16 +137,16 @@ export default function TestimoniosAdminPage() {
         </div>
 
         {generatedUrl && (
-          <div className="mt-4 flex items-center gap-3 bg-primary-container/30 rounded-xl px-4 py-3">
-            <span className="text-sm text-on-surface flex-1 break-all font-mono">{generatedUrl}</span>
+          <div className="mt-4 bg-primary-container/30 rounded-xl px-4 py-3 space-y-3">
+            <pre className="text-sm text-on-surface whitespace-pre-wrap font-sans leading-relaxed">{waMessage}</pre>
             <button
               onClick={handleCopy}
-              className="shrink-0 px-3 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-semibold hover:opacity-90 flex items-center gap-1"
+              className="w-full px-3 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:opacity-90 flex items-center justify-center gap-2"
             >
-              <span className="material-symbol" style={{ fontSize: 14 }}>
+              <span className="material-symbol" style={{ fontSize: 16 }}>
                 {copied ? "check" : "content_copy"}
               </span>
-              {copied ? "¡Copiado!" : "Copiar"}
+              {copied ? "¡Copiado! Pégalo en WhatsApp" : "Copiar mensaje completo"}
             </button>
           </div>
         )}
