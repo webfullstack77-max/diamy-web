@@ -43,8 +43,10 @@ export default function AssistantChat() {
 
   const bottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const handsFreeRef = useRef(false);
   const loadingRef = useRef(false);
+  const speakingRef = useRef(false); // true mientras el TTS está reproduciendo — bloquea restart del mic
 
   useEffect(() => {
     setHasSpeech(typeof window !== "undefined" && ("SpeechRecognition" in window || "webkitSpeechRecognition" in window));
@@ -60,6 +62,7 @@ export default function AssistantChat() {
   useEffect(() => {
     return () => {
       recognitionRef.current?.stop();
+      audioRef.current?.pause();
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     };
   }, []);
@@ -100,35 +103,53 @@ export default function AssistantChat() {
     return null;
   }
 
-  function speakText(text: string) {
-    if (!handsFreeRef.current || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  async function speakText(text: string) {
+    if (!handsFreeRef.current || typeof window === "undefined") return;
 
-    // Pausar el micrófono mientras habla el asistente — evita que se grabe a sí mismo
+    // Marcar como "hablando" ANTES de stop() — así r.onend no reinicia el mic prematuramente
+    speakingRef.current = true;
     try { recognitionRef.current?.stop(); } catch { /* ignorar */ }
+    window.speechSynthesis?.cancel();
 
-    window.speechSynthesis.cancel();
     const clean = stripMarkdown(text);
-    const utterance = new SpeechSynthesisUtterance(clean);
-    utterance.lang = "es-MX";
-    utterance.rate = 1.0;
-    utterance.pitch = 1.15; // voz más femenina y natural
 
-    const voice = pickFemaleVoice();
-    if (voice) utterance.voice = voice;
-
-    // Reiniciar el micrófono DESPUÉS de que termina de hablar
-    utterance.onend = () => {
+    const restartMic = () => {
+      speakingRef.current = false;
       if (handsFreeRef.current) {
-        setTimeout(() => {
-          if (handsFreeRef.current) startHandsFreeRecognition();
-        }, 400); // pequeña pausa para que el audio se estabilice
+        setTimeout(() => { if (handsFreeRef.current) startHandsFreeRecognition(); }, 400);
       }
     };
 
-    utterance.onerror = () => {
-      if (handsFreeRef.current) startHandsFreeRecognition();
-    };
+    // Intentar ElevenLabs (voz natural en español)
+    try {
+      const res = await fetch("/api/admin/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: clean }),
+      });
+      if (!res.ok) throw new Error("no-elevenlabs");
 
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
+      audio.onerror = () => { URL.revokeObjectURL(url); audioRef.current = null; restartMic(); };
+      await audio.play();
+      return;
+    } catch { /* fallback */ }
+
+    // Fallback: Web Speech API
+    if (!("speechSynthesis" in window)) { restartMic(); return; }
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = "es-MX";
+    utterance.rate = 1.0;
+    utterance.pitch = 1.15;
+    const voice = pickFemaleVoice();
+    if (voice) utterance.voice = voice;
+    utterance.onend = restartMic;
+    utterance.onerror = restartMic;
     window.speechSynthesis.speak(utterance);
   }
 
@@ -207,14 +228,13 @@ export default function AssistantChat() {
     };
 
     r.onend = () => {
-      if (handsFreeRef.current && !loadingRef.current) {
-        // Crear instancia limpia en lugar de reusar la misma
+      if (handsFreeRef.current && !loadingRef.current && !speakingRef.current) {
         startHandsFreeRecognition();
       } else if (!handsFreeRef.current) {
         setRecording(false);
         setInterimText("");
       }
-      // Si loadingRef.current=true, el mic se reiniciará desde utterance.onend
+      // Si speakingRef.current=true, el mic se reiniciará desde audio.onended
     };
 
     r.start();
@@ -225,6 +245,9 @@ export default function AssistantChat() {
   function toggleHandsFree() {
     if (handsFree) {
       recognitionRef.current?.stop();
+      audioRef.current?.pause();
+      audioRef.current = null;
+      speakingRef.current = false;
       if (typeof window !== "undefined") window.speechSynthesis?.cancel();
       setHandsFree(false);
       handsFreeRef.current = false;
@@ -295,7 +318,7 @@ export default function AssistantChat() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-on-surface">Asistente Diamy</p>
-              <p className="text-xs text-on-surface-muted">Claude · Responde en español</p>
+              <p className="text-xs text-on-surface-muted">Claude + ElevenLabs · Responde en español</p>
             </div>
             {/* Toggle manos libres */}
             {hasSpeech && (
