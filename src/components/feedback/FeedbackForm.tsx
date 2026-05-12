@@ -64,7 +64,7 @@ export default function FeedbackForm({ token }: Props) {
         <label className="block text-sm font-medium text-on-surface mb-2">
           Calificación <span className="text-error">*</span>
         </label>
-        <div className="flex gap-1">
+        <div className="flex gap-2">
           {[1, 2, 3, 4, 5].map((star) => (
             <button
               key={star}
@@ -72,12 +72,16 @@ export default function FeedbackForm({ token }: Props) {
               onClick={() => setRating(star)}
               onMouseEnter={() => setHover(star)}
               onMouseLeave={() => setHover(0)}
-              className="focus:outline-none"
+              onTouchStart={() => setHover(star)}
+              onTouchEnd={() => setHover(0)}
+              className="focus:outline-none p-1"
+              aria-label={`${star} estrella${star > 1 ? "s" : ""}`}
             >
               <span
-                className="material-symbol text-secondary-dark transition-all"
+                className="material-symbol transition-colors"
                 style={{
-                  fontSize: 36,
+                  fontSize: 40,
+                  color: star <= activeRating ? "#f59e0b" : "#d1d5db",
                   fontVariationSettings: star <= activeRating ? "'FILL' 1" : "'FILL' 0",
                 }}
               >
@@ -86,6 +90,11 @@ export default function FeedbackForm({ token }: Props) {
             </button>
           ))}
         </div>
+        {rating > 0 && (
+          <p className="text-xs text-on-surface-muted mt-1">
+            {["", "Muy malo", "Malo", "Regular", "Bueno", "¡Excelente!"][rating]}
+          </p>
+        )}
       </div>
 
       {/* Nombre */}
