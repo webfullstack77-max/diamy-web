@@ -30,17 +30,16 @@ export default function AdminCategoriasPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [promoUploading, setPromoUploading] = useState(false);
-  const [promoGenerating, setPromoGenerating] = useState(false);
-  const promoFileRef = useRef<HTMLInputElement>(null);
-
-  // Formulario principal (categorías padre)
+  // Modal categoría padre (nuevo + editar)
+  const [parentModal, setParentModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [promoUploading, setPromoUploading] = useState(false);
+  const [promoGenerating, setPromoGenerating] = useState(false);
   const [error, setError] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const promoFileRef = useRef<HTMLInputElement>(null);
 
   // Modal de subcategoría
   const [modal, setModal] = useState<{ parentId: string; parentName: string } | null>(null);
@@ -61,17 +60,19 @@ export default function AdminCategoriasPage() {
 
   const parentOptions = categories.filter((c) => !c.parentId);
 
-  function startNew() {
+  function openNew() {
     setForm(emptyForm);
-    setEditing(true);
     setError("");
+    setParentModal(true);
   }
 
-  function startEdit(cat: Category) {
+  function openEdit(cat: Category) {
     setForm({ id: cat.id, slug: cat.slug, name: cat.name, description: cat.description ?? "", image: cat.image ?? "", parentId: cat.parentId ?? "", promoMode: cat.promoMode ?? false, promoImage: cat.promoImage ?? "", promoDescription: cat.promoDescription ?? "" });
-    setEditing(true);
     setError("");
+    setParentModal(true);
   }
+
+  function closeParentModal() { setParentModal(false); }
 
   async function handlePromoImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -120,7 +121,7 @@ export default function AdminCategoriasPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ slug: form.slug, name: form.name, description: form.description || null, image: form.image || null, parentId: form.parentId || null, promoMode: form.promoMode, promoImage: form.promoImage || null, promoDescription: form.promoDescription || null }),
     });
-    if (res.ok) { setEditing(false); load(); }
+    if (res.ok) { closeParentModal(); load(); }
     else { const d = await res.json(); setError(d.error ?? "Error al guardar"); }
     setSaving(false);
   }
@@ -174,106 +175,11 @@ export default function AdminCategoriasPage() {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-serif text-3xl font-bold text-on-surface">Categorías</h1>
-        <button onClick={startNew} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-medium hover:bg-primary-dark transition">
+        <button onClick={openNew} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary text-sm font-medium hover:bg-primary-dark transition">
           <span className="material-symbol" style={{ fontSize: "18px" }}>add</span>
           Nueva categoría
         </button>
       </div>
-
-      {/* Formulario categoría padre */}
-      {editing && (
-        <form onSubmit={handleSave} className="bg-surface rounded-2xl border border-primary/30 p-6 mb-6 space-y-4">
-          <h2 className="font-semibold text-on-surface">{form.id ? "Editar categoría" : "Nueva categoría"}</h2>
-          {error && <p className="text-sm text-error">{error}</p>}
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-on-surface">Categoría padre <span className="text-on-surface-muted font-normal">(dejar vacío si es categoría principal)</span></label>
-            <select value={form.parentId} onChange={(e) => setForm((p) => ({ ...p, parentId: e.target.value }))} className={cls}>
-              <option value="">— Categoría principal —</option>
-              {parentOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-on-surface">Nombre</label>
-              <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required className={cls} />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5 text-on-surface">Slug</label>
-              <input value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))} required pattern="[a-z0-9-]+" className={cls} />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-on-surface">Descripción</label>
-            <input value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className={cls} />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1.5 text-on-surface">Imagen</label>
-            <div className="flex items-start gap-4">
-              {form.image && <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-outline-variant shrink-0"><Image src={form.image} alt="preview" fill className="object-cover" /></div>}
-              <div className="flex-1">
-                <input type="text" value={form.image} onChange={(e) => setForm((p) => ({ ...p, image: e.target.value }))} placeholder="URL o sube un archivo" className={cls} />
-                <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="mt-2 flex items-center gap-1.5 text-sm text-primary hover:underline disabled:opacity-50">
-                  <span className="material-symbol" style={{ fontSize: "16px" }}>upload</span>
-                  {uploading ? "Subiendo..." : "Subir imagen"}
-                </button>
-              </div>
-            </div>
-          </div>
-          {/* Modo promocional */}
-          <div className="border border-outline-variant rounded-xl p-4 space-y-4">
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" checked={form.promoMode} onChange={(e) => setForm((p) => ({ ...p, promoMode: e.target.checked }))} className="mt-0.5 w-4 h-4 accent-primary" />
-              <div>
-                <span className="text-sm font-semibold text-on-surface">Modo promocional</span>
-                <p className="text-xs text-outline mt-0.5">En lugar del catálogo de productos, muestra un anuncio con imagen, descripción y botón de cotización</p>
-              </div>
-            </label>
-            {form.promoMode && (
-              <div className="space-y-3 pl-7">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5 text-on-surface">Imagen del anuncio <span className="text-outline font-normal">(16:9 PNG recomendado)</span></label>
-                  <div className="flex items-start gap-4">
-                    {form.promoImage && (
-                      <div className="relative w-32 h-18 rounded-xl overflow-hidden border border-outline-variant shrink-0" style={{ height: "72px" }}>
-                        <Image src={form.promoImage} alt="promo" fill className="object-cover" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <input type="text" value={form.promoImage} onChange={(e) => setForm((p) => ({ ...p, promoImage: e.target.value }))} placeholder="URL de imagen" className={cls} />
-                      <input ref={promoFileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePromoImageUpload} className="hidden" />
-                      <button type="button" onClick={() => promoFileRef.current?.click()} disabled={promoUploading} className="mt-2 flex items-center gap-1.5 text-sm text-primary hover:underline disabled:opacity-50">
-                        <span className="material-symbol" style={{ fontSize: "16px" }}>upload</span>
-                        {promoUploading ? "Subiendo..." : "Subir imagen 16:9"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-sm font-medium text-on-surface">Descripción del anuncio</label>
-                    <button
-                      type="button"
-                      onClick={handleGeneratePromoDescription}
-                      disabled={promoGenerating || !form.name}
-                      className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition disabled:opacity-50"
-                    >
-                      <span className="material-symbol" style={{ fontSize: "14px" }}>auto_awesome</span>
-                      {promoGenerating ? "Generando..." : "Generar con IA"}
-                    </button>
-                  </div>
-                  <textarea value={form.promoDescription} onChange={(e) => setForm((p) => ({ ...p, promoDescription: e.target.value }))} rows={3} placeholder="Describe los servicios de esta categoría..." className={`${cls} resize-none`} />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-3">
-            <button type="submit" disabled={saving || uploading} className="px-5 py-2 rounded-lg bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition disabled:opacity-60">{saving ? "..." : form.id ? "Guardar" : "Crear"}</button>
-            <button type="button" onClick={() => setEditing(false)} className="px-5 py-2 rounded-lg border border-outline-variant text-on-surface text-sm hover:bg-surface-container transition">Cancelar</button>
-          </div>
-        </form>
-      )}
 
       {/* Lista */}
       {loading ? (
@@ -294,7 +200,7 @@ export default function AdminCategoriasPage() {
                   <span className="material-symbol" style={{ fontSize: "14px" }}>add</span>
                   Subcategoría
                 </button>
-                <button onClick={() => startEdit(cat)} className="text-sm text-primary hover:underline font-medium">Editar</button>
+                <button onClick={() => openEdit(cat)} className="text-sm text-primary hover:underline font-medium">Editar</button>
                 <button onClick={() => handleDelete(cat.id)} className="text-sm text-error hover:underline font-medium">Eliminar</button>
               </div>
 
@@ -321,13 +227,121 @@ export default function AdminCategoriasPage() {
         </div>
       )}
 
+      {/* ── Modal categoría padre (nuevo / editar) ── */}
+      {parentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeParentModal} />
+          <div className="relative bg-surface rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 space-y-4">
+            <div className="flex items-start justify-between">
+              <h2 className="font-semibold text-on-surface text-lg">{form.id ? "Editar categoría" : "Nueva categoría"}</h2>
+              <button onClick={closeParentModal} className="p-1 rounded-lg hover:bg-surface-container transition text-on-surface-muted">
+                <span className="material-symbol" style={{ fontSize: "20px" }}>close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-4">
+              {error && <p className="text-sm text-error">{error}</p>}
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-on-surface">Categoría padre <span className="text-on-surface-muted font-normal">(dejar vacío si es categoría principal)</span></label>
+                <select value={form.parentId} onChange={(e) => setForm((p) => ({ ...p, parentId: e.target.value }))} className={cls}>
+                  <option value="">— Categoría principal —</option>
+                  {parentOptions.filter((c) => c.id !== form.id).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-on-surface">Nombre</label>
+                  <input value={form.name} onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} required className={cls} />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1.5 text-on-surface">Slug</label>
+                  <input value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: e.target.value }))} required pattern="[a-z0-9-]+" className={cls} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-on-surface">Descripción</label>
+                <input value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} className={cls} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-on-surface">Imagen</label>
+                <div className="flex items-start gap-4">
+                  {form.image && <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-outline-variant shrink-0"><Image src={form.image} alt="preview" fill className="object-cover" /></div>}
+                  <div className="flex-1">
+                    <input type="text" value={form.image} onChange={(e) => setForm((p) => ({ ...p, image: e.target.value }))} placeholder="URL o sube un archivo" className={cls} />
+                    <input ref={fileRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="mt-2 flex items-center gap-1.5 text-sm text-primary hover:underline disabled:opacity-50">
+                      <span className="material-symbol" style={{ fontSize: "16px" }}>upload</span>
+                      {uploading ? "Subiendo..." : "Subir imagen"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modo promocional */}
+              <div className="border border-outline-variant rounded-xl p-4 space-y-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={form.promoMode} onChange={(e) => setForm((p) => ({ ...p, promoMode: e.target.checked }))} className="mt-0.5 w-4 h-4 accent-primary" />
+                  <div>
+                    <span className="text-sm font-semibold text-on-surface">Modo promocional</span>
+                    <p className="text-xs text-outline mt-0.5">En lugar del catálogo de productos, muestra un anuncio con imagen, descripción y botón de cotización</p>
+                  </div>
+                </label>
+                {form.promoMode && (
+                  <div className="space-y-3 pl-7">
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5 text-on-surface">Imagen del anuncio <span className="text-outline font-normal">(16:9 PNG recomendado)</span></label>
+                      <div className="flex items-start gap-4">
+                        {form.promoImage && (
+                          <div className="relative w-32 rounded-xl overflow-hidden border border-outline-variant shrink-0" style={{ height: "72px" }}>
+                            <Image src={form.promoImage} alt="promo" fill className="object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <input type="text" value={form.promoImage} onChange={(e) => setForm((p) => ({ ...p, promoImage: e.target.value }))} placeholder="URL de imagen" className={cls} />
+                          <input ref={promoFileRef} type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePromoImageUpload} className="hidden" />
+                          <button type="button" onClick={() => promoFileRef.current?.click()} disabled={promoUploading} className="mt-2 flex items-center gap-1.5 text-sm text-primary hover:underline disabled:opacity-50">
+                            <span className="material-symbol" style={{ fontSize: "16px" }}>upload</span>
+                            {promoUploading ? "Subiendo..." : "Subir imagen 16:9"}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="text-sm font-medium text-on-surface">Descripción del anuncio</label>
+                        <button
+                          type="button"
+                          onClick={handleGeneratePromoDescription}
+                          disabled={promoGenerating || !form.name}
+                          className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition disabled:opacity-50"
+                        >
+                          <span className="material-symbol" style={{ fontSize: "14px" }}>auto_awesome</span>
+                          {promoGenerating ? "Generando..." : "Generar con IA"}
+                        </button>
+                      </div>
+                      <textarea value={form.promoDescription} onChange={(e) => setForm((p) => ({ ...p, promoDescription: e.target.value }))} rows={3} placeholder="Describe los servicios de esta categoría..." className={`${cls} resize-none`} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button type="submit" disabled={saving || uploading} className="flex-1 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition disabled:opacity-60">
+                  {saving ? "Guardando..." : form.id ? "Guardar cambios" : "Crear categoría"}
+                </button>
+                <button type="button" onClick={closeParentModal} className="px-4 py-2.5 rounded-xl border border-outline-variant text-on-surface text-sm hover:bg-surface-container transition">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* ── Modal subcategoría ── */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
-
-          {/* Panel */}
           <div className="relative bg-surface rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <div className="flex items-start justify-between">
               <div>
