@@ -3,20 +3,20 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
-interface Catalog { uuid: string; name: string; mockups_count?: number; collections_count?: number; }
+interface Collection { uuid: string; name: string; mockup_count?: number; }
 // Mockup raw puede tener cualquier estructura — lo guardamos como Record
 type RawMockup = Record<string, unknown>;
 
 interface SmartObject { uuid: string; name: string; }
 
-type Step = "catalogs" | "mockups" | "design" | "result";
+type Step = "collections" | "mockups" | "design" | "result";
 
 function extractArray(data: unknown): unknown[] {
   if (Array.isArray(data)) return data;
   if (data && typeof data === "object") {
     const d = data as Record<string, unknown>;
     if (Array.isArray(d.data)) return d.data as unknown[];
-    for (const key of ["catalogs", "collections", "mockups", "items", "results", "templates"]) {
+    for (const key of ["collections", "collections", "mockups", "items", "results", "templates"]) {
       if (Array.isArray(d[key])) return d[key] as unknown[];
     }
   }
@@ -69,13 +69,13 @@ export default function MockupsDMPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [step, setStep] = useState<Step>("catalogs");
-  const [catalogs, setCatalogs] = useState<Catalog[]>([]);
-  const [loadingCatalogs, setLoadingCatalogs] = useState(true);
-  const [catalogsError, setCatalogsError] = useState("");
-  const [catalogsDebug, setCatalogsDebug] = useState("");
+  const [step, setStep] = useState<Step>("collections");
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loadingCollections, setLoadingCollections] = useState(true);
+  const [collectionsError, setCollectionsError] = useState("");
+  const [collectionsDebug, setCollectionsDebug] = useState("");
 
-  const [selectedCatalog, setSelectedCatalog] = useState<Catalog | null>(null);
+  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
   const [mockups, setMockups] = useState<RawMockup[]>([]);
   const [loadingMockups, setLoadingMockups] = useState(false);
   const [mockupsDebug, setMockupsDebug] = useState("");
@@ -96,23 +96,23 @@ export default function MockupsDMPage() {
     fetch("/api/admin/dynamic-mockups/collections")
       .then((r) => r.json())
       .then((d) => {
-        setCatalogsDebug(JSON.stringify(d).slice(0, 800));
-        if (d?.error) { setCatalogsError(d.error); return; }
-        const arr = extractArray(d) as Catalog[];
-        setCatalogs(arr);
-        if (arr.length === 0) setCatalogsError("Sin catálogos disponibles.");
+        setCollectionsDebug(JSON.stringify(d).slice(0, 800));
+        if (d?.error) { setCollectionsError(d.error); return; }
+        const arr = extractArray(d) as Collection[];
+        setCollections(arr);
+        if (arr.length === 0) setCollectionsError("Sin catálogos disponibles.");
       })
-      .catch((e) => setCatalogsError(`Error: ${e.message}`))
-      .finally(() => setLoadingCatalogs(false));
+      .catch((e) => setCollectionsError(`Error: ${e.message}`))
+      .finally(() => setLoadingCollections(false));
   }, []);
 
-  async function selectCatalog(cat: Catalog) {
-    setSelectedCatalog(cat);
+  async function selectCollection(cat: Collection) {
+    setSelectedCollection(cat);
     setMockups([]);
     setLoadingMockups(true);
     setStep("mockups");
     try {
-      const r = await fetch(`/api/admin/dynamic-mockups/mockups?catalog_uuid=${cat.uuid}`);
+      const r = await fetch(`/api/admin/dynamic-mockups/mockups?collection_uuid=${cat.uuid}`);
       const d = await r.json();
       const arr = extractArray(d) as RawMockup[];
       setMockups(arr);
@@ -204,8 +204,8 @@ export default function MockupsDMPage() {
   }
 
   function reset() {
-    setStep("catalogs");
-    setSelectedCatalog(null);
+    setStep("collections");
+    setSelectedCollection(null);
     setSelectedMockup(null);
     setSmartObjects([]);
     setDesignUrl("");
@@ -213,8 +213,8 @@ export default function MockupsDMPage() {
     setRenderError("");
   }
 
-  const STEPS = ["Catálogo", "Template", "Diseño", "Resultado"];
-  const STEP_INDEX: Record<Step, number> = { catalogs: 0, mockups: 1, design: 2, result: 3 };
+  const STEPS = ["Colección", "Template", "Diseño", "Resultado"];
+  const STEP_INDEX: Record<Step, number> = { collections: 0, mockups: 1, design: 2, result: 3 };
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -223,7 +223,7 @@ export default function MockupsDMPage() {
           <h1 className="font-serif text-2xl font-bold text-on-surface">Mockups Pro</h1>
           <p className="text-xs text-on-surface-muted mt-0.5">Powered by Dynamic Mockups</p>
         </div>
-        {step !== "catalogs" && (
+        {step !== "collections" && (
           <button onClick={reset} className="flex items-center gap-1.5 text-sm text-on-surface-muted hover:text-on-surface transition">
             <span className="material-symbol" style={{ fontSize: 16 }}>restart_alt</span>
             Empezar de nuevo
@@ -253,40 +253,40 @@ export default function MockupsDMPage() {
         })}
       </div>
 
-      {/* ── Step 1: Catálogos ── */}
-      {step === "catalogs" && (
+      {/* ── Step 1: Coleccións ── */}
+      {step === "collections" && (
         <div>
-          {loadingCatalogs && (
+          {loadingCollections && (
             <div className="flex items-center justify-center py-16 text-on-surface-muted text-sm gap-2">
               <span className="material-symbol animate-spin" style={{ fontSize: 20 }}>progress_activity</span>
               Cargando catálogos…
             </div>
           )}
-          {catalogsError && (
+          {collectionsError && (
             <div className="bg-error-container/20 border border-error/20 rounded-2xl p-5 space-y-3">
-              <p className="text-sm text-error font-medium">{catalogsError}</p>
-              {catalogsError.includes("no configurado") && (
+              <p className="text-sm text-error font-medium">{collectionsError}</p>
+              {collectionsError.includes("no configurado") && (
                 <p className="text-xs text-on-surface-muted">
                   Agrega <code className="bg-surface-container px-1 rounded">DYNAMIC_MOCKUPS_API_KEY</code> en <code className="bg-surface-container px-1 rounded">.env.production</code> y recarga el servidor.
                 </p>
               )}
-              {catalogsDebug && (
+              {collectionsDebug && (
                 <details className="text-xs">
                   <summary className="cursor-pointer text-on-surface-muted hover:text-on-surface">Ver respuesta API (debug)</summary>
-                  <pre className="mt-2 bg-surface-container rounded p-2 overflow-x-auto whitespace-pre-wrap break-all text-on-surface">{catalogsDebug}</pre>
+                  <pre className="mt-2 bg-surface-container rounded p-2 overflow-x-auto whitespace-pre-wrap break-all text-on-surface">{collectionsDebug}</pre>
                 </details>
               )}
             </div>
           )}
-          {!loadingCatalogs && catalogs.length > 0 && (
+          {!loadingCollections && collections.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {catalogs.map((cat) => (
-                <button key={cat.uuid} onClick={() => selectCatalog(cat)}
+              {collections.map((cat) => (
+                <button key={cat.uuid} onClick={() => selectCollection(cat)}
                   className="bg-surface border border-outline-variant rounded-2xl p-5 text-left hover:border-primary/50 hover:shadow-sm transition group">
                   <span className="material-symbol text-primary group-hover:scale-110 transition-transform inline-block" style={{ fontSize: 28 }}>style</span>
                   <p className="font-semibold text-on-surface text-sm mt-2">{cat.name}</p>
-                  {(cat.mockups_count ?? cat.collections_count) != null && (
-                    <p className="text-xs text-on-surface-muted mt-0.5">{cat.mockups_count ?? cat.collections_count} templates</p>
+                  {cat.mockup_count != null && (
+                    <p className="text-xs text-on-surface-muted mt-0.5">{cat.mockup_count} templates</p>
                   )}
                 </button>
               ))}
@@ -298,9 +298,9 @@ export default function MockupsDMPage() {
       {/* ── Step 2: Mockups ── */}
       {step === "mockups" && (
         <div className="space-y-4">
-          <button onClick={() => setStep("catalogs")} className="flex items-center gap-1 text-sm text-on-surface-muted hover:text-on-surface transition">
+          <button onClick={() => setStep("collections")} className="flex items-center gap-1 text-sm text-on-surface-muted hover:text-on-surface transition">
             <span className="material-symbol" style={{ fontSize: 16 }}>arrow_back</span>
-            Catálogos / <span className="font-semibold text-on-surface ml-1">{selectedCatalog?.name}</span>
+            Coleccións / <span className="font-semibold text-on-surface ml-1">{selectedCollection?.name}</span>
           </button>
 
           {loadingMockups && (
@@ -354,7 +354,7 @@ export default function MockupsDMPage() {
         <div className="space-y-5">
           <button onClick={() => setStep("mockups")} className="flex items-center gap-1 text-sm text-on-surface-muted hover:text-on-surface transition">
             <span className="material-symbol" style={{ fontSize: 16 }}>arrow_back</span>
-            {selectedCatalog?.name} / <span className="font-semibold text-on-surface ml-1 line-clamp-1">{getMockupName(selectedMockup)}</span>
+            {selectedCollection?.name} / <span className="font-semibold text-on-surface ml-1 line-clamp-1">{getMockupName(selectedMockup)}</span>
           </button>
 
           <div className="grid sm:grid-cols-2 gap-6">

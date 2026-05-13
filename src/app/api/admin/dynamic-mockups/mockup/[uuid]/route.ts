@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 
 const DM_BASE = "https://app.dynamicmockups.com/api/v1";
 
+// Endpoint oficial: GET /mockup/{uuid}  (singular, no "mockups")
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ uuid: string }> }
@@ -16,7 +17,7 @@ export async function GET(
 
   const { uuid } = await params;
 
-  const res = await fetch(`${DM_BASE}/mockups/${uuid}`, {
+  const res = await fetch(`${DM_BASE}/mockup/${uuid}`, {
     headers: { "x-api-key": apiKey, Accept: "application/json" },
     cache: "no-store",
   });
@@ -24,7 +25,7 @@ export async function GET(
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     console.error("DM mockup detail error:", res.status, txt);
-    return NextResponse.json({ error: "Error al obtener detalle del mockup" }, { status: res.status });
+    return NextResponse.json({ error: `Error DM ${res.status}` }, { status: res.status });
   }
 
   const data = await res.json();
