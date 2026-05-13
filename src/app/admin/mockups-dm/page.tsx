@@ -31,28 +31,30 @@ function getField(obj: RawMockup, ...keys: string[]): unknown {
 }
 
 function getThumbnail(m: RawMockup): string {
-  // Probar todos los campos posibles que DM puede usar para thumbnails
-  const candidates = [
-    getField(m, "thumbnail_url", "preview_url", "image_url", "preview", "image"),
-    // thumbnail puede ser objeto { src } o { url }
-    ...(m.thumbnail && typeof m.thumbnail === "object"
-      ? [
-          (m.thumbnail as Record<string, unknown>).src,
-          (m.thumbnail as Record<string, unknown>).url,
-          (m.thumbnail as Record<string, unknown>).href,
-        ]
-      : []),
-  ];
-  for (const c of candidates) {
-    if (typeof c === "string" && c.startsWith("http")) return c;
+  // thumbnail es un string directo en la API de DM
+  const direct = getField(m, "thumbnail", "thumbnail_url", "preview_url", "image_url", "preview", "image");
+  if (typeof direct === "string" && direct.startsWith("http")) return direct;
+  // thumbnail como objeto { src } o { url }
+  if (m.thumbnail && typeof m.thumbnail === "object") {
+    const t = m.thumbnail as Record<string, unknown>;
+    if (typeof t.src === "string") return t.src;
+    if (typeof t.url === "string") return t.url;
+  }
+  // thumbnails array: [{ url, width }]
+  if (Array.isArray(m.thumbnails) && m.thumbnails.length > 0) {
+    const first = m.thumbnails[0] as Record<string, unknown>;
+    if (typeof first.url === "string") return first.url;
   }
   return "";
 }
 
 function getSmartObjects(m: RawMockup): SmartObject[] {
   const so = getField(m, "smart_objects", "smartObjects", "layers", "print_areas");
-  if (Array.isArray(so)) return so as SmartObject[];
-  return [];
+  if (!Array.isArray(so)) return [];
+  const all = so as SmartObject[];
+  // Preferir capas que NO sean de fondo/background (son las de la prenda)
+  const garment = all.filter((s) => !s.name?.toLowerCase().includes("background") && !s.name?.toLowerCase().includes("dm:ai"));
+  return garment.length > 0 ? garment : all;
 }
 
 function getMockupName(m: RawMockup): string {
