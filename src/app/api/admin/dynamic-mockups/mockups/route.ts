@@ -12,10 +12,12 @@ export async function GET(req: NextRequest) {
   if (!apiKey) return NextResponse.json({ error: "DYNAMIC_MOCKUPS_API_KEY no configurado" }, { status: 500 });
 
   const { searchParams } = new URL(req.url);
+  const catalog_uuid = searchParams.get("catalog_uuid") ?? "";
   const collection_uuid = searchParams.get("collection_uuid") ?? "";
   const page = searchParams.get("page") ?? "1";
 
   const qs = new URLSearchParams();
+  if (catalog_uuid) qs.set("catalog_uuid", catalog_uuid);
   if (collection_uuid) qs.set("collection_uuid", collection_uuid);
   qs.set("page", page);
   qs.set("per_page", "48");
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     console.error("DM mockups error:", res.status, txt);
-    return NextResponse.json({ error: "Error al obtener mockups" }, { status: res.status });
+    return NextResponse.json({ error: `Error DM ${res.status}` }, { status: res.status });
   }
 
   const data = await res.json();

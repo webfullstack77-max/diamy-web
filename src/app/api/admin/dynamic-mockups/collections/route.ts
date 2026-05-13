@@ -5,21 +5,23 @@ export const dynamic = "force-dynamic";
 
 const DM_BASE = "https://app.dynamicmockups.com/api/v1";
 
+// Usa /catalogs (categorías globales de DM: Apparel, Mugs, etc.)
+// /collections devuelve colecciones del usuario — vacías en cuentas nuevas
 export async function GET() {
   try { await requireAdmin(); } catch { return NextResponse.json({ error: "No autorizado" }, { status: 401 }); }
 
   const apiKey = process.env.DYNAMIC_MOCKUPS_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "DYNAMIC_MOCKUPS_API_KEY no configurado" }, { status: 500 });
 
-  const res = await fetch(`${DM_BASE}/collections`, {
+  const res = await fetch(`${DM_BASE}/catalogs`, {
     headers: { "x-api-key": apiKey, Accept: "application/json" },
     cache: "no-store",
   });
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    console.error("DM collections error:", res.status, txt);
-    return NextResponse.json({ error: "Error al obtener colecciones de Dynamic Mockups" }, { status: res.status });
+    console.error("DM catalogs error:", res.status, txt);
+    return NextResponse.json({ error: `Error DM ${res.status}` }, { status: res.status });
   }
 
   const data = await res.json();
