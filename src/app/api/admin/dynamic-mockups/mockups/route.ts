@@ -1,0 +1,36 @@
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/auth";
+
+export const dynamic = "force-dynamic";
+
+const DM_BASE = "https://app.dynamicmockups.com/api/v1";
+
+export async function GET(req: NextRequest) {
+  try { await requireAdmin(); } catch { return NextResponse.json({ error: "No autorizado" }, { status: 401 }); }
+
+  const apiKey = process.env.DYNAMIC_MOCKUPS_API_KEY;
+  if (!apiKey) return NextResponse.json({ error: "DYNAMIC_MOCKUPS_API_KEY no configurado" }, { status: 500 });
+
+  const { searchParams } = new URL(req.url);
+  const collection_uuid = searchParams.get("collection_uuid") ?? "";
+  const page = searchParams.get("page") ?? "1";
+
+  const qs = new URLSearchParams();
+  if (collection_uuid) qs.set("collection_uuid", collection_uuid);
+  qs.set("page", page);
+  qs.set("per_page", "48");
+
+  const res = await fetch(`${DM_BASE}/mockups?${qs}`, {
+    headers: { "x-api-key": apiKey, Accept: "application/json" },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    console.error("DM mockups error:", res.status, txt);
+    return NextResponse.json({ error: "Error al obtener mockups" }, { status: res.status });
+  }
+
+  const data = await res.json();
+  return NextResponse.json(data);
+}
