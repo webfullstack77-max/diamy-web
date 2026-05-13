@@ -34,7 +34,7 @@ function extractItem(data: unknown): unknown {
 function getThumbnail(m: Mockup): string {
   if (m.thumbnail?.src) return m.thumbnail.src;
   // Algunos mockups de DM usan otras claves
-  const raw = m as Record<string, unknown>;
+  const raw = m as unknown as Record<string, unknown>;
   if (typeof raw.preview_url === "string") return raw.preview_url;
   if (typeof raw.image_url === "string") return raw.image_url;
   return "";
