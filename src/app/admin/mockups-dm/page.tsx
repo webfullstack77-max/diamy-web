@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { initDynamicMockupsIframe } from "@dynamic-mockups/mockup-editor-sdk";
-import type { IframeResponse, DynamicAiShopAddToCartResponse, DmSessionIdResponse } from "@dynamic-mockups/mockup-editor-sdk";
+import type { IframeResponse } from "@dynamic-mockups/mockup-editor-sdk";
 
 interface SavedMockup {
   imageUrl: string;
@@ -11,6 +10,8 @@ interface SavedMockup {
 }
 
 type Phase = "editor" | "saving" | "result";
+
+const DM_EMBED_ORIGIN = "https://embed.dynamicmockups.com";
 
 export default function MockupsDMPage() {
   const router = useRouter();
@@ -30,45 +31,67 @@ export default function MockupsDMPage() {
         if (cancelled) return;
         if (d.error) { setKeyError(d.error); return; }
 
-        initDynamicMockupsIframe({
-          iframeId: "dm-editor-iframe",
-          data: { "x-website-key": d.websiteKey },
-          mode: "custom",
-          callback: async (response: IframeResponse | DynamicAiShopAddToCartResponse | DmSessionIdResponse) => {
-            const res = response as IframeResponse;
-            // Collect all exported mockup paths
-            const exports: Array<{ export_path: string; export_label: string | null }> = [];
-            if (res.mockupsExport?.length) {
-              exports.push(...res.mockupsExport);
-            } else if (res.mockupsAndPrintFilesExport?.mockupsExport?.length) {
-              exports.push(...res.mockupsAndPrintFilesExport.mockupsExport);
-            }
-            if (exports.length === 0) return;
+        const websiteKey: string = d.websiteKey;
 
-            setPhase("saving");
-            setSaveError("");
+        // Bypass the DM SDK to fix its bug with multi-part TLDs like .com.mx.
+        // The SDK's domain extractor strips everything but the last 2 segments,
+        // turning "diamylasercut.com.mx" into "com.mx" → 400 from DM servers.
+        // We replicate the postMessage protocol manually with window.location.hostname.
+        const handleMessage = async (event: MessageEvent) => {
+          if (event.origin !== DM_EMBED_ORIGIN && event.data !== "dmIframeReady") return;
 
-            try {
-              const saved: SavedMockup[] = await Promise.all(
-                exports.map(async (exp, i) => {
-                  const r = await fetch("/api/admin/dynamic-mockups/save-image", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ url: exp.export_path }),
-                  });
-                  const data = await r.json();
-                  if (!r.ok || data.error) throw new Error(data.error ?? `Error al guardar mockup ${i + 1}`);
-                  return { imageUrl: data.imageUrl, label: exp.export_label };
-                })
-              );
-              setResults(saved);
-              setPhase("result");
-            } catch (e: unknown) {
-              setSaveError((e as Error).message ?? "Error al guardar los mockups.");
-              setPhase("editor");
-            }
-          },
-        });
+          const iframe = iframeRef.current;
+          if (!iframe?.contentWindow) return;
+
+          // DM iframe signals it's ready → send auth
+          if (event.data === "dmIframeReady") {
+            iframe.contentWindow.postMessage(
+              { "x-website-key": websiteKey, locationHost: window.location.hostname },
+              DM_EMBED_ORIGIN
+            );
+            return;
+          }
+
+          // Export callback
+          const response = event.data as IframeResponse;
+          const exports: Array<{ export_path: string; export_label: string | null }> = [];
+          if (response.mockupsExport?.length) {
+            exports.push(...response.mockupsExport);
+          } else if (response.mockupsAndPrintFilesExport?.mockupsExport?.length) {
+            exports.push(...response.mockupsAndPrintFilesExport.mockupsExport);
+          }
+          if (exports.length === 0) return;
+
+          setPhase("saving");
+          setSaveError("");
+
+          try {
+            const saved: SavedMockup[] = await Promise.all(
+              exports.map(async (exp, i) => {
+                const r = await fetch("/api/admin/dynamic-mockups/save-image", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ url: exp.export_path }),
+                });
+                const data = await r.json();
+                if (!r.ok || data.error) throw new Error(data.error ?? `Error al guardar mockup ${i + 1}`);
+                return { imageUrl: data.imageUrl, label: exp.export_label };
+              })
+            );
+            setResults(saved);
+            setPhase("result");
+          } catch (e: unknown) {
+            setSaveError((e as Error).message ?? "Error al guardar los mockups.");
+            setPhase("editor");
+          }
+        };
+
+        window.addEventListener("message", handleMessage);
+
+        // Re-trigger iframe ready event
+        if (iframeRef.current) iframeRef.current.src = DM_EMBED_ORIGIN;
+
+        return () => window.removeEventListener("message", handleMessage);
       })
       .catch((e: unknown) => { if (!cancelled) setKeyError(`Error: ${(e as Error).message}`); });
 
@@ -79,6 +102,7 @@ export default function MockupsDMPage() {
     setPhase("editor");
     setResults([]);
     setSaveError("");
+    if (iframeRef.current) iframeRef.current.src = DM_EMBED_ORIGIN;
   }
 
   return (
@@ -132,7 +156,6 @@ export default function MockupsDMPage() {
       {phase === "result" && results.length > 0 && (
         <div className="space-y-6">
           {results.length === 1 ? (
-            /* Single result — full layout */
             <div className="space-y-4">
               <div className="bg-surface border border-outline-variant rounded-2xl overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -141,7 +164,6 @@ export default function MockupsDMPage() {
               <ResultActions imageUrl={results[0].imageUrl} onBack={reset} router={router} />
             </div>
           ) : (
-            /* Multiple results — grid */
             <div className="space-y-4">
               <p className="text-sm text-on-surface-muted">{results.length} mockups generados</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -153,20 +175,13 @@ export default function MockupsDMPage() {
                     </div>
                     {r.label && <p className="text-xs text-on-surface-muted text-center">{r.label}</p>}
                     <div className="flex gap-2">
-                      <a
-                        href={r.imageUrl}
-                        download={`mockup-${i + 1}.png`}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-outline-variant text-on-surface text-xs font-medium hover:bg-surface-container transition"
-                      >
-                        <span className="material-symbol" style={{ fontSize: 14 }}>download</span>
-                        Descargar
+                      <a href={r.imageUrl} download={`mockup-${i + 1}.png`}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg border border-outline-variant text-on-surface text-xs font-medium hover:bg-surface-container transition">
+                        <span className="material-symbol" style={{ fontSize: 14 }}>download</span>Descargar
                       </a>
-                      <button
-                        onClick={() => router.push(`/admin/productos/nuevo?image=${encodeURIComponent(r.imageUrl)}`)}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-medium hover:opacity-90 transition"
-                      >
-                        <span className="material-symbol" style={{ fontSize: 14 }}>inventory_2</span>
-                        Producto
+                      <button onClick={() => router.push(`/admin/productos/nuevo?image=${encodeURIComponent(r.imageUrl)}`)}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-medium hover:opacity-90 transition">
+                        <span className="material-symbol" style={{ fontSize: 14 }}>inventory_2</span>Producto
                       </button>
                     </div>
                   </div>
@@ -183,7 +198,7 @@ export default function MockupsDMPage() {
         </div>
       )}
 
-      {/* DM Editor iframe — always mounted so SDK can attach to it */}
+      {/* DM Editor iframe — always mounted */}
       <div
         className="rounded-2xl overflow-hidden border border-outline-variant"
         style={{ display: phase === "editor" ? "block" : "none" }}
@@ -191,7 +206,7 @@ export default function MockupsDMPage() {
         <iframe
           ref={iframeRef}
           id="dm-editor-iframe"
-          src="https://embed.dynamicmockups.com"
+          src={DM_EMBED_ORIGIN}
           style={{ width: "100%", height: "calc(100vh - 180px)", minHeight: "600px", border: "none", display: "block" }}
           allow="clipboard-write"
         />
@@ -201,9 +216,7 @@ export default function MockupsDMPage() {
 }
 
 function ResultActions({
-  imageUrl,
-  onBack,
-  router,
+  imageUrl, onBack, router,
 }: {
   imageUrl: string;
   onBack: () => void;
@@ -212,33 +225,22 @@ function ResultActions({
   return (
     <div className="space-y-4">
       <div className="grid sm:grid-cols-3 gap-3">
-        <button
-          onClick={() => router.push(`/admin/productos/nuevo?image=${encodeURIComponent(imageUrl)}`)}
-          className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition"
-        >
-          <span className="material-symbol" style={{ fontSize: 18 }}>inventory_2</span>
-          Guardar en producto
+        <button onClick={() => router.push(`/admin/productos/nuevo?image=${encodeURIComponent(imageUrl)}`)}
+          className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 transition">
+          <span className="material-symbol" style={{ fontSize: 18 }}>inventory_2</span>Guardar en producto
         </button>
-        <a
-          href={imageUrl}
-          download="mockup.png"
-          className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-outline-variant text-on-surface text-sm font-semibold hover:bg-surface-container transition"
-        >
-          <span className="material-symbol" style={{ fontSize: 18 }}>download</span>
-          Descargar PNG
+        <a href={imageUrl} download="mockup.png"
+          className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-outline-variant text-on-surface text-sm font-semibold hover:bg-surface-container transition">
+          <span className="material-symbol" style={{ fontSize: 18 }}>download</span>Descargar PNG
         </a>
-        <button
-          onClick={() => router.push(`/admin/publicidad?image=${encodeURIComponent(imageUrl)}`)}
-          className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-outline-variant text-on-surface text-sm font-semibold hover:bg-surface-container transition"
-        >
-          <span className="material-symbol" style={{ fontSize: 18 }}>campaign</span>
-          Enviar a publicidad
+        <button onClick={() => router.push(`/admin/publicidad?image=${encodeURIComponent(imageUrl)}`)}
+          className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-outline-variant text-on-surface text-sm font-semibold hover:bg-surface-container transition">
+          <span className="material-symbol" style={{ fontSize: 18 }}>campaign</span>Enviar a publicidad
         </button>
       </div>
       <div className="flex justify-center">
         <button onClick={onBack} className="flex items-center gap-2 text-sm text-primary hover:underline">
-          <span className="material-symbol" style={{ fontSize: 16 }}>add_photo_alternate</span>
-          Crear otro mockup
+          <span className="material-symbol" style={{ fontSize: 16 }}>add_photo_alternate</span>Crear otro mockup
         </button>
       </div>
     </div>
