@@ -46,7 +46,7 @@ export default function MockupsDMPage() {
           // DM iframe signals it's ready → send auth
           if (event.data === "dmIframeReady") {
             iframe.contentWindow.postMessage(
-              { "x-website-key": websiteKey, locationHost: window.location.hostname },
+              { "x-website-key": websiteKey, locationHost: window.location.origin },
               DM_EMBED_ORIGIN
             );
             return;
