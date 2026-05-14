@@ -99,14 +99,17 @@ export default function MockupsDMPage() {
 
       {/* API Key error */}
       {keyError && (
-        <div className="bg-error-container/20 border border-error/20 rounded-2xl p-5 space-y-2">
+        <div className="bg-error-container/20 border border-error/20 rounded-2xl p-5 space-y-3">
           <p className="text-sm text-error font-medium">{keyError}</p>
-          {keyError.includes("configurado") && (
-            <p className="text-xs text-on-surface-muted">
-              Agrega <code className="bg-surface-container px-1 rounded">DYNAMIC_MOCKUPS_API_KEY</code> en{" "}
-              <code className="bg-surface-container px-1 rounded">.env.production</code> y recarga la página.
-            </p>
-          )}
+          <div className="text-xs text-on-surface-muted space-y-1">
+            <p>En tu dashboard de Dynamic Mockups → <strong>Embed settings</strong>:</p>
+            <ol className="list-decimal list-inside space-y-0.5 pl-1">
+              <li>Genera una <strong>Website Key</strong> (diferente a la API Key)</li>
+              <li>Agrega tu dominio a la whitelist (<code className="bg-surface-container px-1 rounded">diamylasercut.com.mx</code>)</li>
+              <li>En <code className="bg-surface-container px-1 rounded">.env.production</code> agrega: <code className="bg-surface-container px-1 rounded">DYNAMIC_MOCKUPS_WEBSITE_KEY=xxx</code></li>
+              <li>Ejecuta <code className="bg-surface-container px-1 rounded">pm2 reload diamy --update-env</code></li>
+            </ol>
+          </div>
         </div>
       )}
 
