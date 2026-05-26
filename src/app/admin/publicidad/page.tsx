@@ -187,13 +187,29 @@ export default function PublicidadPage() {
     const p = products.find((x) => x.id === productId);
     if (!p) return;
     setSelectedProduct(p);
-    const img = p.images?.[0] ?? "";
-    setImageUrl(img);
-    setImagePreview(img);
+    // No pre-cargar imagen por defecto de catálogo para dar total libertad de subir JPEGs
+    setImageUrl("");
+    setImagePreview("");
     setImageUrls([]);
     setCaption("");
     setHashtags("");
     resetVideo();
+  }
+
+  function removeImage(index: number) {
+    if (index === 0) {
+      if (imageUrls.length > 0) {
+        const nextPrimary = imageUrls[0];
+        setImageUrl(nextPrimary);
+        setImagePreview(nextPrimary);
+        setImageUrls((prev) => prev.slice(1));
+      } else {
+        setImageUrl("");
+        setImagePreview("");
+      }
+    } else {
+      setImageUrls((prev) => prev.filter((_, idx) => idx !== index - 1));
+    }
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -477,18 +493,22 @@ export default function PublicidadPage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={imagePreview} alt="Principal" className="w-20 h-20 object-cover rounded-xl border-2 border-primary" />
                   <span className="absolute -top-1.5 -left-1.5 bg-primary text-on-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">1</span>
+                  <button
+                    onClick={() => removeImage(0)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600"
+                  >✕</button>
                 </div>
                 {imageUrls.map((u, i) => (
                   <div key={u} className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={u} alt={`img ${i + 2}`} className="w-20 h-20 object-cover rounded-xl border border-outline-variant" />
                     <button
-                      onClick={() => setImageUrls((prev) => prev.filter((_, idx) => idx !== i))}
+                      onClick={() => removeImage(i + 1)}
                       className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center hover:bg-red-600"
                     >✕</button>
                   </div>
                 ))}
-                {[...Array(imageUrl), ...imageUrls].length < 10 && (
+                {([imageUrl].filter(Boolean).length + imageUrls.length) < 10 && (
                   <button
                     onClick={() => carouselInputRef.current?.click()}
                     disabled={uploading}
