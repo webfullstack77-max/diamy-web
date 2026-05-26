@@ -79,6 +79,24 @@ function buildImageUrl(imageUrl) {
   return `${base}${imageUrl.startsWith('/') ? imageUrl : '/' + imageUrl}`;
 }
 
+const GRAPH_API = 'https://graph.facebook.com/v22.0';
+
+async function graphPost(endpoint, params) {
+  const body = new URLSearchParams(params);
+  const res = await fetch(`${GRAPH_API}/${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+  return res.json();
+}
+
+async function graphGet(endpoint, params) {
+  const qs = new URLSearchParams(params).toString();
+  const res = await fetch(`${GRAPH_API}/${endpoint}?${qs}`);
+  return res.json();
+}
+
 async function sendWhatsApp(ad, fullText) {
   const groupNames = (process.env.WA_TARGET_GROUP || '').split(',').map((n) => n.trim()).filter(Boolean);
   if (groupNames.length === 0) {
@@ -122,16 +140,12 @@ async function publishFacebook(ad, fullText) {
   }
 
   const imgUrl = buildImageUrl(ad.imageUrl);
-  const endpoint = `https://graph.facebook.com/v21.0/${pageId}/feed`;
-  const params = new URLSearchParams({
-    message: fullText,
-    access_token: token,
-    ...(imgUrl ? { link: imgUrl } : {}),
-  });
-
   try {
-    const res = await fetch(`${endpoint}?${params}`, { method: 'POST' });
-    const data = await res.json();
+    const data = await graphPost(`${pageId}/feed`, {
+      message: fullText,
+      access_token: token,
+      ...(imgUrl ? { link: imgUrl } : {}),
+    });
     if (data.error) {
       console.error('[FB] Error:', data.error.message);
       return { ok: false, error: data.error.message };
@@ -192,12 +206,9 @@ async function publishInstagram(ad, fullText) {
 
   try {
     // Paso 1: crear contenedor
-    const createRes = await fetch(
-      `https://graph.facebook.com/v21.0/${igUserId}/media?` +
-        new URLSearchParams({ image_url: imgUrl, caption: fullText, access_token: token }),
-      { method: 'POST' }
-    );
-    const createData = await createRes.json();
+    const createData = await graphPost(`${igUserId}/media`, {
+      image_url: imgUrl, caption: fullText, access_token: token,
+    });
     console.log('[IG] Respuesta contenedor:', JSON.stringify(createData));
     if (createData.error) {
       console.error('[IG] Error al crear contenedor:', createData.error.message);
@@ -211,10 +222,9 @@ async function publishInstagram(ad, fullText) {
     let statusCode = 'IN_PROGRESS';
     for (let i = 0; i < 8; i++) {
       await new Promise((r) => setTimeout(r, 3000));
-      const stRes = await fetch(
-        `https://graph.facebook.com/v21.0/${createData.id}?fields=status_code,status&access_token=${token}`
-      );
-      const stData = await stRes.json();
+      const stData = await graphGet(createData.id, {
+        fields: 'status_code,status', access_token: token,
+      });
       statusCode = stData.status_code || 'UNKNOWN';
       console.log(`[IG] Estado contenedor (intento ${i + 1}): ${statusCode}`);
       if (statusCode !== 'IN_PROGRESS') break;
@@ -227,12 +237,9 @@ async function publishInstagram(ad, fullText) {
     }
 
     // Paso 2: publicar
-    const publishRes = await fetch(
-      `https://graph.facebook.com/v21.0/${igUserId}/media_publish?` +
-        new URLSearchParams({ creation_id: createData.id, access_token: token }),
-      { method: 'POST' }
-    );
-    const publishData = await publishRes.json();
+    const publishData = await graphPost(`${igUserId}/media_publish`, {
+      creation_id: createData.id, access_token: token,
+    });
     if (publishData.error) {
       console.error('[IG] Error al publicar:', publishData.error.message);
       return { ok: false, error: publishData.error.message };
@@ -258,21 +265,24 @@ async function publishInstagramCarousel(ad, fullText) {
   let images;
   try { images = JSON.parse(ad.imageUrls); } catch { return { ok: false, error: 'imageUrls inválido' }; }
 
+  console.log(`[IG Carousel] Procesando ${images.length} imagen(es)...`);
+
+  // ── Paso 1: Crear contenedores individuales para cada imagen ──
   const itemIds = [];
   const igApiErrors = [];
-  for (const imgUrl of images) {
+  for (let idx = 0; idx < images.length; idx++) {
+    const imgUrl = images[idx];
     const url = buildImageUrl(imgUrl);
     if (!url) continue;
     try {
       const { url: preparedUrl, tempFile } = await prepareImageForInstagram(url);
-      const res = await fetch(
-        `https://graph.facebook.com/v21.0/${igUserId}/media?` +
-          new URLSearchParams({ image_url: preparedUrl, is_carousel_item: 'true', access_token: token }),
-        { method: 'POST' }
-      );
-      const data = await res.json();
+      console.log(`[IG Carousel] Creando item ${idx + 1}/${images.length}: ${preparedUrl}`);
+      const data = await graphPost(`${igUserId}/media`, {
+        image_url: preparedUrl, is_carousel_item: 'true', access_token: token,
+      });
       if (data.id) {
         itemIds.push(data.id);
+        console.log(`[IG Carousel] Item ${idx + 1} creado, container_id: ${data.id}`);
       } else {
         const errMsg = data.error ? `${data.error.message} (code ${data.error.code})` : JSON.stringify(data);
         igApiErrors.push(errMsg);
@@ -287,35 +297,58 @@ async function publishInstagramCarousel(ad, fullText) {
 
   if (itemIds.length < 2) return { ok: false, error: `Solo ${itemIds.length} imagen(es) válidas para carrusel (mínimo 2). Error Meta: ${igApiErrors[0] ?? 'desconocido'}` };
 
+  // ── Paso 2: Esperar a que CADA item termine de procesarse ──
+  console.log(`[IG Carousel] Esperando que ${itemIds.length} items terminen de procesarse...`);
+  for (let idx = 0; idx < itemIds.length; idx++) {
+    const itemId = itemIds[idx];
+    let itemStatus = 'IN_PROGRESS';
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      const stData = await graphGet(itemId, {
+        fields: 'status_code', access_token: token,
+      });
+      itemStatus = stData.status_code || 'IN_PROGRESS';
+      console.log(`[IG Carousel] Item ${idx + 1} (${itemId}) intento ${attempt + 1}: ${itemStatus}`);
+      if (itemStatus !== 'IN_PROGRESS') break;
+    }
+    if (itemStatus === 'ERROR') {
+      return { ok: false, error: `Item ${idx + 1} falló al procesarse en Instagram` };
+    }
+    if (itemStatus !== 'FINISHED') {
+      return { ok: false, error: `Item ${idx + 1} en estado inesperado: ${itemStatus}` };
+    }
+    console.log(`[IG Carousel] ✓ Item ${idx + 1} listo`);
+  }
+
+  // ── Paso 3: Crear el contenedor del carrusel ──
   try {
-    const carouselRes = await fetch(
-      `https://graph.facebook.com/v21.0/${igUserId}/media?` +
-        new URLSearchParams({ media_type: 'CAROUSEL', caption: fullText, children: itemIds.join(','), access_token: token }),
-      { method: 'POST' }
-    );
-    const carouselData = await carouselRes.json();
+    console.log(`[IG Carousel] Creando contenedor carrusel con ${itemIds.length} items...`);
+    const carouselData = await graphPost(`${igUserId}/media`, {
+      media_type: 'CAROUSEL', caption: fullText, children: itemIds.join(','), access_token: token,
+    });
     if (carouselData.error) return { ok: false, error: carouselData.error.message };
     if (!carouselData.id) return { ok: false, error: 'No se obtuvo ID del contenedor carrusel' };
+    console.log(`[IG Carousel] Contenedor carrusel creado: ${carouselData.id}`);
 
-    // Polling status
+    // ── Paso 4: Esperar a que el carrusel termine de procesarse ──
     let statusCode = 'IN_PROGRESS';
-    for (let i = 0; i < 8; i++) {
-      await new Promise((r) => setTimeout(r, 3000));
-      const stRes = await fetch(`https://graph.facebook.com/v21.0/${carouselData.id}?fields=status_code&access_token=${token}`);
-      const stData = await stRes.json();
-      statusCode = stData.status_code || 'UNKNOWN';
+    for (let i = 0; i < 15; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+      const stData = await graphGet(carouselData.id, {
+        fields: 'status_code', access_token: token,
+      });
+      statusCode = stData.status_code || 'IN_PROGRESS';
+      console.log(`[IG Carousel] Estado carrusel (intento ${i + 1}): ${statusCode}`);
       if (statusCode !== 'IN_PROGRESS') break;
     }
     if (statusCode !== 'FINISHED') return { ok: false, error: `Estado carrusel: ${statusCode}` };
 
-    const pubRes = await fetch(
-      `https://graph.facebook.com/v21.0/${igUserId}/media_publish?` +
-        new URLSearchParams({ creation_id: carouselData.id, access_token: token }),
-      { method: 'POST' }
-    );
-    const pubData = await pubRes.json();
+    // ── Paso 5: Publicar ──
+    const pubData = await graphPost(`${igUserId}/media_publish`, {
+      creation_id: carouselData.id, access_token: token,
+    });
     if (pubData.error) return { ok: false, error: pubData.error.message };
-    console.log(`[IG Carousel] Publicado, media_id: ${pubData.id}`);
+    console.log(`[IG Carousel] ✓ Publicado exitosamente, media_id: ${pubData.id}`);
     return { ok: true, postId: pubData.id };
   } catch (err) {
     return { ok: false, error: err.message };
@@ -337,12 +370,9 @@ async function publishFacebookAlbum(ad, fullText) {
     const url = buildImageUrl(imgUrl);
     if (!url) continue;
     try {
-      const res = await fetch(
-        `https://graph.facebook.com/v21.0/${pageId}/photos?` +
-          new URLSearchParams({ url, published: 'false', access_token: token }),
-        { method: 'POST' }
-      );
-      const data = await res.json();
+      const data = await graphPost(`${pageId}/photos`, {
+        url, published: 'false', access_token: token,
+      });
       if (data.id) {
         photoIds.push(data.id);
       } else {
@@ -360,12 +390,9 @@ async function publishFacebookAlbum(ad, fullText) {
 
   try {
     const attachedMedia = photoIds.map((id) => JSON.stringify({ media_fbid: id })).join(',');
-    const feedRes = await fetch(
-      `https://graph.facebook.com/v21.0/${pageId}/feed?` +
-        new URLSearchParams({ message: fullText, attached_media: `[${attachedMedia}]`, access_token: token }),
-      { method: 'POST' }
-    );
-    const feedData = await feedRes.json();
+    const feedData = await graphPost(`${pageId}/feed`, {
+      message: fullText, attached_media: `[${attachedMedia}]`, access_token: token,
+    });
     if (feedData.error) return { ok: false, error: feedData.error.message };
     console.log(`[FB Album] Publicado, post_id: ${feedData.id}`);
     return { ok: true, postId: feedData.id };
@@ -384,12 +411,9 @@ async function publishInstagramReel(ad, fullText) {
   if (!videoUrl) return { ok: false, error: 'videoUrl no disponible' };
 
   try {
-    const createRes = await fetch(
-      `https://graph.facebook.com/v21.0/${igUserId}/media?` +
-        new URLSearchParams({ media_type: 'REELS', video_url: videoUrl, caption: fullText, share_to_feed: 'true', access_token: token }),
-      { method: 'POST' }
-    );
-    const createData = await createRes.json();
+    const createData = await graphPost(`${igUserId}/media`, {
+      media_type: 'REELS', video_url: videoUrl, caption: fullText, share_to_feed: 'true', access_token: token,
+    });
     console.log('[IG Reel] Respuesta contenedor:', JSON.stringify(createData));
     if (createData.error) return { ok: false, error: createData.error.message };
     if (!createData.id) return { ok: false, error: `Contenedor sin ID: ${JSON.stringify(createData)}` };
@@ -398,8 +422,9 @@ async function publishInstagramReel(ad, fullText) {
     let statusCode = 'IN_PROGRESS';
     for (let i = 0; i < 50; i++) {
       await new Promise((r) => setTimeout(r, 10000));
-      const stRes = await fetch(`https://graph.facebook.com/v21.0/${createData.id}?fields=status_code,status&access_token=${token}`);
-      const stData = await stRes.json();
+      const stData = await graphGet(createData.id, {
+        fields: 'status_code,status', access_token: token,
+      });
       statusCode = stData.status_code || 'UNKNOWN';
       console.log(`[IG Reel] Estado (intento ${i + 1}): ${statusCode}`);
       if (statusCode !== 'IN_PROGRESS') break;
@@ -407,12 +432,9 @@ async function publishInstagramReel(ad, fullText) {
     if (statusCode === 'ERROR') return { ok: false, error: 'El Reel falló al procesarse en Instagram' };
     if (statusCode !== 'FINISHED') return { ok: false, error: `Estado Reel inesperado: ${statusCode}` };
 
-    const pubRes = await fetch(
-      `https://graph.facebook.com/v21.0/${igUserId}/media_publish?` +
-        new URLSearchParams({ creation_id: createData.id, access_token: token }),
-      { method: 'POST' }
-    );
-    const pubData = await pubRes.json();
+    const pubData = await graphPost(`${igUserId}/media_publish`, {
+      creation_id: createData.id, access_token: token,
+    });
     if (pubData.error) return { ok: false, error: pubData.error.message };
     console.log(`[IG Reel] Publicado, media_id: ${pubData.id}`);
     return { ok: true, postId: pubData.id };
@@ -431,12 +453,9 @@ async function publishFacebookVideo(ad, fullText) {
   if (!videoUrl) return { ok: false, error: 'videoUrl no disponible' };
 
   try {
-    const res = await fetch(
-      `https://graph.facebook.com/v21.0/${pageId}/videos?` +
-        new URLSearchParams({ file_url: videoUrl, description: fullText, access_token: token }),
-      { method: 'POST' }
-    );
-    const data = await res.json();
+    const data = await graphPost(`${pageId}/videos`, {
+      file_url: videoUrl, description: fullText, access_token: token,
+    });
     if (data.error) return { ok: false, error: data.error.message };
     console.log(`[FB Video] Publicado, id: ${data.id}`);
     return { ok: true, postId: data.id };
