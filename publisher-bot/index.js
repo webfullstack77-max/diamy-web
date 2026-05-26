@@ -524,6 +524,15 @@ cron.schedule('* * * * *', async () => {
   console.log(`[CRON] ${ads.length} anuncio(s) para procesar`);
 
   for (const ad of ads) {
+    // Evitar procesamiento duplicado por ejecuciones de cron concurrentes
+    try {
+      await query(`UPDATE ads_queue SET status = 'sending' WHERE id = $1`, [ad.id]);
+      console.log(`[AD ${ad.id}] Marcado como 'sending' para evitar concurrencia`);
+    } catch (err) {
+      console.error(`[AD ${ad.id}] Error al marcar como 'sending':`, err.message);
+      continue;
+    }
+
     let channels = [];
     try { channels = JSON.parse(ad.channels || '[]'); } catch { channels = ['whatsapp']; }
 
