@@ -270,12 +270,14 @@ async function publishInstagramCarousel(ad, fullText) {
   // ── Paso 1: Crear contenedores individuales para cada imagen ──
   const itemIds = [];
   const igApiErrors = [];
+  const tempFiles = [];
   for (let idx = 0; idx < images.length; idx++) {
     const imgUrl = images[idx];
     const url = buildImageUrl(imgUrl);
     if (!url) continue;
     try {
       const { url: preparedUrl, tempFile } = await prepareImageForInstagram(url);
+      if (tempFile) tempFiles.push(tempFile);
       console.log(`[IG Carousel] Creando item ${idx + 1}/${images.length}: ${preparedUrl}`);
       const data = await graphPost(`${igUserId}/media`, {
         image_url: preparedUrl, is_carousel_item: 'true', access_token: token,
@@ -288,14 +290,16 @@ async function publishInstagramCarousel(ad, fullText) {
         igApiErrors.push(errMsg);
         console.warn(`[IG Carousel] Meta rechazó imagen ${imgUrl}: ${errMsg}`);
       }
-      if (tempFile) { try { fs.unlinkSync(tempFile); } catch {} }
     } catch (err) {
       igApiErrors.push(err.message);
       console.warn(`[IG Carousel] Error en imagen ${imgUrl}: ${err.message}`);
     }
   }
 
-  if (itemIds.length < 2) return { ok: false, error: `Solo ${itemIds.length} imagen(es) válidas para carrusel (mínimo 2). Error Meta: ${igApiErrors[0] ?? 'desconocido'}` };
+  if (itemIds.length < 2) {
+    tempFiles.forEach((f) => { try { fs.unlinkSync(f); } catch {} });
+    return { ok: false, error: `Solo ${itemIds.length} imagen(es) válidas para carrusel (mínimo 2). Error Meta: ${igApiErrors[0] ?? 'desconocido'}` };
+  }
 
   // ── Paso 2: Esperar a que CADA item termine de procesarse ──
   console.log(`[IG Carousel] Esperando que ${itemIds.length} items terminen de procesarse...`);
@@ -312,13 +316,20 @@ async function publishInstagramCarousel(ad, fullText) {
       if (itemStatus !== 'IN_PROGRESS') break;
     }
     if (itemStatus === 'ERROR') {
+      tempFiles.forEach((f) => { try { fs.unlinkSync(f); } catch {} });
       return { ok: false, error: `Item ${idx + 1} falló al procesarse en Instagram` };
     }
     if (itemStatus !== 'FINISHED') {
+      tempFiles.forEach((f) => { try { fs.unlinkSync(f); } catch {} });
       return { ok: false, error: `Item ${idx + 1} en estado inesperado: ${itemStatus}` };
     }
     console.log(`[IG Carousel] ✓ Item ${idx + 1} listo`);
   }
+
+  // Limpiar archivos temporales después de que Instagram ya descargó todas las imágenes
+  tempFiles.forEach((f) => { try { fs.unlinkSync(f); } catch {} });
+  console.log(`[IG Carousel] Archivos temporales limpiados (${tempFiles.length})`);
+
 
   // ── Paso 3: Crear el contenedor del carrusel ──
   try {
