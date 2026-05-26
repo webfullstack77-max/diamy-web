@@ -58,24 +58,29 @@ async function processSlideshowBackground(mockId: string, imageUrls: string[]) {
       inputArgs += `-loop 1 -t ${showTime} -i "${p}" `;
     });
     
-    let filterComplex = '';
-    let lastOut = '[0:v]';
-    
-    for (let i = 1; i < N; i++) {
-      const offset = i * (showTime - transTime);
-      const outLabel = `[v${i}]`;
-      const nextIn = `[${i}:v]`;
+    let cmd = '';
+    if (N === 1) {
+      cmd = `ffmpeg -y -loop 1 -t 3 -i "${tempPaths[0]}" -r 25 -pix_fmt yuv420p "${finalPath}"`;
+    } else {
+      let filterComplex = '';
+      let lastOut = '[0:v]';
       
-      filterComplex += `${lastOut}${nextIn}xfade=transition=fade:duration=${transTime}:offset=${offset}`;
-      if (i < N - 1) {
-        filterComplex += `[v${i}_temp]; `;
-        lastOut = `[v${i}_temp]`;
-      } else {
-        filterComplex += `[v]`;
+      for (let i = 1; i < N; i++) {
+        const offset = i * (showTime - transTime);
+        const outLabel = `[v${i}]`;
+        const nextIn = `[${i}:v]`;
+        
+        filterComplex += `${lastOut}${nextIn}xfade=transition=fade:duration=${transTime}:offset=${offset}`;
+        if (i < N - 1) {
+          filterComplex += `[v${i}_temp]; `;
+          lastOut = `[v${i}_temp]`;
+        } else {
+          filterComplex += `[v]`;
+        }
       }
+      
+      cmd = `ffmpeg -y ${inputArgs} -filter_complex "${filterComplex}" -map "[v]" -r 25 -pix_fmt yuv420p "${finalPath}"`;
     }
-    
-    const cmd = `ffmpeg -y ${inputArgs} -filter_complex "${filterComplex}" -map "[v]" -r 25 -pix_fmt yuv420p "${finalPath}"`;
     
     await new Promise<void>((resolve, reject) => {
       exec(cmd, (err, stdout, stderr) => {
@@ -110,64 +115,35 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
 
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) {
+  // Verificar si FFmpeg está disponible de inmediato
+  const ffmpegOk = await isFfmpegAvailable();
+  if (!ffmpegOk) {
     return NextResponse.json(
-      { error: "REPLICATE_API_TOKEN no está configurado en el servidor" },
+      { 
+        error: "FFmpeg no está instalado en tu VPS. Por favor ejecuta 'sudo apt update && sudo apt install -y ffmpeg' en la terminal de tu VPS para activar la generación de videos." 
+      },
       { status: 500 }
     );
   }
 
   const { imageUrl, imageUrls } = await request.json();
-  if (!imageUrl) {
-    return NextResponse.json({ error: "Falta imageUrl" }, { status: 400 });
+  const allImages = imageUrls && Array.isArray(imageUrls) && imageUrls.length > 0
+    ? imageUrls
+    : imageUrl ? [imageUrl] : [];
+
+  if (allImages.length === 0) {
+    return NextResponse.json({ error: "Faltan imágenes para generar el video" }, { status: 400 });
   }
 
-  // Si hay múltiples imágenes (carrusel) y ffmpeg está disponible, generar video-slideshow local
-  if (imageUrls && Array.isArray(imageUrls) && imageUrls.length >= 2) {
-    const ffmpegOk = await isFfmpegAvailable();
-    if (ffmpegOk) {
-      const mockId = `slideshow_${uuidv4()}`;
-      localPredictions.set(mockId, { status: "processing" });
-      
-      // Procesar el video-slideshow en segundo plano
-      processSlideshowBackground(mockId, imageUrls).catch((err) => {
-        console.error("[generate-video] Error en slideshow en segundo plano:", err);
-        localPredictions.set(mockId, { status: "error", error: err.message });
-      });
-      
-      console.log("[generate-video] Slideshow local iniciado:", mockId);
-      return NextResponse.json({ predictionId: mockId });
-    } else {
-      console.warn("[generate-video] ffmpeg no está disponible en el servidor, ignorando carrusel y cayendo en Replicate");
-    }
-  }
+  const mockId = `slideshow_${uuidv4()}`;
+  localPredictions.set(mockId, { status: "processing" });
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? `https://${request.headers.get("host")}`;
-  const absoluteImageUrl = imageUrl.startsWith("http")
-    ? imageUrl
-    : `${siteUrl}${imageUrl}`;
+  // Procesar el video local en segundo plano usando FFmpeg
+  processSlideshowBackground(mockId, allImages).catch((err) => {
+    console.error("[generate-video] Error en procesamiento de video local:", err);
+    localPredictions.set(mockId, { status: "error", error: err.message });
+  });
 
-  try {
-    const replicate = new Replicate({ auth: token });
-
-    const prediction = await replicate.predictions.create({
-      model: "minimax/video-01",
-      input: {
-        first_frame_image: absoluteImageUrl,
-        prompt:
-          "Cinematic product showcase, slow gentle zoom revealing detail, professional lighting, luxury feel, clean background",
-      },
-    });
-
-    console.log("[generate-video] Predicción iniciada:", prediction.id);
-    return NextResponse.json({ predictionId: prediction.id });
-  } catch (error) {
-    console.error("[generate-video] Error:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error al iniciar generación de video" },
-      { status: 500 }
-    );
-  }
+  console.log("[generate-video] Generación de video con FFmpeg iniciada:", mockId);
+  return NextResponse.json({ predictionId: mockId });
 }

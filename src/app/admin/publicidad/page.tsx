@@ -535,12 +535,12 @@ export default function PublicidadPage() {
             </div>
           )}
 
-          {/* Video IA */}
+          {/* Video FFmpeg */}
           {imageUrl && (
             <div className="mt-4 pt-4 border-t border-outline-variant">
               <p className="text-sm font-medium text-on-surface mb-2 flex items-center gap-1.5">
                 <span className="material-symbol" style={{ fontSize: "18px" }}>movie</span>
-                Generar Video IA (Reel)
+                Generar Video (Reel / Slideshow)
               </p>
               {!videoGenerating && !videoUrl && (
                 <button
@@ -548,13 +548,13 @@ export default function PublicidadPage() {
                   className="flex items-center gap-2 px-4 py-2 rounded-xl border border-primary text-primary text-sm font-semibold hover:bg-primary/10 transition"
                 >
                   <span className="material-symbol" style={{ fontSize: "18px" }}>auto_awesome</span>
-                  Generar Video con IA (~3 min)
+                  Generar video con FFmpeg
                 </button>
               )}
               {videoGenerating && (
                 <div className="flex items-center gap-3 text-sm text-on-surface-muted">
                   <span className="material-symbol animate-spin" style={{ fontSize: "20px" }}>progress_activity</span>
-                  <span>Generando video con IA… puede tardar 2-4 minutos</span>
+                  <span>Generando video...</span>
                 </div>
               )}
               {videoError && (
