@@ -255,6 +255,12 @@ async function publishInstagram(ad, fullText) {
       const stData = await graphGet(createData.id, {
         fields: 'status_code,status', access_token: token,
       });
+      if (stData.error && stData.error.error_subcode === 33) {
+        console.warn(`[IG] ⚠️ Meta devolvió error 33 (Authorization Error) al consultar estado del contenedor ${createData.id}. Esto es un bug conocido de la plataforma de Meta. Saltando verificación y esperando 15 segundos para asegurar procesamiento...`);
+        await new Promise((r) => setTimeout(r, 15000));
+        statusCode = 'FINISHED';
+        break;
+      }
       statusCode = stData.status_code || 'UNKNOWN';
       console.log(`[IG] Estado contenedor (intento ${i + 1}): ${statusCode}`);
       if (statusCode !== 'IN_PROGRESS') break;
@@ -341,6 +347,12 @@ async function publishInstagramCarousel(ad, fullText) {
       const stData = await graphGet(itemId, {
         fields: 'status_code', access_token: token,
       });
+      if (stData.error && stData.error.error_subcode === 33) {
+        console.warn(`[IG Carousel] ⚠️ Meta devolvió error 33 (Authorization Error) al consultar estado del item ${itemId}. Esto es un bug de la plataforma de Meta. Saltando verificación y esperando 15 segundos para asegurar procesamiento...`);
+        await new Promise((r) => setTimeout(r, 15000));
+        itemStatus = 'FINISHED';
+        break;
+      }
       itemStatus = stData.status_code || 'IN_PROGRESS';
       console.log(`[IG Carousel] Item ${idx + 1} (${itemId}) intento ${attempt + 1}: ${itemStatus}`);
       if (itemStatus !== 'IN_PROGRESS') break;
@@ -378,6 +390,12 @@ async function publishInstagramCarousel(ad, fullText) {
       const stData = await graphGet(carouselData.id, {
         fields: 'status_code', access_token: token,
       });
+      if (stData.error && stData.error.error_subcode === 33) {
+        console.warn(`[IG Carousel] ⚠️ Meta devolvió error 33 al consultar estado del carrusel ${carouselData.id}. Saltando verificación y esperando 15 segundos para asegurar procesamiento...`);
+        await new Promise((r) => setTimeout(r, 15000));
+        statusCode = 'FINISHED';
+        break;
+      }
       statusCode = stData.status_code || 'IN_PROGRESS';
       console.log(`[IG Carousel] Estado carrusel (intento ${i + 1}): ${statusCode}`);
       if (statusCode !== 'IN_PROGRESS') break;
