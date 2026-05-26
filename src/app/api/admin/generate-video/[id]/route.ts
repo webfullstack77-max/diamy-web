@@ -24,6 +24,18 @@ export async function GET(
 
   const { id } = await params;
 
+  if (id.startsWith("slideshow_")) {
+    const localPredictions = (global as any).localVideoPredictions;
+    if (!localPredictions) {
+      return NextResponse.json({ status: "error", error: "No local predictions registry found" });
+    }
+    const task = localPredictions.get(id);
+    if (!task) {
+      return NextResponse.json({ status: "error", error: "Slideshow task not found" });
+    }
+    return NextResponse.json(task);
+  }
+
   try {
     const replicate = new Replicate({ auth: token });
     const prediction = await replicate.predictions.get(id);

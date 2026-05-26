@@ -263,10 +263,17 @@ export default function PublicidadPage() {
     resetVideo();
     setVideoGenerating(true);
     setVideoError(null);
+
+    // Si hay carrusel, mandar todas las imágenes del carrusel para hacer el video-slideshow
+    const allImages = [imageUrl, ...imageUrls].filter(Boolean);
+
     const res = await fetch("/api/admin/generate-video", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imageUrl }),
+      body: JSON.stringify({ 
+        imageUrl,
+        imageUrls: allImages.length > 1 ? allImages : null
+      }),
     });
     const d = await res.json();
     if (!res.ok || !d.predictionId) {
