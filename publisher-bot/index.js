@@ -157,8 +157,8 @@ async function publishFacebook(ad, fullText) {
   }
 }
 
-// Instagram requires aspect ratio between 4:5 (0.8) and 1.91:1 (1.91).
-// If the image is outside that range, resize to 1080x1080 square and save temporarily.
+// Instagram requires: JPEG/PNG format (NO WebP), aspect ratio between 4:5 (0.8) and 1.91:1.
+// Always convert to JPEG to guarantee compatibility, and resize if aspect ratio is out of range.
 async function prepareImageForInstagram(imgUrl) {
   const res = await fetch(imgUrl);
   if (!res.ok) throw new Error(`No se pudo descargar la imagen: ${res.status}`);
@@ -166,24 +166,54 @@ async function prepareImageForInstagram(imgUrl) {
 
   const meta = await sharp(buf).metadata();
   const ratio = meta.width / meta.height;
+  const isWebP = meta.format === 'webp';
+  const needsResize = ratio < 0.8 || ratio > 1.91;
 
-  if (ratio >= 0.8 && ratio <= 1.91) {
+  // Si ya es JPEG/PNG y el ratio es aceptable, usar la URL original
+  if (!isWebP && !needsResize) {
+    console.log(`[IG] Imagen OK (${meta.format}, ratio ${ratio.toFixed(2)}), usando original`);
     return { url: imgUrl, tempFile: null };
   }
 
-  console.log(`[IG] Relación de aspecto ${ratio.toFixed(2)} fuera de rango, redimensionando a 1080x1080`);
-  const resized = await sharp(buf)
-    .resize(1080, 1080, { fit: 'cover', position: 'center' })
-    .jpeg({ quality: 85 })
-    .toBuffer();
+  // Convertir a JPEG (obligatorio si es WebP) y redimensionar si es necesario
+  const reason = isWebP && needsResize
+    ? `WebP + ratio ${ratio.toFixed(2)} fuera de rango`
+    : isWebP ? 'WebP → JPEG' : `ratio ${ratio.toFixed(2)} fuera de rango`;
+  console.log(`[IG] ${reason}, convirtiendo a JPEG 1080x1080`);
+
+  let pipeline = sharp(buf);
+  if (needsResize) {
+    pipeline = pipeline.resize(1080, 1080, { fit: 'cover', position: 'center' });
+  } else {
+    // Solo convertir formato, mantener dimensiones originales
+    pipeline = pipeline.resize({ width: meta.width, withoutEnlargement: true });
+  }
+  const resized = await pipeline.jpeg({ quality: 85 }).toBuffer();
 
   const filename = `_ig_${randomUUID()}.jpg`;
   const uploadDir = path.join(__dirname, '../public/uploads');
   const filePath = path.join(uploadDir, filename);
   fs.writeFileSync(filePath, resized);
 
+  // Verificar que el archivo se escribió correctamente
+  const stats = fs.statSync(filePath);
+  console.log(`[IG] Archivo guardado: ${filePath} (${(stats.size / 1024).toFixed(0)} KB)`);
+
   const base = (process.env.APP_URL || 'https://diamylasercut.com.mx').replace(/\/$/, '');
-  return { url: `${base}/uploads/${filename}`, tempFile: filePath };
+  const publicUrl = `${base}/uploads/${filename}`;
+
+  // Verificar que la URL es accesible
+  try {
+    const check = await fetch(publicUrl, { method: 'HEAD' });
+    console.log(`[IG] Verificación URL ${publicUrl}: ${check.status} ${check.ok ? '✓' : '✗'}`);
+    if (!check.ok) {
+      console.error(`[IG] ⚠️ La imagen NO es accesible vía HTTP (status ${check.status})`);
+    }
+  } catch (err) {
+    console.error(`[IG] ⚠️ Error verificando URL: ${err.message}`);
+  }
+
+  return { url: publicUrl, tempFile: filePath };
 }
 
 async function publishInstagram(ad, fullText) {
