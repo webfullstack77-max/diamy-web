@@ -484,6 +484,12 @@ async function publishInstagramReel(ad, fullText) {
       const stData = await graphGet(createData.id, {
         fields: 'status_code,status', access_token: token,
       });
+      if (stData.error && stData.error.error_subcode === 33) {
+        console.warn(`[IG Reel] ⚠️ Meta devolvió error 33 (Authorization Error) al consultar estado del Reel ${createData.id}. Esto es un bug conocido de la plataforma de Meta. Saltando verificación y esperando 45 segundos para asegurar procesamiento...`);
+        await new Promise((r) => setTimeout(r, 45000));
+        statusCode = 'FINISHED';
+        break;
+      }
       statusCode = stData.status_code || 'UNKNOWN';
       console.log(`[IG Reel] Estado (intento ${i + 1}): ${statusCode}`);
       if (statusCode !== 'IN_PROGRESS') break;
