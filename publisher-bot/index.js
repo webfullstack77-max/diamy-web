@@ -250,8 +250,8 @@ async function publishInstagram(ad, fullText) {
 
     // Paso 1b: esperar a que el contenedor esté listo
     let statusCode = 'IN_PROGRESS';
-    for (let i = 0; i < 8; i++) {
-      await new Promise((r) => setTimeout(r, 3000));
+    for (let i = 0; i < 18; i++) {
+      await new Promise((r) => setTimeout(r, 10000));
       const stData = await graphGet(createData.id, {
         fields: 'status_code,status', access_token: token,
       });
@@ -332,12 +332,12 @@ async function publishInstagramCarousel(ad, fullText) {
   }
 
   // ── Paso 2: Esperar a que CADA item termine de procesarse ──
-  console.log(`[IG Carousel] Esperando que ${itemIds.length} items terminen de procesarse...`);
+  console.log(`[IG Carousel] Esperando que ${itemIds.length} items terminen de procesarse (máximo 5 minutos por item)...`);
   for (let idx = 0; idx < itemIds.length; idx++) {
     const itemId = itemIds[idx];
     let itemStatus = 'IN_PROGRESS';
-    for (let attempt = 0; attempt < 20; attempt++) {
-      await new Promise((r) => setTimeout(r, 3000));
+    for (let attempt = 0; attempt < 30; attempt++) {
+      await new Promise((r) => setTimeout(r, 10000));
       const stData = await graphGet(itemId, {
         fields: 'status_code', access_token: token,
       });
@@ -373,8 +373,8 @@ async function publishInstagramCarousel(ad, fullText) {
 
     // ── Paso 4: Esperar a que el carrusel termine de procesarse ──
     let statusCode = 'IN_PROGRESS';
-    for (let i = 0; i < 15; i++) {
-      await new Promise((r) => setTimeout(r, 5000));
+    for (let i = 0; i < 18; i++) {
+      await new Promise((r) => setTimeout(r, 10000));
       const stData = await graphGet(carouselData.id, {
         fields: 'status_code', access_token: token,
       });
