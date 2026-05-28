@@ -57,11 +57,32 @@ waClient.on('qr', (qr) => {
   qrcode.toString(qr, { type: 'terminal', small: true }, (err, str) => {
     if (!err) console.log(str);
   });
+
+  // Guardar QR como imagen en la carpeta pública para fácil escaneo web
+  const qrPath = path.join(__dirname, '../public/qr.png');
+  qrcode.toFile(qrPath, qr, { scale: 8 }, (err) => {
+    if (err) {
+      console.error('[WA] Error al guardar QR en public/qr.png:', err.message);
+    } else {
+      console.log('[WA] QR guardado en public/qr.png. Puedes escanearlo en su navegador.');
+    }
+  });
 });
 
 waClient.on('ready', () => {
   console.log('[WA] WhatsApp listo!');
   waReady = true;
+
+  // Eliminar el archivo de QR por seguridad
+  const qrPath = path.join(__dirname, '../public/qr.png');
+  if (fs.existsSync(qrPath)) {
+    try {
+      fs.unlinkSync(qrPath);
+      console.log('[WA] Archivo qr.png eliminado por seguridad.');
+    } catch (err) {
+      console.error('[WA] Error al eliminar qr.png:', err.message);
+    }
+  }
 });
 
 waClient.on('disconnected', () => {
