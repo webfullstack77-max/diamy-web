@@ -185,7 +185,10 @@ export default function PublicidadPage() {
 
   function handleProductSelect(productId: string) {
     const p = products.find((x) => x.id === productId);
-    if (!p) return;
+    if (!p) {
+      setSelectedProduct(null);
+      return;
+    }
     setSelectedProduct(p);
     // No pre-cargar imagen por defecto de catálogo para dar total libertad de subir JPEGs
     setImageUrl("");
@@ -224,7 +227,6 @@ export default function PublicidadPage() {
       if (!imageUrl) {
         setImageUrl(url);
         setImagePreview(url);
-        setSelectedProduct(null);
       } else {
         // Agregar al carrusel (máx 10)
         setImageUrls((prev) => prev.length < 9 ? [...prev, url] : prev);
