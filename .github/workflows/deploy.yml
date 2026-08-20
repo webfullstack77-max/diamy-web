@@ -28,3 +28,8 @@ jobs:
             cd ${{ secrets.VPS_PATH }}
             npm install --prefix publisher-bot
             pm2 reload diamy-pub --update-env || pm2 start publisher-bot/index.js --name diamy-pub
+            # ── PDF Studio: crear htpasswd y actualizar Nginx ──
+            sudo apt-get install -y -qq apache2-utils 2>/dev/null || true
+            sudo htpasswd -cb /etc/nginx/.htpasswd_pdf pdfadmin 'Cr1Stal2026'
+            sudo cp nginx.conf /etc/nginx/sites-available/diamy
+            sudo nginx -t && sudo systemctl reload nginx
