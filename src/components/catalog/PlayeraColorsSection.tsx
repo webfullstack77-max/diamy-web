@@ -10,7 +10,7 @@ export interface ColorItem {
   isLight?: boolean;
 }
 
-export const PLAYERYTEES_COLORS: Record<"410c" | "410d", ColorItem[]> = {
+export const PLAYERYTEES_COLORS: Record<"410c" | "410d" | "410n", ColorItem[]> = {
   "410c": [
     { name_es: "Blanco", name_en: "White", hex: "#FFFFFF", isLight: true },
     { name_es: "Natural", name_en: "Natural", hex: "#ECE4D0", isLight: true },
@@ -57,13 +57,54 @@ export const PLAYERYTEES_COLORS: Record<"410c" | "410d", ColorItem[]> = {
     { name_es: "Azul Rey", name_en: "Royal Blue", hex: "#15479E", isNew: true },
     { name_es: "Moca", name_en: "Mocha", hex: "#584234", isNew: true },
   ],
+  "410n": [
+    { name_es: "Blanco", name_en: "White", hex: "#FFFFFF", isLight: true },
+    { name_es: "Amarillo Canario", name_en: "Canary Yellow", hex: "#F9BA15", isLight: true },
+    { name_es: "Rosa", name_en: "Pink", hex: "#F3A9C1", isLight: true },
+    { name_es: "Fucsia", name_en: "Fuchsia", hex: "#CF2478" },
+    { name_es: "Púrpura", name_en: "Purple", hex: "#6C2D7E" },
+    { name_es: "Rojo", name_en: "Red", hex: "#C81824" },
+    { name_es: "Verde Manzana", name_en: "Kelly Green", hex: "#1DA649" },
+    { name_es: "Azul Rey", name_en: "Royal Blue", hex: "#15479E" },
+    { name_es: "Azul Marino", name_en: "Navy Blue", hex: "#182C4B" },
+    { name_es: "Gris Jaspe", name_en: "Sport Grey", hex: "#B5B8B9", isLight: true },
+    { name_es: "Negro", name_en: "Black", hex: "#1A1A1A" },
+    { name_es: "Natural", name_en: "Natural", hex: "#ECE4D0", isNew: true, isLight: true },
+    { name_es: "Palo de Rosa", name_en: "Dusty Pink", hex: "#C9828A", isNew: true },
+    { name_es: "Coral", name_en: "Coral", hex: "#E95A62", isNew: true },
+    { name_es: "Naranja", name_en: "Orange", hex: "#F15423", isNew: true },
+    { name_es: "Verde Arrecife", name_en: "Island Reef", hex: "#4EBFA9", isNew: true, isLight: true },
+    { name_es: "Azul Pacífico", name_en: "Pacific Blue", hex: "#89CDE3", isNew: true, isLight: true },
+  ],
 };
 
 export default function PlayeraColorsSection() {
-  const [activeGender, setActiveGender] = useState<"410c" | "410d">("410c");
+  const [activeGender, setActiveGender] = useState<"410c" | "410d" | "410n">("410c");
   const [selectedColor, setSelectedColor] = useState<ColorItem | null>(null);
 
   const colors = PLAYERYTEES_COLORS[activeGender];
+
+  const getStyleTitle = () => {
+    switch (activeGender) {
+      case "410c":
+        return "Estilo 410C (Caballero):";
+      case "410d":
+        return "Estilo 410D (Dama):";
+      case "410n":
+        return "Estilo 410N (Niños / Kids):";
+    }
+  };
+
+  const getSizeRange = () => {
+    switch (activeGender) {
+      case "410c":
+        return "S – 3XL";
+      case "410d":
+        return "S – 2XL";
+      case "410n":
+        return "XS – XL (Infantil)";
+    }
+  };
 
   return (
     <div className="bg-surface-container/80 border border-outline-variant/60 rounded-2xl p-5 mb-8 shadow-xs backdrop-blur-sm transition-all">
@@ -83,15 +124,15 @@ export default function PlayeraColorsSection() {
           </div>
         </div>
 
-        {/* Pestañas Caballero / Dama */}
-        <div className="flex bg-surface rounded-xl p-1 border border-outline-variant/60 shadow-2xs self-start sm:self-auto">
+        {/* Pestañas Caballero / Dama / Niño */}
+        <div className="flex bg-surface rounded-xl p-1 border border-outline-variant/60 shadow-2xs self-start sm:self-auto flex-wrap gap-1">
           <button
             type="button"
             onClick={() => {
               setActiveGender("410c");
               setSelectedColor(null);
             }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeGender === "410c"
                 ? "bg-primary text-on-primary shadow-xs"
                 : "text-on-surface-muted hover:text-on-surface hover:bg-surface-container"
@@ -106,7 +147,7 @@ export default function PlayeraColorsSection() {
               setActiveGender("410d");
               setSelectedColor(null);
             }}
-            className={`px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeGender === "410d"
                 ? "bg-primary text-on-primary shadow-xs"
                 : "text-on-surface-muted hover:text-on-surface hover:bg-surface-container"
@@ -115,6 +156,21 @@ export default function PlayeraColorsSection() {
             <span>👩</span>
             <span>Dama (19)</span>
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveGender("410n");
+              setSelectedColor(null);
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeGender === "410n"
+                ? "bg-primary text-on-primary shadow-xs"
+                : "text-on-surface-muted hover:text-on-surface hover:bg-surface-container"
+            }`}
+          >
+            <span>🧒</span>
+            <span>Niño (17)</span>
+          </button>
         </div>
       </div>
 
@@ -122,11 +178,11 @@ export default function PlayeraColorsSection() {
       <div className="flex flex-wrap items-center justify-between gap-2 py-3 text-xs text-on-surface-muted">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-on-surface">
-            {activeGender === "410c" ? "Estilo 410C (Caballero):" : "Estilo 410D (Dama):"}
+            {getStyleTitle()}
           </span>
           <span>{colors.length} tonos en catálogo</span>
           <span className="inline-block w-1 h-1 rounded-full bg-outline-variant"></span>
-          <span>Tallas: {activeGender === "410c" ? "S – 3XL" : "S – 2XL"}</span>
+          <span>Tallas: {getSizeRange()}</span>
         </div>
 
         {selectedColor ? (
