@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import ProductCard from "@/components/catalog/ProductCard";
 import FilterSidebar from "@/components/catalog/FilterSidebar";
 import FilterChips from "@/components/catalog/FilterChips";
+import PlayeraColorsSection from "@/components/catalog/PlayeraColorsSection";
 
 export const revalidate = 60;
 
@@ -49,6 +50,11 @@ export default async function CatalogoPage({
   const activeCategory = categories.find((c) => c.slug === categoria) as (typeof categories[0] & { promoMode?: boolean; promoImage?: string | null; promoDescription?: string | null }) | undefined;
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER;
   const isPromo = !!(activeCategory as any)?.promoMode;
+  const isPlayeraCategory =
+    categoria === "estampado-de-playeras" ||
+    categories
+      .find((c) => c.slug === "estampado-de-playeras")
+      ?.children?.some((s: any) => s.slug === categoria);
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-8">
@@ -83,7 +89,8 @@ export default async function CatalogoPage({
         />
 
         {/* Main content */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
+          {isPlayeraCategory && <PlayeraColorsSection />}
           {isPromo ? (
             /* ── Modo promocional ── */
             <div className="space-y-6">
