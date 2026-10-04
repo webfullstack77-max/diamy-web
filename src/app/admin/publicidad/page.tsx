@@ -371,7 +371,7 @@ export default function PublicidadPage() {
 
   const fullText = [caption, hashtags].filter(Boolean).join("\n\n");
   const canGenerate = !!(imageUrl || selectedProduct);
-  const canSubmit = !!(imageUrl && caption && channels.length > 0);
+  const canSubmit = !!(imageUrl && caption.trim() && channels.length > 0 && (scheduleNow || scheduleTime));
 
   return (
     <div className="max-w-3xl">
@@ -618,34 +618,36 @@ export default function PublicidadPage() {
             {generating ? "Generando..." : "Generar anuncio con IA"}
           </button>
 
-          {(caption || generating) && (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-on-surface-muted mb-1">Texto del anuncio</label>
-                <textarea
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  rows={5}
-                  className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface-container text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-none"
-                  placeholder={generating ? "Generando..." : ""}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-on-surface-muted mb-1">Hashtags</label>
-                <input
-                  type="text"
-                  value={hashtags}
-                  onChange={(e) => setHashtags(e.target.value)}
-                  className="w-full px-4 py-2 rounded-xl border border-outline-variant bg-surface-container text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                  placeholder="#laser #personalizado #regalo"
-                />
-              </div>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-on-surface-muted mb-1">
+                Texto del anuncio {generating && <span className="text-primary font-normal">(generando con IA...)</span>}
+              </label>
+              <textarea
+                value={caption}
+                onChange={(e) => setCaption(e.target.value)}
+                rows={5}
+                className="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface-container text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition resize-none"
+                placeholder={generating ? "Generando texto con IA..." : "Escribe aquí el texto del anuncio o haz clic arriba en 'Generar anuncio con IA'..."}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-on-surface-muted mb-1">Hashtags</label>
+              <input
+                type="text"
+                value={hashtags}
+                onChange={(e) => setHashtags(e.target.value)}
+                className="w-full px-4 py-2 rounded-xl border border-outline-variant bg-surface-container text-on-surface text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
+                placeholder="#laser #personalizado #regalo"
+              />
+            </div>
+            {caption && (
               <p className="text-xs text-on-surface-muted">
                 Puedes editar el texto antes de publicar.{" "}
                 <span className="font-medium">{fullText.split(/\s+/).filter(Boolean).length} palabras</span>
               </p>
-            </div>
-          )}
+            )}
+          </div>
         </section>
 
         {/* Paso 3 */}
@@ -735,14 +737,51 @@ export default function PublicidadPage() {
               ¡Anuncio programado correctamente!
             </div>
           ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={!canSubmit || submitting}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary font-semibold hover:bg-primary-dark transition disabled:opacity-50"
-            >
-              <span className="material-symbol" style={{ fontSize: "18px" }}>send</span>
-              {submitting ? "Guardando..." : "Programar publicación"}
-            </button>
+            <div>
+              <button
+                onClick={handleSubmit}
+                disabled={!canSubmit || submitting}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-on-primary font-semibold hover:bg-primary-dark transition disabled:opacity-50"
+              >
+                <span className="material-symbol" style={{ fontSize: "18px" }}>send</span>
+                {submitting ? "Guardando..." : "Programar publicación"}
+              </button>
+
+              {!canSubmit && !submitting && (
+                <div className="mt-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-800 dark:text-amber-200">
+                  <p className="font-semibold flex items-center gap-1.5 mb-1.5">
+                    <span className="material-symbol" style={{ fontSize: "16px" }}>info</span>
+                    Para habilitar el botón de publicación, completa:
+                  </p>
+                  <ul className="space-y-1 pl-1">
+                    {!imageUrl && (
+                      <li className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <strong>Paso 1:</strong> Selecciona un producto del catálogo o sube una foto.
+                      </li>
+                    )}
+                    {!caption.trim() && (
+                      <li className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <strong>Paso 2:</strong> Escribe el texto del anuncio o haz clic en &ldquo;Generar anuncio con IA&rdquo;.
+                      </li>
+                    )}
+                    {channels.length === 0 && (
+                      <li className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <strong>Paso 3:</strong> Selecciona al menos un canal (WhatsApp, Facebook o Instagram).
+                      </li>
+                    )}
+                    {!scheduleNow && !scheduleTime && (
+                      <li className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                        <strong>Paso 3:</strong> Elige la fecha y hora de programación.
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
         </section>
 
