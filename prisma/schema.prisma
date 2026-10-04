@@ -225,3 +225,19 @@ model PushSubscription {
 
   @@map("push_subscriptions")
 }
+
+model PopupConfig {
+  id               String   @id @default("main")
+  isActive         Boolean  @default(true)
+  theme            String   @default("halloween")
+  title            String   @default("Temporada de Halloween")
+  subtitle         String?  @default("Playeras exclusivas Halloween")
+  buttonText       String?  @default("Ver Producto")
+  slides           String   @default("[]")
+  autoPlayInterval Int      @default(4)
+  displayFrequency String   @default("always")
+  updatedAt        DateTime @updatedAt
+
+  @@map("popup_config")
+}
+

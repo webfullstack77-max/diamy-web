@@ -1,15 +1,11 @@
-import { readFile, writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
-import type { PopupConfig } from "@/types/popup";
-
-const CONFIG_FILE = join(process.cwd(), "src", "data", "popup-config.json");
+import { prisma } from "@/lib/prisma";
+import type { PopupConfig, PopupSlide, PopupTheme } from "@/types/popup";
 
 export const DEFAULT_POPUP_CONFIG: PopupConfig = {
   isActive: true,
   theme: "halloween",
-  title: "¡Especial Spooky Halloween! 🎃",
-  subtitle: "Playeras exclusivas y decoración en corte láser con envío a todo México",
+  title: "Temporada de Halloween",
+  subtitle: "Playeras exclusivas Halloween",
   buttonText: "Ver Producto",
   displayFrequency: "always",
   autoPlayInterval: 4,
@@ -44,28 +40,86 @@ export const DEFAULT_POPUP_CONFIG: PopupConfig = {
 
 export async function getPopupConfig(): Promise<PopupConfig> {
   try {
-    if (!existsSync(CONFIG_FILE)) {
-      await savePopupConfig(DEFAULT_POPUP_CONFIG);
-      return DEFAULT_POPUP_CONFIG;
+    const row = await prisma.popupConfig.findUnique({
+      where: { id: "main" },
+    });
+
+    if (!row) {
+      return await savePopupConfig(DEFAULT_POPUP_CONFIG);
     }
-    const data = await readFile(CONFIG_FILE, "utf-8");
-    const parsed = JSON.parse(data);
-    return { ...DEFAULT_POPUP_CONFIG, ...parsed };
+
+    let slides: PopupSlide[] = [];
+    try {
+      slides = JSON.parse(row.slides);
+    } catch {
+      slides = DEFAULT_POPUP_CONFIG.slides;
+    }
+
+    return {
+      isActive: row.isActive,
+      theme: (row.theme as PopupTheme) || "halloween",
+      title: row.title,
+      subtitle: row.subtitle || undefined,
+      buttonText: row.buttonText || undefined,
+      slides,
+      autoPlayInterval: row.autoPlayInterval,
+      displayFrequency: (row.displayFrequency as PopupConfig["displayFrequency"]) || "always",
+      updatedAt: row.updatedAt.toISOString(),
+    };
   } catch (error) {
-    console.error("Error reading popup config:", error);
+    console.error("Error reading popup config from database:", error);
     return DEFAULT_POPUP_CONFIG;
   }
 }
 
 export async function savePopupConfig(config: PopupConfig): Promise<PopupConfig> {
-  const dir = join(process.cwd(), "src", "data");
-  if (!existsSync(dir)) {
-    await mkdir(dir, { recursive: true });
+  try {
+    const slidesJson = JSON.stringify(config.slides || []);
+    const row = await prisma.popupConfig.upsert({
+      where: { id: "main" },
+      create: {
+        id: "main",
+        isActive: config.isActive ?? true,
+        theme: config.theme || "halloween",
+        title: config.title || DEFAULT_POPUP_CONFIG.title,
+        subtitle: config.subtitle || null,
+        buttonText: config.buttonText || "Ver Producto",
+        slides: slidesJson,
+        autoPlayInterval: config.autoPlayInterval ?? 4,
+        displayFrequency: config.displayFrequency || "always",
+      },
+      update: {
+        isActive: config.isActive ?? true,
+        theme: config.theme || "halloween",
+        title: config.title || DEFAULT_POPUP_CONFIG.title,
+        subtitle: config.subtitle || null,
+        buttonText: config.buttonText || "Ver Producto",
+        slides: slidesJson,
+        autoPlayInterval: config.autoPlayInterval ?? 4,
+        displayFrequency: config.displayFrequency || "always",
+      },
+    });
+
+    let slides: PopupSlide[] = [];
+    try {
+      slides = JSON.parse(row.slides);
+    } catch {
+      slides = config.slides || [];
+    }
+
+    return {
+      isActive: row.isActive,
+      theme: (row.theme as PopupTheme) || "halloween",
+      title: row.title,
+      subtitle: row.subtitle || undefined,
+      buttonText: row.buttonText || undefined,
+      slides,
+      autoPlayInterval: row.autoPlayInterval,
+      displayFrequency: (row.displayFrequency as PopupConfig["displayFrequency"]) || "always",
+      updatedAt: row.updatedAt.toISOString(),
+    };
+  } catch (error) {
+    console.error("Error saving popup config to database:", error);
+    throw error;
   }
-  const toSave: PopupConfig = {
-    ...config,
-    updatedAt: new Date().toISOString(),
-  };
-  await writeFile(CONFIG_FILE, JSON.stringify(toSave, null, 2), "utf-8");
-  return toSave;
 }
