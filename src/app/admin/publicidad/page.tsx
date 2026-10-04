@@ -187,13 +187,23 @@ export default function PublicidadPage() {
     const p = products.find((x) => x.id === productId);
     if (!p) {
       setSelectedProduct(null);
+      setImageUrl("");
+      setImagePreview("");
+      setImageUrls([]);
       return;
     }
     setSelectedProduct(p);
-    // No pre-cargar imagen por defecto de catálogo para dar total libertad de subir JPEGs
-    setImageUrl("");
-    setImagePreview("");
-    setImageUrls([]);
+    // Cargar automáticamente todas las imágenes del producto seleccionado (máx 10 para carrusel Meta/IG)
+    const validImages = (p.images || []).filter(Boolean);
+    if (validImages.length > 0) {
+      setImageUrl(validImages[0]);
+      setImagePreview(validImages[0]);
+      setImageUrls(validImages.slice(1, 10));
+    } else {
+      setImageUrl("");
+      setImagePreview("");
+      setImageUrls([]);
+    }
     setCaption("");
     setHashtags("");
     resetVideo();
@@ -528,12 +538,29 @@ export default function PublicidadPage() {
                   </button>
                 )}
               </div>
-              {imageUrls.length > 0 && (
-                <p className="text-xs text-primary font-medium flex items-center gap-1">
-                  <span className="material-symbol" style={{ fontSize: "14px" }}>view_carousel</span>
-                  Carrusel ({1 + imageUrls.length} imágenes)
-                </p>
-              )}
+              {imageUrls.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                  <span className="inline-flex items-center gap-1 text-primary font-semibold bg-primary/10 px-2.5 py-1 rounded-lg">
+                    <span className="material-symbol" style={{ fontSize: "16px" }}>view_carousel</span>
+                    Carrusel ({1 + imageUrls.length} imágenes listas para enviar)
+                  </span>
+                  {selectedProduct && (
+                    <span className="text-on-surface-muted bg-surface-container px-2.5 py-1 rounded-lg">
+                      Producto: <strong>{selectedProduct.title}</strong>
+                    </span>
+                  )}
+                  {selectedProduct && selectedProduct.images && selectedProduct.images.length > 10 && (
+                    <span className="text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg">
+                      (Máx. 10 para carrusel en Instagram)
+                    </span>
+                  )}
+                </div>
+              ) : selectedProduct && imageUrl ? (
+                <div className="pt-1 text-xs text-on-surface-muted flex items-center gap-1.5">
+                  <span className="material-symbol text-primary" style={{ fontSize: "16px" }}>check_circle</span>
+                  Imagen cargada desde: <strong>{selectedProduct.title}</strong>
+                </div>
+              ) : null}
             </div>
           )}
 
