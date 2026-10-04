@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { href: "/admin/mockups-dm", icon: "style", label: "Mockups Pro" },
   { href: "/admin/categorias", icon: "category", label: "Categorías" },
   { href: "/admin/publicidad", icon: "campaign", label: "Publicidad" },
+  { href: "/admin/popups", icon: "featured_seasonal_and_gifts", label: "Popups" },
   { href: "/admin/producto-del-mes", icon: "star", label: "Producto del mes" },
   { href: "/admin/imagen-del-dia", icon: "today", label: "Imagen del día" },
   { href: "/admin/testimonios", icon: "rate_review", label: "Testimonios" },

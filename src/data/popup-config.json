@@ -1,0 +1,36 @@
+{
+  "isActive": true,
+  "theme": "halloween",
+  "title": "Temporada de Halloween",
+  "subtitle": "Playeras exclusivas Halloween",
+  "buttonText": "Ver Producto",
+  "displayFrequency": "always",
+  "autoPlayInterval": 4,
+  "slides": [
+    {
+      "id": "slide-1",
+      "imageUrl": "/uploads/3b541247-1378-4fa9-b9c2-877ffb182bd8.jpg",
+      "badge": "Más Pedida",
+      "subtitle": "Estampado DTF alta definición sobre 100% algodón",
+      "title": "Playera Demon Hunters - Calaveras y Cazadores",
+      "linkUrl": "/producto/playerasdhsemi"
+    },
+    {
+      "id": "slide-2",
+      "imageUrl": "/uploads/5622e428-60b6-46cf-b2ec-a0a4699db75f.jpg",
+      "badge": "123",
+      "subtitle": "Colores vibrantes resistentes a lavadas",
+      "title": "Playera Jurassic Spooky World - Edición Nocturna",
+      "linkUrl": "/producto/playerasjp"
+    },
+    {
+      "id": "slide-3",
+      "imageUrl": "/uploads/e00455a2-01d0-4895-80d6-7c2bc6fc2efc.jpg",
+      "badge": "123",
+      "subtitle": "Elige tu diseño favorito o personalízala con nosotros",
+      "title": "Playera Anime Jujutsu Kaisen - Modo Oscuro",
+      "linkUrl": "/producto/jujutsu-kaisen-tshirts"
+    }
+  ],
+  "updatedAt": "2026-10-04T18:45:35.919Z"
+}

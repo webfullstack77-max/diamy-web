@@ -7,6 +7,8 @@ import FloatingWhatsApp from "@/components/layout/FloatingWhatsApp";
 import PublicOnly from "@/components/layout/PublicOnly";
 import AutoRefresh from "@/components/AutoRefresh";
 import PageTracker from "@/components/analytics/PageTracker";
+import HalloweenFloating from "@/components/layout/HalloweenFloating";
+import ThemedPopup from "@/components/popups/ThemedPopup";
 import "./globals.css";
 
 const notoSerif = Noto_Serif({
@@ -74,6 +76,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <PageTracker />
         <PublicOnly>
           <Header />
+          <HalloweenFloating />
+          <ThemedPopup />
         </PublicOnly>
         <main className="flex-1">
           {/* Spacer que compensa el Header fijo solo en páginas públicas */}
