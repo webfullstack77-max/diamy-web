@@ -8,7 +8,37 @@ import PlayeraColorsSection from "@/components/catalog/PlayeraColorsSection";
 
 export const revalidate = 60;
 
-export const metadata: Metadata = { title: "Catálogo" };
+export const metadata: Metadata = {
+  title: "Catálogo de Productos",
+  description: "Explora nuestro catálogo de productos artesanales en corte láser, acrílico, playeras estampadas, tazas, MDF y regalos personalizados.",
+  alternates: {
+    canonical: "https://diamylasercut.com.mx/catalogo",
+  },
+  openGraph: {
+    title: "Catálogo de Productos | Diamy Laser Cut",
+    description: "Explora nuestro catálogo de productos artesanales en corte láser, acrílico, playeras estampadas, tazas, MDF y regalos personalizados.",
+    url: "https://diamylasercut.com.mx/catalogo",
+    siteName: "Diamy Laser Cut",
+    locale: "es_MX",
+    type: "website",
+    images: [
+      {
+        url: "https://diamylasercut.com.mx/og-image.jpg",
+        secureUrl: "https://diamylasercut.com.mx/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Catálogo Diamy Laser Cut",
+        type: "image/jpeg",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Catálogo de Productos | Diamy Laser Cut",
+    description: "Explora nuestro catálogo de productos artesanales en corte láser, acrílico, playeras estampadas, tazas, MDF y regalos personalizados.",
+    images: ["https://diamylasercut.com.mx/og-image.jpg"],
+  },
+};
 
 interface SearchParams {
   categoria?: string;

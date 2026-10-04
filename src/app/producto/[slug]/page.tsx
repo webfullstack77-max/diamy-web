@@ -18,9 +18,80 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = await prisma.product.findUnique({ where: { slug } });
-  if (!product) return { title: "Producto no encontrado" };
-  return { title: product.title, description: product.description };
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    include: { category: true },
+  });
+
+  if (!product) {
+    return {
+      title: "Producto no encontrado",
+      description: "El producto solicitado no está disponible en Diamy Laser Cut.",
+    };
+  }
+
+  const siteUrl = "https://diamylasercut.com.mx";
+  const canonicalUrl = `${siteUrl}/producto/${product.slug}`;
+
+  // Buscar la primera imagen válida (descartar videos)
+  const firstImage = product.images.find(
+    (img) => !/\.(mp4|webm)(\?|$)/i.test(img)
+  );
+
+  let absoluteImageUrl = `${siteUrl}/og-image.jpg`;
+  if (firstImage) {
+    if (firstImage.startsWith("http://") || firstImage.startsWith("https://")) {
+      absoluteImageUrl = firstImage;
+    } else {
+      absoluteImageUrl = `${siteUrl}${firstImage.startsWith("/") ? "" : "/"}${firstImage}`;
+    }
+  }
+
+  // Limpiar y acortar descripción para que WhatsApp/FB la muestre perfecta sin cortes raros
+  const cleanDescription = (product.description || "")
+    .replace(/(\r\n|\n|\r)/gm, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 160);
+
+  const priceText = product.price ? `$${product.price.toLocaleString("es-MX")} MXN` : "";
+  const titleWithBrand = priceText
+    ? `${product.title} (${priceText}) | Diamy Laser Cut`
+    : `${product.title} | Diamy Laser Cut`;
+
+  const isPng = absoluteImageUrl.toLowerCase().endsWith(".png");
+
+  return {
+    title: product.title,
+    description: cleanDescription,
+    alternates: {
+      canonical: canonicalUrl,
+    },
+    openGraph: {
+      title: titleWithBrand,
+      description: cleanDescription,
+      url: canonicalUrl,
+      siteName: "Diamy Laser Cut",
+      locale: "es_MX",
+      type: "website",
+      images: [
+        {
+          url: absoluteImageUrl,
+          secureUrl: absoluteImageUrl,
+          width: 1200,
+          height: 1200,
+          alt: product.title,
+          type: isPng ? "image/png" : "image/jpeg",
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: titleWithBrand,
+      description: cleanDescription,
+      images: [absoluteImageUrl],
+    },
+  };
 }
 
 export default async function ProductoPage({ params }: Props) {
