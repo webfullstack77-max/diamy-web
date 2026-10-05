@@ -9,6 +9,14 @@ const path = require('path');
 const { randomUUID } = require('crypto');
 const webpush = require('web-push');
 
+// ── Manejo de errores globales para evitar que el bot muera inesperadamente ────
+process.on('unhandledRejection', (reason) => {
+  console.warn('[WA Process] Advertencia Unhandled Rejection:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[WA Process] Error Uncaught Exception:', err?.message || err);
+});
+
 // ── Web Push (VAPID) ─────────────────────────────────────────────────────────
 if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
   webpush.setVapidDetails(
@@ -19,12 +27,10 @@ if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
 }
 
 // ── PostgreSQL ──────────────────────────────────────────────────────────────
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
-// Establecer search_path al schema correcto en cada nueva conexión
-pool.on('connect', async (client) => {
-  const schema = process.env.DB_SCHEMA || 'diamy_v4';
-  await client.query(`SET search_path TO "${schema}"`);
+const schema = process.env.DB_SCHEMA || 'diamy_v4';
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  options: `-c search_path=${schema}`,
 });
 
 async function query(sql, params) {
@@ -36,7 +42,7 @@ async function query(sql, params) {
 let waReady = false;
 
 const waClient = new Client({
-  authStrategy: new LocalAuth({ dataPath: './sessions' }),
+  authStrategy: new LocalAuth({ dataPath: path.join(__dirname, 'sessions') }),
   puppeteer: {
     headless: true,
     args: [
@@ -64,13 +70,29 @@ waClient.on('qr', (qr) => {
     if (err) {
       console.error('[WA] Error al guardar QR en public/qr.png:', err.message);
     } else {
-      console.log('[WA] QR guardado en public/qr.png. Puedes escanearlo en su navegador.');
+      console.log('[WA] QR guardado en public/qr.png. Puedes ver el QR en https://diamylasercut.com.mx/qr.png');
     }
   });
 });
 
+waClient.on('authenticated', () => {
+  console.log('[WA] ¡Autenticado exitosamente con WhatsApp!');
+});
+
+waClient.on('auth_failure', (msg) => {
+  console.error('[WA] Fallo de autenticación en WhatsApp:', msg);
+});
+
+waClient.on('loading_screen', (percent, message) => {
+  console.log(`[WA] Sincronizando WhatsApp Web: ${percent}% - ${message || ''}`);
+});
+
+waClient.on('change_state', (state) => {
+  console.log('[WA] Estado de WhatsApp cambiado:', state);
+});
+
 waClient.on('ready', () => {
-  console.log('[WA] WhatsApp listo!');
+  console.log('[WA] ¡WhatsApp listo y conectado!');
   waReady = true;
 
   // Eliminar el archivo de QR por seguridad
@@ -85,12 +107,14 @@ waClient.on('ready', () => {
   }
 });
 
-waClient.on('disconnected', () => {
-  console.log('[WA] WhatsApp desconectado');
+waClient.on('disconnected', (reason) => {
+  console.log('[WA] WhatsApp desconectado. Razón:', reason);
   waReady = false;
 });
 
-waClient.initialize();
+waClient.initialize().catch((err) => {
+  console.error('[WA] Error inicializando cliente de WhatsApp:', err?.message || err);
+});
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 function buildImageUrl(imageUrl) {
