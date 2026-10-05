@@ -33,6 +33,11 @@ export default function Footer() {
               </Link>
             </li>
             <li>
+              <Link href="/personalizador" prefetch={false} className="text-primary font-medium hover:underline transition">
+                👕 Simulador / Personalizador DTF
+              </Link>
+            </li>
+            <li>
               <Link href="/catalogo?categoria=MDF" prefetch={false} className="hover:text-primary transition">
                 Productos MDF
               </Link>

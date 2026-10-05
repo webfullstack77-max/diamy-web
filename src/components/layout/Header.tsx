@@ -72,6 +72,16 @@ export default function Header() {
           </Link>
 
           <Link
+            href="/personalizador"
+            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-primary/40 text-primary text-sm font-semibold hover:bg-primary/10 transition"
+          >
+            <span className="material-symbol" style={{ fontSize: "18px" }}>
+              checkroom
+            </span>
+            Diseña tu Playera
+          </Link>
+
+          <Link
             href="/catalogo"
             className="hidden sm:flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-primary text-on-primary text-sm font-medium hover:bg-primary-dark transition"
           >

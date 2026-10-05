@@ -50,6 +50,8 @@ next-env.d.ts
 # Uploaded images — persistent storage on VPS (not in git)
 /public/uploads/*
 !/public/uploads/.gitkeep
+!/public/uploads/designs/
+!/public/uploads/ARTE-PNG*
 
 # Legacy local data files
 /src/data/popup-config.json

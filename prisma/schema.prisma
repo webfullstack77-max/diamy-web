@@ -261,3 +261,34 @@ model ClientWork {
   @@map("client_works")
 }
 
+model DesignCollection {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  description String?
+  icon        String?       @default("📁")
+  coverImage  String?
+  order       Int           @default(0)
+  isActive    Boolean       @default(true)
+  designs     DesignAsset[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("design_collections")
+}
+
+model DesignAsset {
+  id           String           @id @default(cuid())
+  title        String
+  imageUrl     String
+  thumbnailUrl String?
+  collectionId String
+  collection   DesignCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  order        Int              @default(0)
+  isActive     Boolean          @default(true)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@map("design_assets")
+}
+

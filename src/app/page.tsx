@@ -7,6 +7,7 @@ import FeaturedCarousel from "@/components/home/FeaturedCarousel";
 import ProductOfMonth from "@/components/home/ProductOfMonth";
 import DailyPromoModal from "@/components/home/DailyPromoModal";
 import RealWorksCarousel from "@/components/home/RealWorksCarousel";
+import DTFSimulatorPromo from "@/components/home/DTFSimulatorPromo";
 
 export const revalidate = 60;
 
@@ -66,6 +67,13 @@ export default async function HomePage() {
               regalos, decoración y proyectos corporativos.
             </p>
             <div className="mt-8 flex flex-row gap-3 justify-center md:justify-start flex-wrap">
+              <Link
+                href="/personalizador"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 text-[#0c0e12] text-sm font-bold hover:brightness-110 transition shadow-lg ring-2 ring-amber-400/40"
+              >
+                <span className="material-symbol" style={{ fontSize: "18px" }}>checkroom</span>
+                Diseña tu Playera DTF
+              </Link>
               <Link
                 href="/catalogo"
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition shadow-lg"
@@ -145,6 +153,9 @@ export default async function HomePage() {
 
       {/* Categories */}
       <CategoryGrid categories={categories} />
+
+      {/* Simulador de Playeras DTF Banner */}
+      <DTFSimulatorPromo />
 
       {/* Trabajos Reales de Clientes */}
       <RealWorksCarousel initialWorks={clientWorks} />

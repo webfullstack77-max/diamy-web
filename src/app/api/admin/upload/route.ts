@@ -7,8 +7,8 @@ import sharp from "sharp";
 
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm"];
-const MAX_IMAGE_SIZE = 30 * 1024 * 1024; // 30MB
-const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_IMAGE_SIZE = 60 * 1024 * 1024; // 60MB
+const MAX_VIDEO_SIZE = 60 * 1024 * 1024; // 60MB
 
 export async function POST(request: NextRequest) {
   try {
