@@ -50,6 +50,7 @@ model Product {
   widthCm         Float?
   heightCm        Float?
   productOfMonthItems ProductOfMonthItem[]
+  clientWorks         ClientWork[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -239,5 +240,24 @@ model PopupConfig {
   updatedAt        DateTime @updatedAt
 
   @@map("popup_config")
+}
+
+model ClientWork {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  category    String?
+  clientName  String?
+  badge       String?  @default("Trabajo Real")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  link        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("client_works")
 }
 

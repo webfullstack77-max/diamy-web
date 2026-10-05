@@ -6,11 +6,12 @@ import TestimonialsSection from "@/components/home/TestimonialsSection";
 import FeaturedCarousel from "@/components/home/FeaturedCarousel";
 import ProductOfMonth from "@/components/home/ProductOfMonth";
 import DailyPromoModal from "@/components/home/DailyPromoModal";
+import RealWorksCarousel from "@/components/home/RealWorksCarousel";
 
 export const revalidate = 60;
 
 export default async function HomePage() {
-  const [categories, testimonials, featuredProducts, productOfMonthItems] = await Promise.all([
+  const [categories, testimonials, featuredProducts, productOfMonthItems, clientWorks] = await Promise.all([
     prisma.category.findMany({ where: { parentId: null }, orderBy: { name: "asc" } }),
     prisma.testimonial.findMany({ where: { isPublished: true, isSubmitted: true }, orderBy: { submittedAt: "desc" } }),
     prisma.product.findMany({
@@ -23,6 +24,11 @@ export default async function HomePage() {
       where: { isActive: true },
       orderBy: { order: "asc" },
       include: { product: { include: { category: true } } },
+    }),
+    prisma.clientWork.findMany({
+      where: { isActive: true },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
+      include: { product: { select: { id: true, title: true, slug: true, price: true, images: true } } },
     }),
   ]);
 
@@ -139,6 +145,9 @@ export default async function HomePage() {
 
       {/* Categories */}
       <CategoryGrid categories={categories} />
+
+      {/* Trabajos Reales de Clientes */}
+      <RealWorksCarousel initialWorks={clientWorks} />
 
       {/* Producto del mes */}
       {productOfMonthItems.length > 0 && (

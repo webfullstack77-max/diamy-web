@@ -53,3 +53,7 @@ next-env.d.ts
 
 # Legacy local data files
 /src/data/popup-config.json
+
+# WhatsApp QR temporary file
+/public/qr.png
+
