@@ -60,6 +60,7 @@ export default function DTFMockupStudio() {
 
   // Image references
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mockupContainerRef = useRef<HTMLDivElement | null>(null);
   const backgroundPhotoRef = useRef<HTMLImageElement | null>(null);
   const designImageRef = useRef<HTMLImageElement | null>(null);
 
@@ -80,6 +81,25 @@ export default function DTFMockupStudio() {
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 3500);
+  }, []);
+
+  // Auto smooth scroll to mockup whenever a design is selected (PC & Mobile)
+  const scrollToMockup = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (mockupContainerRef.current) {
+      const rect = mockupContainerRef.current.getBoundingClientRect();
+      // If mockup is not positioned right in view (user scrolled down to gallery)
+      if (rect.top < 60 || rect.top > 160) {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetY = Math.max(0, scrollTop + rect.top - 84);
+        window.scrollTo({
+          top: targetY,
+          behavior: "smooth",
+        });
+      }
+    } else {
+      window.scrollTo({ top: 120, behavior: "smooth" });
+    }
   }, []);
 
   // Load collections from public API with background sync support
@@ -452,10 +472,8 @@ export default function DTFMockupStudio() {
     setDesignRotation(0);
     showToast(`¡"${design.title}" aplicado al mockup!`);
 
-    // Smooth scroll up to mockup on mobile
-    if (window.innerWidth < 768) {
-      window.scrollTo({ top: 180, behavior: "smooth" });
-    }
+    // Auto smooth scroll to mockup on both PC and mobile
+    scrollToMockup();
   };
 
   // Upload custom design from user's phone or computer
@@ -478,9 +496,8 @@ export default function DTFMockupStudio() {
       setDesignRotation(0);
       showToast("¡Tu diseño se cargó y ajustó al centro de la playera!");
 
-      if (window.innerWidth < 768) {
-        window.scrollTo({ top: 180, behavior: "smooth" });
-      }
+      // Auto smooth scroll to mockup on both PC and mobile
+      scrollToMockup();
     };
     reader.readAsDataURL(file);
   };
@@ -709,7 +726,7 @@ export default function DTFMockupStudio() {
       )}
 
       {/* TOP STUDIO GRID: Mockup Canvas + Controls */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div ref={mockupContainerRef} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24">
         {/* LEFT COLUMN: The Mockup Canvas Box (Sticky on Desktop) */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-4">
           {/* Mockup Canvas Container with Glassmorphism Frame */}
