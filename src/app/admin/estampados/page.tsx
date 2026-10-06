@@ -53,6 +53,10 @@ export default function AdminEstampadosPage() {
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Drag and drop state
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const dragCounterRef = useRef(0);
+
   // Quick edit design title
   const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
   const [editingDesignTitle, setEditingDesignTitle] = useState("");
@@ -191,9 +195,8 @@ export default function AdminEstampadosPage() {
     }
   };
 
-  // Bulk Upload designs to active collection
-  const handleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  // Bulk Upload designs to active collection (from file input or drag & drop)
+  const processFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0 || !activeCollectionId) return;
 
     setUploadingDesigns(true);
@@ -261,6 +264,60 @@ export default function AdminEstampadosPage() {
       setUploadingDesigns(false);
       setUploadProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      await processFiles(e.target.files);
+    }
+  };
+
+  // Drag and Drop Handlers
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current <= 0) {
+      dragCounterRef.current = 0;
+      setIsDraggingOver(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounterRef.current = 0;
+    setIsDraggingOver(false);
+
+    if (uploadingDesigns) return;
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const validFiles = Array.from(e.dataTransfer.files).filter((file) =>
+        file.type.startsWith("image/") || /\.(png|webp)$/i.test(file.name)
+      );
+
+      if (validFiles.length === 0) {
+        alert("Por favor arrastra archivos de imagen PNG o WEBP.");
+        return;
+      }
+
+      await processFiles(validFiles);
     }
   };
 
@@ -538,24 +595,107 @@ export default function AdminEstampadosPage() {
 
             {/* Designs Gallery Grid */}
             {currentCollection.designs.length === 0 ? (
-              <div className="text-center py-16 bg-surface rounded-2xl border border-dashed border-outline-variant p-8">
-                <div className="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mx-auto mb-4 text-3xl">
-                  🖼️
-                </div>
-                <h3 className="font-bold text-on-surface text-lg">Esta carpeta aún no tiene estampados</h3>
-                <p className="text-sm text-on-surface-muted max-w-md mx-auto mt-1 mb-6">
-                  Sube tus archivos PNG con fondo transparente (puedes seleccionar varios a la vez) para que aparezcan en el mockup.
-                </p>
-                <label
-                  htmlFor="bulk-designs-upload"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-sm shadow cursor-pointer hover:bg-primary/90"
+              <div
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => {
+                  if (!uploadingDesigns && fileInputRef.current) {
+                    fileInputRef.current.click();
+                  }
+                }}
+                className={`text-center py-16 bg-surface rounded-3xl border-2 border-dashed transition-all duration-300 p-8 cursor-pointer relative overflow-hidden group select-none ${
+                  isDraggingOver
+                    ? "border-primary bg-primary/10 ring-4 ring-primary/20 scale-[1.01]"
+                    : "border-outline-variant hover:border-primary/60 hover:bg-surface-container/30"
+                }`}
+              >
+                {/* Visual pulse glow on drag */}
+                {isDraggingOver && (
+                  <div className="absolute inset-0 bg-primary/5 pointer-events-none animate-pulse" />
+                )}
+
+                <div
+                  className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl transition-transform duration-300 ${
+                    isDraggingOver
+                      ? "scale-125 bg-primary text-on-primary shadow-xl shadow-primary/30 rotate-3"
+                      : "bg-surface-container group-hover:scale-110"
+                  }`}
                 >
-                  <span className="material-symbol" style={{ fontSize: "18px" }}>upload</span>
-                  Seleccionar Archivos PNG
-                </label>
+                  {isDraggingOver ? "📥" : "🖼️"}
+                </div>
+
+                <h3 className="font-bold text-on-surface text-xl transition-colors">
+                  {isDraggingOver ? "¡Suelta tus archivos PNG aquí!" : "Esta carpeta aún no tiene estampados"}
+                </h3>
+
+                <p className="text-sm text-on-surface-muted max-w-md mx-auto mt-2 mb-6 transition-colors">
+                  {isDraggingOver
+                    ? "Suelta las imágenes para comenzar a subirlas de inmediato a esta colección."
+                    : "Arrastra y suelta tus archivos PNG aquí o da clic en el botón para seleccionarlos de tu equipo."}
+                </p>
+
+                <div
+                  className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-all ${
+                    isDraggingOver
+                      ? "bg-primary text-on-primary scale-105 shadow-primary/30"
+                      : "bg-primary text-on-primary hover:bg-primary/90 group-hover:shadow-lg"
+                  }`}
+                >
+                  <span className="material-symbol" style={{ fontSize: "20px" }}>
+                    {isDraggingOver ? "download" : "upload"}
+                  </span>
+                  <span>{isDraggingOver ? "Soltar Archivos Ahora" : "Seleccionar Archivos PNG"}</span>
+                </div>
+
+                <p className="text-[11px] text-on-surface-muted mt-4">
+                  💡 Puedes arrastrar o seleccionar varios archivos PNG con fondo transparente a la vez
+                </p>
               </div>
             ) : (
               <div className="space-y-6">
+                {/* Quick Drag & Drop Bar above existing designs */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragEnter={handleDragEnter}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => {
+                    if (!uploadingDesigns && fileInputRef.current) {
+                      fileInputRef.current.click();
+                    }
+                  }}
+                  className={`p-4 rounded-2xl border-2 border-dashed transition-all duration-200 cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left ${
+                    isDraggingOver
+                      ? "border-primary bg-primary/10 ring-4 ring-primary/20 scale-[1.005]"
+                      : "border-outline-variant hover:border-primary/50 hover:bg-surface-container/20 bg-surface-container/10"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-transform ${
+                        isDraggingOver ? "scale-110 bg-primary text-on-primary" : "bg-surface-container"
+                      }`}
+                    >
+                      {isDraggingOver ? "📥" : "➕"}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-on-surface">
+                        {isDraggingOver
+                          ? "¡Suelta los archivos aquí para agregarlos a la carpeta!"
+                          : "Arrastra y suelta más estampados PNG aquí"}
+                      </p>
+                      <p className="text-[11px] text-on-surface-muted">
+                        O haz clic para seleccionar archivos desde tu computadora
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-surface border border-outline-variant text-on-surface flex items-center gap-1.5 pointer-events-none">
+                    <span className="material-symbol" style={{ fontSize: "16px" }}>upload_file</span>
+                    Agregar PNGs
+                  </span>
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                   {paginatedAdminDesigns.map((design) => (
                     <div
