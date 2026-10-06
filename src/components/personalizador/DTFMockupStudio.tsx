@@ -60,7 +60,6 @@ export default function DTFMockupStudio() {
 
   // Image references
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const mockupContainerRef = useRef<HTMLDivElement | null>(null);
   const backgroundPhotoRef = useRef<HTMLImageElement | null>(null);
   const designImageRef = useRef<HTMLImageElement | null>(null);
 
@@ -81,25 +80,6 @@ export default function DTFMockupStudio() {
     setTimeout(() => {
       setToastMessage((prev) => (prev === msg ? null : prev));
     }, 3500);
-  }, []);
-
-  // Auto smooth scroll to mockup whenever a design is selected (PC & Mobile)
-  const scrollToMockup = useCallback(() => {
-    if (typeof window === "undefined") return;
-    if (mockupContainerRef.current) {
-      const rect = mockupContainerRef.current.getBoundingClientRect();
-      // If mockup is scrolled out of view or partly off screen (e.g. user is in the gallery below)
-      if (rect.top < 50 || rect.top > 250) {
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const targetY = Math.max(0, scrollTop + rect.top - 80);
-        window.scrollTo({
-          top: targetY,
-          behavior: "smooth",
-        });
-      }
-    } else {
-      window.scrollTo({ top: 120, behavior: "smooth" });
-    }
   }, []);
 
   // Load collections from public API with background sync support
@@ -241,7 +221,7 @@ export default function DTFMockupStudio() {
       if (bc) {
         try {
           bc.close();
-        } catch {}
+        } catch { }
       }
       window.removeEventListener("storage", handleStorage);
       window.removeEventListener("focus", handleVisibility);
@@ -432,10 +412,6 @@ export default function DTFMockupStudio() {
       setDesignSkew(currentScene.defaultSkew);
       renderCanvas();
     };
-    img.onerror = () => {
-      designImageRef.current = null;
-      renderCanvas();
-    };
   }, [selectedDesign, currentScene, renderCanvas]);
 
   // Redraw when transforms change
@@ -476,8 +452,10 @@ export default function DTFMockupStudio() {
     setDesignRotation(0);
     showToast(`¡"${design.title}" aplicado al mockup!`);
 
-    // Auto smooth scroll to mockup on both PC and mobile
-    scrollToMockup();
+    // Smooth scroll up to mockup on mobile
+    if (window.innerWidth < 768) {
+      window.scrollTo({ top: 180, behavior: "smooth" });
+    }
   };
 
   // Upload custom design from user's phone or computer
@@ -500,8 +478,9 @@ export default function DTFMockupStudio() {
       setDesignRotation(0);
       showToast("¡Tu diseño se cargó y ajustó al centro de la playera!");
 
-      // Auto smooth scroll to mockup on both PC and mobile
-      scrollToMockup();
+      if (window.innerWidth < 768) {
+        window.scrollTo({ top: 180, behavior: "smooth" });
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -682,12 +661,42 @@ export default function DTFMockupStudio() {
     }
   };
 
+  // Pagination State for Collection Designs (20 designs per page)
+  const [currentPage, setCurrentPage] = useState(1);
+  const DESIGNS_PER_PAGE = 20;
+  const galleryRef = useRef<HTMLDivElement | null>(null);
+
   const activeFolder = collections.find((c) => c.id === activeFolderId);
   const filteredDesigns = activeFolder
     ? activeFolder.designs.filter((d) =>
-        d.title.toLowerCase().includes(searchFilter.toLowerCase())
-      )
+      d.title.toLowerCase().includes(searchFilter.toLowerCase())
+    )
     : [];
+
+  const totalPages = Math.ceil(filteredDesigns.length / DESIGNS_PER_PAGE) || 1;
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+  const startIndex = (safeCurrentPage - 1) * DESIGNS_PER_PAGE;
+  const endIndex = Math.min(startIndex + DESIGNS_PER_PAGE, filteredDesigns.length);
+  const paginatedDesigns = filteredDesigns.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    if (galleryRef.current) {
+      const rect = galleryRef.current.getBoundingClientRect();
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const targetY = Math.max(0, scrollTop + rect.top - 84);
+      window.scrollTo({
+        top: targetY,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const handleSelectFolder = (folderId: string | null) => {
+    setActiveFolderId(folderId);
+    setCurrentPage(1);
+    setSearchFilter("");
+  };
 
   return (
     <div className="space-y-10">
@@ -700,7 +709,7 @@ export default function DTFMockupStudio() {
       )}
 
       {/* TOP STUDIO GRID: Mockup Canvas + Controls */}
-      <div ref={mockupContainerRef} className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start scroll-mt-24">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* LEFT COLUMN: The Mockup Canvas Box (Sticky on Desktop) */}
         <div className="lg:col-span-7 xl:col-span-8 space-y-4">
           {/* Mockup Canvas Container with Glassmorphism Frame */}
@@ -735,11 +744,10 @@ export default function DTFMockupStudio() {
                 </button>
                 <button
                   onClick={() => setShowBadge(!showBadge)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition ${
-                    showBadge
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition ${showBadge
                       ? "bg-[#d4af37]/20 border-[#d4af37]/50 text-[#d4af37]"
                       : "bg-white/5 border-white/10 text-white/60"
-                  }`}
+                    }`}
                   title="Mostrar/Ocultar etiqueta de color"
                 >
                   <span className="material-symbol" style={{ fontSize: "14px" }}>label</span>
@@ -896,11 +904,10 @@ export default function DTFMockupStudio() {
                   <button
                     key={scene.id}
                     onClick={() => handleSelectScene(scene)}
-                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden flex flex-col justify-between ${
-                      isSelected
+                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden flex flex-col justify-between ${isSelected
                         ? "bg-[#d4af37]/10 border-[#d4af37] shadow-lg shadow-[#d4af37]/10 ring-1 ring-[#d4af37]"
                         : "bg-white/5 border-white/10 hover:bg-white/10 text-white/70"
-                    }`}
+                      }`}
                   >
                     <div>
                       <span className="text-xs font-bold text-white block line-clamp-1">
@@ -940,11 +947,10 @@ export default function DTFMockupStudio() {
                   <button
                     key={key}
                     onClick={() => handleSelectModel(key)}
-                    className={`py-2 px-3 rounded-xl border text-center transition ${
-                      isSelected
+                    className={`py-2 px-3 rounded-xl border text-center transition ${isSelected
                         ? "bg-[#d4af37] text-[#0c0e12] font-black border-[#d4af37] shadow-md shadow-[#d4af37]/20"
                         : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10 font-semibold"
-                    } text-xs`}
+                      } text-xs`}
                   >
                     {model.name}
                   </button>
@@ -999,11 +1005,10 @@ export default function DTFMockupStudio() {
                     key={color.name_en}
                     onClick={() => handleSelectColor(color)}
                     title={`${color.name_es} (${color.name_en})`}
-                    className={`w-9 h-9 rounded-xl transition-all duration-150 relative flex items-center justify-center ${
-                      isSelected
+                    className={`w-9 h-9 rounded-xl transition-all duration-150 relative flex items-center justify-center ${isSelected
                         ? "scale-110 shadow-lg ring-2 ring-[#d4af37] ring-offset-2 ring-offset-[#121620] z-10"
                         : "hover:scale-105 opacity-90 hover:opacity-100"
-                    }`}
+                      }`}
                     style={{
                       backgroundColor: color.hex,
                       border: isWhite ? "1px solid #444" : "1px solid rgba(255,255,255,0.15)",
@@ -1106,12 +1111,11 @@ export default function DTFMockupStudio() {
         {/* FOLDERS TABS / SELECTOR BAR */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
           <button
-            onClick={() => setActiveFolderId(null)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2 border ${
-              activeFolderId === null
+            onClick={() => handleSelectFolder(null)}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2 border ${activeFolderId === null
                 ? "bg-[#d4af37] text-[#0c0e12] border-[#d4af37] shadow-lg shadow-[#d4af37]/20"
                 : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
-            }`}
+              }`}
           >
             <span>📁</span> Todas las Colecciones ({collections.length})
           </button>
@@ -1121,18 +1125,16 @@ export default function DTFMockupStudio() {
             return (
               <button
                 key={col.id}
-                onClick={() => setActiveFolderId(col.id)}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2 border ${
-                  isSelected
+                onClick={() => handleSelectFolder(col.id)}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2 border ${isSelected
                     ? "bg-[#d4af37] text-[#0c0e12] border-[#d4af37] shadow-lg shadow-[#d4af37]/20"
                     : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
-                }`}
+                  }`}
               >
                 <span>{col.icon || "📁"}</span>
                 <span>{col.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? "bg-[#0c0e12]/30 text-[#0c0e12]" : "bg-white/10 text-white/60"
-                }`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? "bg-[#0c0e12]/30 text-[#0c0e12]" : "bg-white/10 text-white/60"
+                  }`}>
                   {col.designs.length}
                 </span>
               </button>
@@ -1153,7 +1155,7 @@ export default function DTFMockupStudio() {
             {collections.map((col) => (
               <div
                 key={col.id}
-                onClick={() => setActiveFolderId(col.id)}
+                onClick={() => handleSelectFolder(col.id)}
                 className="group bg-[#141822] hover:bg-[#1a202c] p-6 rounded-2xl border border-white/10 hover:border-[#d4af37]/60 cursor-pointer transition-all duration-200 shadow-md hover:shadow-xl flex flex-col justify-between"
               >
                 <div>
@@ -1185,7 +1187,7 @@ export default function DTFMockupStudio() {
         ) : (
           /* INSIDE ACTIVE FOLDER GALLERY */
           activeFolder && (
-            <div className="space-y-4">
+            <div ref={galleryRef} className="space-y-4 scroll-mt-24">
               {/* Folder Breadcrumb & Search Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-[#141822] p-4 rounded-2xl border border-white/10">
                 <div className="flex items-center gap-3">
@@ -1202,7 +1204,10 @@ export default function DTFMockupStudio() {
                     type="text"
                     placeholder="Buscar diseño..."
                     value={searchFilter}
-                    onChange={(e) => setSearchFilter(e.target.value)}
+                    onChange={(e) => {
+                      setSearchFilter(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="w-full bg-[#0e1218] border border-white/15 rounded-xl px-3.5 py-2 pl-9 text-xs text-white placeholder-white/40 focus:outline-none focus:border-[#d4af37]"
                   />
                   <span className="material-symbol absolute left-3 top-2.5 text-white/40" style={{ fontSize: "16px" }}>
@@ -1217,62 +1222,130 @@ export default function DTFMockupStudio() {
                   <p className="text-sm text-white/60">No se encontraron diseños que coincidan con la búsqueda.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {filteredDesigns.map((design) => {
-                    const isSelected = selectedDesign?.id === design.id;
-                    return (
-                      <div
-                        key={design.id}
-                        onClick={() => handleApplyDesign(design, activeFolder.name)}
-                        className={`group bg-[#141822] rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col justify-between ${
-                          isSelected
-                            ? "border-[#d4af37] ring-2 ring-[#d4af37]/50 shadow-xl shadow-[#d4af37]/10 scale-[1.02]"
-                            : "border-white/10 hover:border-white/30 hover:scale-[1.02]"
-                        }`}
-                      >
-                        {/* Checkerboard container for transparent PNG */}
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {paginatedDesigns.map((design) => {
+                      const isSelected = selectedDesign?.id === design.id;
+                      return (
                         <div
-                          className="w-full aspect-square p-4 flex items-center justify-center relative"
-                          style={{
-                            backgroundColor: "#161920",
-                            backgroundImage: `
-                              linear-gradient(45deg, #1c2028 25%, transparent 25%),
-                              linear-gradient(-45deg, #1c2028 25%, transparent 25%),
-                              linear-gradient(45deg, transparent 75%, #1c2028 75%),
-                              linear-gradient(-45deg, transparent 75%, #1c2028 75%)
-                            `,
-                            backgroundSize: "16px 16px",
-                            backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
-                          }}
+                          key={design.id}
+                          onClick={() => handleApplyDesign(design, activeFolder.name)}
+                          className={`group bg-[#141822] rounded-2xl border transition-all duration-200 cursor-pointer overflow-hidden flex flex-col justify-between ${isSelected
+                              ? "border-[#d4af37] ring-2 ring-[#d4af37]/50 shadow-xl shadow-[#d4af37]/10 scale-[1.02]"
+                              : "border-white/10 hover:border-white/30 hover:scale-[1.02]"
+                            }`}
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={design.imageUrl}
-                            alt={design.title}
-                            className="max-w-full max-h-full object-contain filter drop-shadow group-hover:scale-110 transition-transform duration-200"
-                            loading="lazy"
-                          />
+                          {/* Checkerboard container for transparent PNG */}
+                          <div
+                            className="w-full aspect-square p-4 flex items-center justify-center relative"
+                            style={{
+                              backgroundColor: "#161920",
+                              backgroundImage: `
+                                linear-gradient(45deg, #1c2028 25%, transparent 25%),
+                                linear-gradient(-45deg, #1c2028 25%, transparent 25%),
+                                linear-gradient(45deg, transparent 75%, #1c2028 75%),
+                                linear-gradient(-45deg, transparent 75%, #1c2028 75%)
+                              `,
+                              backgroundSize: "16px 16px",
+                              backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+                            }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={design.imageUrl}
+                              alt={design.title}
+                              className="max-w-full max-h-full object-contain filter drop-shadow group-hover:scale-110 transition-transform duration-200"
+                              loading="lazy"
+                            />
 
-                          {isSelected && (
-                            <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#d4af37] text-[#0c0e12] flex items-center justify-center shadow">
-                              <span className="material-symbol" style={{ fontSize: "16px" }}>check</span>
+                            {isSelected && (
+                              <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#d4af37] text-[#0c0e12] flex items-center justify-center shadow">
+                                <span className="material-symbol" style={{ fontSize: "16px" }}>check</span>
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Title and Tap hint */}
+                          <div className="p-3 bg-[#11141c] border-t border-white/5 flex-1 flex flex-col justify-between">
+                            <h4 className="text-xs font-semibold text-white/90 group-hover:text-[#d4af37] truncate transition-colors">
+                              {design.title}
+                            </h4>
+                            <span className="text-[10px] text-white/40 mt-1 flex items-center gap-1 group-hover:text-[#d4af37]/80">
+                              <span className="material-symbol" style={{ fontSize: "12px" }}>touch_app</span>
+                              Tocar para probar
                             </span>
-                          )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-white/10 mt-6 bg-[#121622]/60 p-4 rounded-2xl border border-white/5">
+                      <div className="text-xs text-white/60 order-2 sm:order-1">
+                        Mostrando <span className="font-bold text-white">{startIndex + 1}</span> -{" "}
+                        <span className="font-bold text-white">{endIndex}</span> de{" "}
+                        <span className="font-bold text-[#d4af37]">{filteredDesigns.length}</span> diseños (Pág. {safeCurrentPage} de {totalPages})
+                      </div>
+
+                      <div className="flex items-center gap-1.5 order-1 sm:order-2 flex-wrap justify-center">
+                        <button
+                          onClick={() => handlePageChange(safeCurrentPage - 1)}
+                          disabled={safeCurrentPage === 1}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/80 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1 cursor-pointer"
+                          title="Página anterior"
+                        >
+                          <span className="material-symbol" style={{ fontSize: "16px" }}>chevron_left</span>
+                          <span>Anterior</span>
+                        </button>
+
+                        {/* Page Numbers */}
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                            const isCurrent = pageNum === safeCurrentPage;
+                            const isFirstOrLast = pageNum === 1 || pageNum === totalPages;
+                            const isNearCurrent = Math.abs(pageNum - safeCurrentPage) <= 1;
+
+                            if (!isFirstOrLast && !isNearCurrent) {
+                              if (pageNum === 2 || pageNum === totalPages - 1) {
+                                return (
+                                  <span key={`dots-${pageNum}`} className="px-1 text-white/30 text-xs select-none">
+                                    •••
+                                  </span>
+                                );
+                              }
+                              return null;
+                            }
+
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => handlePageChange(pageNum)}
+                                className={`w-8 h-8 rounded-xl text-xs font-bold transition flex items-center justify-center cursor-pointer ${
+                                  isCurrent
+                                    ? "bg-[#d4af37] text-[#0c0e12] shadow-md shadow-[#d4af37]/20 scale-105"
+                                    : "bg-white/5 hover:bg-white/10 text-white/70 border border-white/10"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
                         </div>
 
-                        {/* Title and Tap hint */}
-                        <div className="p-3 bg-[#11141c] border-t border-white/5 flex-1 flex flex-col justify-between">
-                          <h4 className="text-xs font-semibold text-white/90 group-hover:text-[#d4af37] truncate transition-colors">
-                            {design.title}
-                          </h4>
-                          <span className="text-[10px] text-white/40 mt-1 flex items-center gap-1 group-hover:text-[#d4af37]/80">
-                            <span className="material-symbol" style={{ fontSize: "12px" }}>touch_app</span>
-                            Tocar para probar
-                          </span>
-                        </div>
+                        <button
+                          onClick={() => handlePageChange(safeCurrentPage + 1)}
+                          disabled={safeCurrentPage === totalPages}
+                          className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-white/80 disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1 cursor-pointer"
+                          title="Página siguiente"
+                        >
+                          <span>Siguiente</span>
+                          <span className="material-symbol" style={{ fontSize: "16px" }}>chevron_right</span>
+                        </button>
                       </div>
-                    );
-                  })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

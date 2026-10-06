@@ -57,6 +57,10 @@ export default function AdminEstampadosPage() {
   const [editingDesignId, setEditingDesignId] = useState<string | null>(null);
   const [editingDesignTitle, setEditingDesignTitle] = useState("");
 
+  // Pagination for designs inside a collection
+  const [adminPage, setAdminPage] = useState(1);
+  const ADMIN_PER_PAGE = 20;
+
   // Delete Confirmation Modal
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -302,6 +306,16 @@ export default function AdminEstampadosPage() {
   };
 
   const currentCollection = collections.find((c) => c.id === activeCollectionId);
+  const adminTotalPages = currentCollection ? Math.ceil(currentCollection.designs.length / ADMIN_PER_PAGE) || 1 : 1;
+  const safeAdminPage = Math.min(Math.max(1, adminPage), adminTotalPages);
+  const adminStartIndex = (safeAdminPage - 1) * ADMIN_PER_PAGE;
+  const adminEndIndex = currentCollection ? Math.min(adminStartIndex + ADMIN_PER_PAGE, currentCollection.designs.length) : 0;
+  const paginatedAdminDesigns = currentCollection ? currentCollection.designs.slice(adminStartIndex, adminEndIndex) : [];
+
+  const handleSelectAdminCollection = (colId: string | null) => {
+    setActiveCollectionId(colId);
+    setAdminPage(1);
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -390,7 +404,7 @@ export default function AdminEstampadosPage() {
                     }`}
                   >
                     <div
-                      onClick={() => setActiveCollectionId(col.id)}
+                      onClick={() => handleSelectAdminCollection(col.id)}
                       className="p-5 cursor-pointer flex-1 select-none"
                     >
                       <div className="flex items-start justify-between mb-3">
@@ -472,7 +486,7 @@ export default function AdminEstampadosPage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-surface p-4 rounded-2xl border border-outline-variant">
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setActiveCollectionId(null)}
+                  onClick={() => handleSelectAdminCollection(null)}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-surface-container text-xs font-semibold text-on-surface hover:bg-surface-container-high transition"
                 >
                   <span className="material-symbol" style={{ fontSize: "16px" }}>arrow_back</span>
@@ -541,116 +555,167 @@ export default function AdminEstampadosPage() {
                 </label>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {currentCollection.designs.map((design) => (
-                  <div
-                    key={design.id}
-                    className={`group bg-surface rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col justify-between ${
-                      design.isActive ? "border-outline-variant hover:border-primary/50" : "border-outline-variant/40 opacity-60"
-                    }`}
-                  >
-                    {/* Checkerboard container for transparent PNG */}
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {paginatedAdminDesigns.map((design) => (
                     <div
-                      className="w-full aspect-square p-4 flex items-center justify-center relative"
-                      style={{
-                        backgroundColor: "#161920",
-                        backgroundImage: `
-                          linear-gradient(45deg, #1c2028 25%, transparent 25%),
-                          linear-gradient(-45deg, #1c2028 25%, transparent 25%),
-                          linear-gradient(45deg, transparent 75%, #1c2028 75%),
-                          linear-gradient(-45deg, transparent 75%, #1c2028 75%)
-                        `,
-                        backgroundSize: "16px 16px",
-                        backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
-                      }}
+                      key={design.id}
+                      className={`group bg-surface rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col justify-between ${
+                        design.isActive ? "border-outline-variant hover:border-primary/50" : "border-outline-variant/40 opacity-60"
+                      }`}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={design.imageUrl}
-                        alt={design.title}
-                        className="max-w-full max-h-full object-contain filter drop-shadow group-hover:scale-105 transition-transform"
-                        loading="lazy"
-                      />
-
-                      {/* Active pill badge */}
-                      <button
-                        onClick={() => handleToggleDesignActive(design)}
-                        className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold shadow ${
-                          design.isActive ? "bg-emerald-500/90 text-white" : "bg-neutral-800 text-neutral-400"
-                        }`}
-                        title={design.isActive ? "Clic para desactivar" : "Clic para activar"}
+                      {/* Checkerboard container for transparent PNG */}
+                      <div
+                        className="w-full aspect-square p-4 flex items-center justify-center relative"
+                        style={{
+                          backgroundColor: "#161920",
+                          backgroundImage: `
+                            linear-gradient(45deg, #1c2028 25%, transparent 25%),
+                            linear-gradient(-45deg, #1c2028 25%, transparent 25%),
+                            linear-gradient(45deg, transparent 75%, #1c2028 75%),
+                            linear-gradient(-45deg, transparent 75%, #1c2028 75%)
+                          `,
+                          backgroundSize: "16px 16px",
+                          backgroundPosition: "0 0, 0 8px, 8px -8px, -8px 0px",
+                        }}
                       >
-                        {design.isActive ? "Activo" : "Oculto"}
-                      </button>
-                    </div>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={design.imageUrl}
+                          alt={design.title}
+                          className="max-w-full max-h-full object-contain filter drop-shadow group-hover:scale-105 transition-transform"
+                          loading="lazy"
+                        />
 
-                    {/* Metadata & Inline Edit */}
-                    <div className="p-3 bg-surface border-t border-outline-variant flex-1 flex flex-col justify-between">
-                      {editingDesignId === design.id ? (
-                        <div className="space-y-1.5">
-                          <input
-                            type="text"
-                            value={editingDesignTitle}
-                            onChange={(e) => setEditingDesignTitle(e.target.value)}
-                            className="w-full bg-surface-container border border-primary text-xs text-on-surface px-2 py-1 rounded focus:outline-none"
-                            autoFocus
-                          />
-                          <div className="flex items-center gap-1 justify-end">
-                            <button
-                              onClick={() => setEditingDesignId(null)}
-                              className="text-[10px] px-2 py-0.5 rounded bg-surface-container text-on-surface-muted"
-                            >
-                              Cancelar
-                            </button>
-                            <button
-                              onClick={() => handleSaveDesignTitle(design.id)}
-                              className="text-[10px] px-2 py-0.5 rounded bg-primary text-on-primary font-bold"
-                            >
-                              Guardar
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between gap-1">
-                          <h4
-                            className="text-xs font-semibold text-on-surface truncate flex-1 cursor-pointer hover:text-primary"
-                            title={design.title}
-                            onClick={() => {
-                              setEditingDesignId(design.id);
-                              setEditingDesignTitle(design.title);
-                            }}
-                          >
-                            {design.title}
-                          </h4>
-                          <button
-                            onClick={() => {
-                              setEditingDesignId(design.id);
-                              setEditingDesignTitle(design.title);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 p-1 text-on-surface-muted hover:text-on-surface transition"
-                          >
-                            <span className="material-symbol" style={{ fontSize: "14px" }}>edit</span>
-                          </button>
-                        </div>
-                      )}
-
-                      <div className="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between text-[11px] text-on-surface-muted">
-                        <span>#{design.order + 1}</span>
+                        {/* Active pill badge */}
                         <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeleteDesignModal(design);
-                          }}
-                          className="text-error/70 hover:text-error p-1 rounded hover:bg-error/10 transition"
-                          title="Eliminar diseño"
+                          onClick={() => handleToggleDesignActive(design)}
+                          className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-bold shadow ${
+                            design.isActive ? "bg-emerald-500/90 text-white" : "bg-neutral-800 text-neutral-400"
+                          }`}
+                          title={design.isActive ? "Clic para desactivar" : "Clic para activar"}
                         >
-                          <span className="material-symbol" style={{ fontSize: "14px" }}>delete</span>
+                          {design.isActive ? "Activo" : "Oculto"}
                         </button>
                       </div>
+
+                      {/* Metadata & Inline Edit */}
+                      <div className="p-3 bg-surface border-t border-outline-variant flex-1 flex flex-col justify-between">
+                        {editingDesignId === design.id ? (
+                          <div className="space-y-1.5">
+                            <input
+                              type="text"
+                              value={editingDesignTitle}
+                              onChange={(e) => setEditingDesignTitle(e.target.value)}
+                              className="w-full bg-surface-container border border-primary text-xs text-on-surface px-2 py-1 rounded focus:outline-none"
+                              autoFocus
+                            />
+                            <div className="flex items-center gap-1 justify-end">
+                              <button
+                                onClick={() => setEditingDesignId(null)}
+                                className="text-[10px] px-2 py-0.5 rounded bg-surface-container text-on-surface-muted"
+                              >
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={() => handleSaveDesignTitle(design.id)}
+                                className="text-[10px] px-2 py-0.5 rounded bg-primary text-on-primary font-bold"
+                              >
+                                Guardar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between gap-1">
+                            <h4
+                              className="text-xs font-semibold text-on-surface truncate flex-1 cursor-pointer hover:text-primary"
+                              title={design.title}
+                              onClick={() => {
+                                setEditingDesignId(design.id);
+                                setEditingDesignTitle(design.title);
+                              }}
+                            >
+                              {design.title}
+                            </h4>
+                            <button
+                              onClick={() => {
+                                setEditingDesignId(design.id);
+                                setEditingDesignTitle(design.title);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 p-1 text-on-surface-muted hover:text-on-surface transition"
+                            >
+                              <span className="material-symbol" style={{ fontSize: "14px" }}>edit</span>
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="mt-2 pt-2 border-t border-outline-variant/60 flex items-center justify-between text-[11px] text-on-surface-muted">
+                          <span>#{design.order + 1}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteDesignModal(design);
+                            }}
+                            className="text-error/70 hover:text-error p-1 rounded hover:bg-error/10 transition"
+                            title="Eliminar diseño"
+                          >
+                            <span className="material-symbol" style={{ fontSize: "14px" }}>delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Admin Pagination Controls */}
+                {adminTotalPages > 1 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-outline-variant bg-surface p-4 rounded-2xl">
+                    <div className="text-xs text-on-surface-muted order-2 sm:order-1">
+                      Mostrando <span className="font-bold text-on-surface">{adminStartIndex + 1}</span> -{" "}
+                      <span className="font-bold text-on-surface">{adminEndIndex}</span> de{" "}
+                      <span className="font-bold text-primary">{currentCollection.designs.length}</span> diseños (Página {safeAdminPage} de {adminTotalPages})
+                    </div>
+
+                    <div className="flex items-center gap-1.5 order-1 sm:order-2 flex-wrap justify-center">
+                      <button
+                        onClick={() => setAdminPage(safeAdminPage - 1)}
+                        disabled={safeAdminPage === 1}
+                        className="px-3 py-1.5 rounded-xl border border-outline-variant text-xs font-semibold text-on-surface hover:bg-surface-container disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1 cursor-pointer"
+                        title="Página anterior"
+                      >
+                        <span className="material-symbol" style={{ fontSize: "16px" }}>chevron_left</span>
+                        <span>Anterior</span>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: adminTotalPages }, (_, i) => i + 1).map((pageNum) => (
+                          <button
+                            key={pageNum}
+                            onClick={() => setAdminPage(pageNum)}
+                            className={`w-8 h-8 rounded-xl text-xs font-bold transition flex items-center justify-center cursor-pointer ${
+                              pageNum === safeAdminPage
+                                ? "bg-primary text-on-primary shadow-sm"
+                                : "border border-outline-variant text-on-surface hover:bg-surface-container"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => setAdminPage(safeAdminPage + 1)}
+                        disabled={safeAdminPage === adminTotalPages}
+                        className="px-3 py-1.5 rounded-xl border border-outline-variant text-xs font-semibold text-on-surface hover:bg-surface-container disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1 cursor-pointer"
+                        title="Página siguiente"
+                      >
+                        <span>Siguiente</span>
+                        <span className="material-symbol" style={{ fontSize: "16px" }}>chevron_right</span>
+                      </button>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>
