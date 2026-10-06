@@ -1125,16 +1125,25 @@ export default function DTFMockupStudio() {
           </div>
         </div>
 
-        {/* FOLDERS TABS / SELECTOR BAR */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        {/* FOLDERS TABS / SELECTOR BAR - WRAPPING WITHOUT HORIZONTAL SCROLL */}
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 pt-1">
           <button
             onClick={() => handleSelectFolder(null)}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2 border ${activeFolderId === null
-                ? "bg-[#d4af37] text-[#0c0e12] border-[#d4af37] shadow-lg shadow-[#d4af37]/20"
-                : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
-              }`}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border cursor-pointer ${
+              activeFolderId === null
+                ? "bg-[#d4af37] text-[#0c0e12] border-[#d4af37] shadow-lg shadow-[#d4af37]/20 scale-[1.02]"
+                : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white"
+            }`}
           >
-            <span>📁</span> Todas las Colecciones ({collections.length})
+            <span>📁</span>
+            <span>Todas las Colecciones</span>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                activeFolderId === null ? "bg-[#0c0e12]/20 text-[#0c0e12]" : "bg-white/10 text-white/60"
+              }`}
+            >
+              {collections.length}
+            </span>
           </button>
 
           {collections.map((col) => {
@@ -1143,15 +1152,19 @@ export default function DTFMockupStudio() {
               <button
                 key={col.id}
                 onClick={() => handleSelectFolder(col.id)}
-                className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition flex items-center gap-2 border ${isSelected
-                    ? "bg-[#d4af37] text-[#0c0e12] border-[#d4af37] shadow-lg shadow-[#d4af37]/20"
-                    : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10"
-                  }`}
+                className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border cursor-pointer ${
+                  isSelected
+                    ? "bg-[#d4af37] text-[#0c0e12] border-[#d4af37] shadow-lg shadow-[#d4af37]/20 scale-[1.02]"
+                    : "bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:border-white/20 hover:text-white"
+                }`}
               >
                 <span>{col.icon || "📁"}</span>
                 <span>{col.name}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? "bg-[#0c0e12]/30 text-[#0c0e12]" : "bg-white/10 text-white/60"
-                  }`}>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${
+                    isSelected ? "bg-[#0c0e12]/20 text-[#0c0e12]" : "bg-white/10 text-white/60"
+                  }`}
+                >
                   {col.designs.length}
                 </span>
               </button>
