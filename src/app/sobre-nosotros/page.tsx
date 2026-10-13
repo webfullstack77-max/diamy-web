@@ -148,8 +148,8 @@ export default function SobreNosotrosPage() {
           De un sueño familiar a una realidad en expansión
         </p>
         <p className="text-sm text-on-surface-muted leading-relaxed">
-          Somos un equipo joven, dinámico y comprometido con transformar ideas
-          en piezas únicas. Desde Morelos, México, para toda la república.
+          Somos un equipo apasionado por transformar ideas en piezas únicas.
+          Desde nuestro taller en <strong>Cuernavaca, Morelos</strong>, con atención directa y entregas locales express.
         </p>
       </div>
 
@@ -161,10 +161,8 @@ export default function SobreNosotrosPage() {
         <p className="text-sm text-on-surface-muted leading-relaxed mb-8">
           Diamy nace en{" "}
           <strong className="text-on-surface">septiembre de 2024</strong> como
-          un proyecto familiar movido por la pasión por la creatividad y la
-          personalización. Lo que comenzó como una pequeña apuesta con una
-          única máquina láser, hoy es un negocio en crecimiento que atiende
-          clientes en toda la república mexicana.
+          un proyecto familiar movido por la creatividad y la personalización.
+          Hoy contamos con taller propio en Cuernavaca equipado con corte láser de alta potencia y tecnología DTF textil, convirtiéndonos en un aliado clave para eventos, bodas y negocios de la región.
         </p>
 
         <div className="space-y-4">

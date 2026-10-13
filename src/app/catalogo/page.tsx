@@ -159,17 +159,17 @@ export default async function CatalogoPage({
                   </div>
                 </div>
                 <div className="flex items-center gap-3 flex-1 bg-surface-container rounded-xl p-4">
-                  <span className="material-symbol text-primary shrink-0" style={{ fontSize: "24px", fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
+                  <span className="material-symbol text-primary shrink-0" style={{ fontSize: "24px", fontVariationSettings: "'FILL' 1" }}>storefront</span>
                   <div>
-                    <p className="text-sm font-semibold text-on-surface">Envío incluido</p>
-                    <p className="text-xs text-outline">En pedidos mayores a $500 MXN</p>
+                    <p className="text-sm font-semibold text-on-surface">Entrega Local Cuernavaca</p>
+                    <p className="text-xs text-outline">Recoge en taller o Didi/Uber Express</p>
                   </div>
                 </div>
               </div>
 
               {/* Botón WhatsApp */}
               <a
-                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hola! Me interesa cotizar un pedido de ${activeCategory!.name}. ¿Pueden ayudarme?`)}`}
+                href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(`Hola! Estoy en Cuernavaca/Morelos y me interesa cotizar un pedido de ${activeCategory!.name}. ¿Pueden orientarme?`)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-3 w-full py-4 rounded-2xl bg-[#25D366] text-white font-semibold text-lg shadow-lg hover:bg-[#20bd5a] transition"

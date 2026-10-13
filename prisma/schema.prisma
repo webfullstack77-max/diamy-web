@@ -292,3 +292,20 @@ model DesignAsset {
   @@map("design_assets")
 }
 
+model PuntoTextilOrder {
+  id          String   @id @default(cuid())
+  folio       String   @unique
+  totalPieces Int
+  pricingTier String   // "menudeo" | "mayoreo"
+  subtotal    Float
+  iva         Float
+  total       Float
+  items       Json
+  notes       String?
+  status      String   @default("borrador") // "borrador" | "enviado_proveedor" | "pagado" | "recibido" | "cancelado"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("punto_textil_orders")
+}
+

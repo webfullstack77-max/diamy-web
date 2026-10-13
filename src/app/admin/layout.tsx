@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/admin/imagen-del-dia", icon: "today", label: "Imagen del día" },
   { href: "/admin/testimonios", icon: "rate_review", label: "Testimonios" },
   { href: "/admin/pedidos", icon: "receipt_long", label: "Pedidos" },
+  { href: "/admin/cotizador-playeras", icon: "shopping_cart_checkout", label: "Cotizador Textil" },
 ];
 
 function DesktopNav() {

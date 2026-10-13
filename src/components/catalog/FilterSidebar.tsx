@@ -154,16 +154,16 @@ export default function FilterSidebar({ categories }: Props) {
 
         {/* WhatsApp CTA */}
         <div className="bg-primary-container rounded-2xl p-4">
-          <p className="text-sm font-medium text-primary mb-2">¿Diseño especial?</p>
-          <p className="text-xs text-on-surface-muted mb-3">Contáctanos para piezas personalizadas</p>
+          <p className="text-sm font-semibold text-primary mb-1">📍 Taller en Cuernavaca</p>
+          <p className="text-xs text-on-surface-muted mb-3">Recogida local sin costo o entrega express el mismo día.</p>
           <a
-            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}`}
+            href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola Diamy, estoy en Cuernavaca y me gustaría cotizar una pieza personalizada.")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-sm text-primary font-semibold hover:underline"
+            className="flex items-center gap-1.5 text-sm text-primary font-bold hover:underline"
           >
             <span className="material-symbol" style={{ fontSize: "16px" }}>chat</span>
-            WhatsApp
+            Cotizar por WhatsApp
           </a>
         </div>
       </div>

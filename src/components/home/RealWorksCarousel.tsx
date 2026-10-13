@@ -274,9 +274,9 @@ export default function RealWorksCarousel({ initialWorks = [] }: Props) {
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbol text-primary" style={{ fontSize: "16px" }}>
-                      local_shipping
+                      storefront
                     </span>
-                    <span>Envíos a todo México</span>
+                    <span>Taller local en Cuernavaca</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="material-symbol text-primary" style={{ fontSize: "16px" }}>

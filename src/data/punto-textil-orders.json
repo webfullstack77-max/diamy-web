@@ -1,0 +1,42 @@
+[
+  {
+    "items": [
+      {
+        "id": "test_1",
+        "modelId": "410c",
+        "styleCode": "410C",
+        "modelName": "Playera Cuello Redondo Caballero",
+        "category": "playeras",
+        "gender": "caballero",
+        "cutType": "Manga Corta",
+        "color": {
+          "name": "Black",
+          "hex": "#1A1A1A"
+        },
+        "sizes": {
+          "S": 3,
+          "M": 5,
+          "L": 4
+        },
+        "totalPieces": 12,
+        "unitPrices": {
+          "S": 52.13,
+          "M": 52.13,
+          "L": 52.13
+        },
+        "lineTotal": 625.56
+      }
+    ],
+    "totalPieces": 12,
+    "pricingTier": "mayoreo",
+    "subtotal": 539.28,
+    "iva": 86.28,
+    "total": 625.56,
+    "notes": "Pedido inicial de prueba",
+    "status": "borrador",
+    "id": "pto_1791600581180_caie1",
+    "folio": "PT-2026-0001",
+    "createdAt": "2026-10-10T02:49:41.180Z",
+    "updatedAt": "2026-10-10T02:49:41.180Z"
+  }
+]

@@ -245,9 +245,9 @@ export default function MassiveGallery({
 
             <div className="flex gap-3">
               <div className="flex flex-col items-center gap-1 flex-1 bg-surface-container rounded-xl p-3">
-                <span className="material-symbol text-primary" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
-                <span className="text-xs text-on-surface-muted text-center font-medium">Envío incluido</span>
-                <span className="text-xs text-outline text-center">En pedidos mayores a $500 MXN</span>
+                <span className="material-symbol text-primary" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>storefront</span>
+                <span className="text-xs text-on-surface-muted text-center font-medium">Entrega Local</span>
+                <span className="text-xs text-outline text-center">Recoge en taller o Didi/Uber Flash</span>
               </div>
               <div className="flex flex-col items-center gap-1 flex-1 bg-surface-container rounded-xl p-3">
                 <span className="material-symbol text-primary" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>palette</span>

@@ -9,12 +9,12 @@ const faqs = [
     a: "Puedes contactarnos por WhatsApp o usar el formulario de contacto en nuestro sitio. Cuéntanos qué producto te interesa, las medidas aproximadas, colores y cualquier detalle de personalización. Te enviamos una cotización en menos de 24 horas.",
   },
   {
-    q: "¿Cuánto tarda la entrega?",
-    a: "El tiempo de producción es de 3 a 5 días hábiles dependiendo del producto y la cantidad. Una vez listo, el envío tarda entre 2 y 5 días hábiles adicionales según tu ubicación. Te avisamos cuando tu pedido esté en camino.",
+    q: "¿Cuánto tarda la producción y entrega?",
+    a: "El tiempo habitual de producción es de 1 a 3 días hábiles según el producto y volumen. Si tienes un evento o urgencia especial en Cuernavaca o Jiutepec, podemos coordinar pedidos express en 24 a 48 horas.",
   },
   {
-    q: "¿Hacen envíos a todo México?",
-    a: "Sí, tenemos cobertura nacional. Además, los envíos son gratis en compras mayores a $500 MXN. Para pedidos menores, el costo de envío se calcula según tu código postal.",
+    q: "¿Cómo son las entregas en Cuernavaca y Morelos?",
+    a: "Puedes recoger tu pedido directamente en nuestro taller en Cuernavaca sin costo alguno. También realizamos entregas express el mismo día a través de Didi Entrega / Uber Flash en Cuernavaca, Jiutepec y municipios cercanos.",
   },
   {
     q: "¿Puedo traer mi propio diseño?",

@@ -10,6 +10,7 @@ type Step =
   | "cotizacion_tipo"
   | "catalogo"
   | "tiempos"
+  | "ubicacion"
   | "materiales"
   | "diseno"
   | "transfer"
@@ -46,7 +47,7 @@ function getGreeting(hour: number): string {
 }
 
 function buildWaUrl(context: string): string {
-  const text = `Hola Diamy, vengo del chat de su sitio web. Me interesa: ${context}`;
+  const text = `Hola Diamy, estoy en Cuernavaca/Morelos y vengo de su sitio web. Me interesa: ${context}`;
   return `https://wa.me/${NUMBER}?text=${encodeURIComponent(text)}`;
 }
 
@@ -58,22 +59,30 @@ function renderText(text: string): string {
 
 const FLOW: Record<Step, { text: string; buttons: Btn[] }> = {
   main_menu: {
-    text: "¿En qué te puedo ayudar hoy?",
+    text: "¿En qué te podemos ayudar hoy en nuestro taller de Cuernavaca?",
     buttons: [
       { label: "💰 Cotización", userText: "Quiero una cotización", next: "cotizacion_tipo" },
+      { label: "📍 Taller en Cuernavaca", userText: "¿Dónde están y cómo entregan?", next: "ubicacion" },
       { label: "📦 Ver catálogo", userText: "Quiero ver el catálogo", next: "catalogo" },
-      { label: "⏱ Tiempo de entrega", userText: "¿Cuánto tiempo tardan?", next: "tiempos" },
+      { label: "⏱ Tiempos y Urgencias", userText: "¿Tienen pedidos express?", next: "tiempos" },
       { label: "🛠 Materiales", userText: "¿Con qué materiales trabajan?", next: "materiales" },
       { label: "🎨 Diseño personalizado", userText: "Quiero un diseño personalizado", next: "diseno" },
+    ],
+  },
+  ubicacion: {
+    text: "📍 *Taller en Cuernavaca, Morelos.*\n\n• Puedes recoger tu pedido sin costo en nuestro taller.\n• Si lo prefieres, te lo enviamos el mismo día vía Didi Entrega / Uber Flash a Cuernavaca, Jiutepec y alrededores.\n\n¿Deseas hablar con nosotros para coordinar?",
+    buttons: [
+      { label: "💬 Hablar por WhatsApp", userText: "Quiero coordinar entrega local", next: "transfer", waContext: "coordinar entrega o visita a taller en Cuernavaca" },
+      { label: "🔙 Menú principal", userText: "Regresar al menú", next: "main_menu" },
     ],
   },
   cotizacion_tipo: {
     text: "¡Con gusto te cotizamos! ¿Qué tipo de producto te interesa?",
     buttons: [
-      { label: "👕 Playeras", userText: "Playeras estampadas", next: "transfer", waContext: "cotización de Playeras estampadas" },
-      { label: "🎨 Acrílico", userText: "Acrílico grabado/cortado", next: "transfer", waContext: "cotización de Acrílico grabado o cortado" },
+      { label: "👕 Playeras DTF", userText: "Playeras estampadas", next: "transfer", waContext: "cotización de Playeras estampadas DTF" },
+      { label: "🎨 Acrílico / Letreros", userText: "Acrílico grabado/cortado", next: "transfer", waContext: "cotización de Acrílico para eventos/negocios" },
       { label: "🪵 MDF", userText: "MDF", next: "transfer", waContext: "cotización de MDF" },
-      { label: "☕ Tazas", userText: "Tazas personalizadas", next: "transfer", waContext: "cotización de Tazas personalizadas" },
+      { label: "☕ Tazas / Termos", userText: "Tazas personalizadas", next: "transfer", waContext: "cotización de Tazas o Termos" },
       { label: "🏷 Stickers / Vinil", userText: "Stickers o Vinil", next: "transfer", waContext: "cotización de Stickers o Vinil" },
       { label: "📦 Otro producto", userText: "Otro producto", next: "transfer", waContext: "cotización de un producto" },
     ],
@@ -87,9 +96,9 @@ const FLOW: Record<Step, { text: string; buttons: Btn[] }> = {
     ],
   },
   tiempos: {
-    text: "Nuestros tiempos de entrega estimados:\n• Acrílico grabado: 3–5 días hábiles\n• Playeras: 5–7 días\n• Tazas: 3–4 días\n• MDF: 3–5 días\n\n¿Necesitas algo más?",
+    text: "Nuestros tiempos de producción estimados:\n• Acrílico y Letreros: 2–4 días\n• Playeras DTF: 2–4 días\n• Tazas y MDF: 2–3 días\n\n📍 *Taller en Cuernavaca*: Puedes recoger en taller o pedir entrega express (Didi / Uber Flash).\n⚡ *¿Urgencia en 24-48h?* ¡Pregúntanos por pedidos express!",
     buttons: [
-      { label: "💬 Hablar con ventas", userText: "Quiero hablar con ventas", next: "transfer", waContext: "tiempos de entrega y disponibilidad" },
+      { label: "💬 Hablar con ventas", userText: "Quiero hablar con ventas", next: "transfer", waContext: "tiempos de entrega y pedidos express en Cuernavaca" },
       { label: "🔙 Menú principal", userText: "Regresar al menú", next: "main_menu" },
     ],
   },

@@ -31,9 +31,15 @@ export default function Header() {
           </Link>
           <Link
             href="/"
-            className="font-serif text-xl font-bold text-primary tracking-tight"
+            className="flex flex-col"
           >
-            Diamy Laser Cut
+            <span className="font-serif text-lg sm:text-xl font-bold text-primary tracking-tight leading-tight">
+              Diamy Laser Cut
+            </span>
+            <span className="text-[10px] text-on-surface-muted font-semibold flex items-center gap-1">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Cuernavaca, Mor. • Taller Local
+            </span>
           </Link>
         </div>
 

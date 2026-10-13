@@ -8,6 +8,7 @@ import ProductOfMonth from "@/components/home/ProductOfMonth";
 import DailyPromoModal from "@/components/home/DailyPromoModal";
 import RealWorksCarousel from "@/components/home/RealWorksCarousel";
 import DTFSimulatorPromo from "@/components/home/DTFSimulatorPromo";
+import LocalCuernavacaSection from "@/components/home/LocalCuernavacaSection";
 
 export const revalidate = 60;
 
@@ -59,12 +60,15 @@ export default async function HomePage() {
           </div>
           {/* Texto */}
           <div className="text-center md:text-left">
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold mb-4 shadow-sm">
+              <span className="material-symbol text-primary" style={{ fontSize: "16px", fontVariationSettings: "'FILL' 1" }}>location_on</span>
+              <span>Taller en Cuernavaca • Pick-up & Entregas Express</span>
+            </div>
             <h1 className="font-serif text-4xl md:text-6xl font-bold text-on-surface leading-tight">
               <span className="text-primary">Productos Personalizados</span>
             </h1>
             <p className="mt-4 text-on-surface-muted text-lg max-w-lg">
-              Creamos piezas únicas en madera, acrílico y más. Perfectas para
-              regalos, decoración y proyectos corporativos.
+              Corte láser, acrílico, MDF y estampado DTF textil en Cuernavaca. Diseños únicos para eventos, bodas, negocios y regalos con entrega local.
             </p>
             <div className="mt-8 flex flex-row gap-3 justify-center md:justify-start flex-wrap">
               <Link
@@ -82,7 +86,7 @@ export default async function HomePage() {
                 Ver catálogo
               </Link>
               <a
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}`}
+                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER}?text=${encodeURIComponent("Hola Diamy, estoy en Cuernavaca y me gustaría cotizar un pedido.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-primary text-primary text-sm font-semibold hover:bg-primary-container transition"
@@ -141,7 +145,7 @@ export default async function HomePage() {
             { value: "500+", label: "Clientes felices" },
             { value: "10+", label: "Categorías" },
             { value: "100%", label: "Personalizable" },
-            { value: "MX", label: "Envíos nacionales" },
+            { value: "Cuernavaca", label: "Taller & Entrega Local" },
           ].map((s) => (
             <div key={s.label}>
               <p className="text-2xl font-bold text-primary-container">{s.value}</p>
@@ -177,8 +181,8 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 relative">
             {[
               { step: "1", icon: "search", title: "Elige tu producto", desc: "Explora nuestro catálogo y encuentra el producto que más te guste." },
-              { step: "2", icon: "edit_note", title: "Mándanos tu diseño", desc: "Escríbenos por WhatsApp con tu idea, nombre o imagen y lo adaptamos." },
-              { step: "3", icon: "card_giftcard", title: "Recíbelo en casa", desc: "Producimos tu pieza única y te la enviamos a cualquier parte de México.", note: "Envío gratis en compras mayores de $500 MXN" },
+              { step: "2", icon: "edit_note", title: "Mándanos tu diseño", desc: "Escríbenos por WhatsApp con tu idea, logotipo o imagen y lo adaptamos." },
+              { step: "3", icon: "storefront", title: "Recoge o Recibe Express", desc: "Pasa por tu pedido a nuestro taller en Cuernavaca o recíbelo vía Didi Entrega / Uber Flash.", note: "Servicio local en Cuernavaca y Jiutepec" },
             ].map((item) => (
               <div key={item.step} className="flex flex-col items-center gap-3">
                 <div className="relative">
@@ -238,6 +242,9 @@ export default async function HomePage() {
         </section>
       )}
 
+      {/* Sección Local Especial: Bodas, Negocios y Urgencias */}
+      <LocalCuernavacaSection />
+
       {/* Services highlight */}
       <section className="py-12 px-4 sm:px-6 lg:px-12 bg-primary text-on-primary">
         <div className="max-w-7xl mx-auto text-center">
@@ -246,9 +253,9 @@ export default async function HomePage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-8">
             {[
-              { icon: "precision_manufacturing", title: "Alta Precisión", desc: "Equipos de corte láser de última generación" },
-              { icon: "palette", title: "Diseño Personalizado", desc: "Adaptamos cada pieza a tu visión y necesidades" },
-              { icon: "local_shipping", title: "Envíos a Todo el País", desc: "Entrega segura en toda la república.\nSolo República Mexicana,\n en compras mayores a $500 MXN" },
+              { icon: "precision_manufacturing", title: "Alta Precisión", desc: "Equipos de corte láser y DTF de última generación" },
+              { icon: "palette", title: "Diseño Personalizado", desc: "Adaptamos cada pieza a tu evento, empresa o regalo especial" },
+              { icon: "storefront", title: "Taller Local en Cuernavaca", desc: "Atención directa sin intermediarios.\nRecoge en taller o entrega express el mismo día.\n¡Resolvemos pedidos urgentes en 24-48h!" },
             ].map((item) => (
               <div key={item.title} className="flex flex-col items-center gap-3">
                 <span

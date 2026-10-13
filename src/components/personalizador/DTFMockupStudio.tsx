@@ -623,7 +623,7 @@ export default function DTFMockupStudio() {
         message += `\n📸 Ver Mockup HD: ${hostedImageUrl}\n`;
       }
 
-      message += `\n¿Me podrían cotizar esta prenda con estampado DTF y darme tiempo de entrega? ¡Gracias!`;
+      message += `\n¿Me podrían cotizar esta prenda con estampado DTF para entrega en Cuernavaca/Morelos y darme tiempo de entrega? ¡Gracias!`;
 
       // 4. On Mobile: Try Web Share API (which directly attaches the PNG image file into WhatsApp!)
       if (blob && typeof navigator !== "undefined" && navigator.canShare) {

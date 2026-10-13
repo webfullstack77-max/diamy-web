@@ -25,6 +25,8 @@
     "@types/nodemailer": "^7.0.11",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
     "next": "16.2.1",
     "nodemailer": "^8.0.4",
     "perspective-transform": "^1.1.3",

@@ -6,11 +6,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-6 lg:px-12 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
         {/* Brand */}
         <div className="col-span-2 md:col-span-1">
-          <span className="font-serif text-2xl font-bold text-primary">Diamy</span>
+          <span className="font-serif text-2xl font-bold text-primary">Diamy Laser Cut</span>
           <p className="mt-2 text-sm text-on-surface-muted leading-relaxed">
-            Corte láser y grabado personalizado. Creamos piezas únicas con
-            materiales de calidad para cada ocasión.
+            Taller de corte láser, acrílico, madera y estampado DTF textil en Cuernavaca, Morelos. Creamos piezas únicas para eventos, empresas y regalos especiales.
           </p>
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-primary font-semibold">
+            <span className="material-symbol text-primary" style={{ fontSize: "16px", fontVariationSettings: "'FILL' 1" }}>location_on</span>
+            <span>Cuernavaca, Mor. • Pick-up & Express</span>
+          </div>
         </div>
 
         {/* Catálogo */}
@@ -76,6 +79,12 @@ export default function Footer() {
         <div id="contacto">
           <h3 className="font-semibold text-on-surface mb-3">Contacto</h3>
           <ul className="space-y-2 text-sm text-on-surface-muted">
+            <li className="flex items-center gap-2">
+              <span className="material-symbol text-primary" style={{ fontSize: "16px", fontVariationSettings: "'FILL' 1" }}>
+                location_on
+              </span>
+              <span className="text-on-surface text-sm">Cuernavaca, Morelos</span>
+            </li>
             <li className="flex items-center gap-2">
               <span className="material-symbol" style={{ fontSize: "16px" }}>
                 chat

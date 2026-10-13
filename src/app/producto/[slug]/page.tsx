@@ -253,13 +253,14 @@ export default async function ProductoPage({ params }: Props) {
 
             <div className="flex gap-3 mt-6">
               <div className="flex flex-col items-center gap-1 flex-1 bg-surface-container rounded-xl p-3">
-                <span className="material-symbol text-primary" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>local_shipping</span>
-                <span className="text-xs text-on-surface-muted text-center leading-tight font-medium">Envío incluido</span>
-                <span className="text-xs text-outline text-center leading-tight">En pedidos mayores a $500 MXN, solo México</span>
+                <span className="material-symbol text-primary" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>storefront</span>
+                <span className="text-xs text-on-surface-muted text-center leading-tight font-medium">Entrega Local</span>
+                <span className="text-xs text-outline text-center leading-tight">Recoge en taller o Didi/Uber Flash</span>
               </div>
               <div className="flex flex-col items-center gap-1 flex-1 bg-surface-container rounded-xl p-3">
                 <span className="material-symbol text-primary" style={{ fontSize: "20px", fontVariationSettings: "'FILL' 1" }}>verified</span>
-                <span className="text-xs text-on-surface-muted text-center leading-tight">Calidad garantizada</span>
+                <span className="text-xs text-on-surface-muted text-center leading-tight font-medium">Calidad garantizada</span>
+                <span className="text-xs text-outline text-center leading-tight">Hecho en Cuernavaca, Mor.</span>
               </div>
             </div>
 
