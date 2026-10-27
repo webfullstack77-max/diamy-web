@@ -7,6 +7,7 @@ import {
   TShirtColor,
   MockupSceneConfig,
   getMockupSceneImagePath,
+  getDualMockupSceneImagePath,
 } from "@/lib/mockup-data";
 
 interface DesignAsset {
@@ -25,6 +26,13 @@ interface DesignCollection {
   designs: DesignAsset[];
 }
 
+interface AppliedDesign {
+  id: string;
+  title: string;
+  imageUrl: string;
+  collectionName?: string;
+}
+
 export default function DTFMockupStudio() {
   // Collections state
   const [collections, setCollections] = useState<DesignCollection[]>([]);
@@ -41,28 +49,41 @@ export default function DTFMockupStudio() {
     currentModel.colors.find((c) => c.name_en === "Black") || currentModel.colors[0]
   );
 
-  // Design state
-  const [selectedDesign, setSelectedDesign] = useState<{
-    id: string;
-    title: string;
-    imageUrl: string;
-    collectionName?: string;
-  } | null>(null);
+  // View state: 'front' (Frente / Pecho) or 'back' (Espalda / Trasera)
+  const [currentView, setCurrentView] = useState<'front' | 'back'>('front');
 
-  // Transform controls
-  const [designPos, setDesignPos] = useState<{ x: number; y: number }>(MOCKUP_SCENES[0].defaultPos);
-  const [designScale, setDesignScale] = useState<number>(1.0);
-  const [designRotation, setDesignRotation] = useState<number>(0);
-  const [designTilt, setDesignTilt] = useState<number>(MOCKUP_SCENES[0].defaultTilt);
-  const [designSkew, setDesignSkew] = useState<number>(0);
-  const [designBlendMode, setDesignBlendMode] = useState<GlobalCompositeOperation>("source-over");
+  // Front Design & Transform state
+  const [frontDesign, setFrontDesign] = useState<AppliedDesign | null>(null);
+  const [frontPos, setFrontPos] = useState<{ x: number; y: number }>(MOCKUP_SCENES[0].defaultPos);
+  const [frontScale, setFrontScale] = useState<number>(1.0);
+  const [frontRotation, setFrontRotation] = useState<number>(0);
+  const [frontTilt, setFrontTilt] = useState<number>(MOCKUP_SCENES[0].defaultTilt);
+  const [frontSkew, setFrontSkew] = useState<number>(0);
+  const [frontBlendMode, setFrontBlendMode] = useState<GlobalCompositeOperation>("source-over");
+
+  // Back Design & Transform state
+  const [backDesign, setBackDesign] = useState<AppliedDesign | null>(null);
+  const [backPos, setBackPos] = useState<{ x: number; y: number }>(MOCKUP_SCENES[0].defaultPos);
+  const [backScale, setBackScale] = useState<number>(1.0);
+  const [backRotation, setBackRotation] = useState<number>(0);
+  const [backTilt, setBackTilt] = useState<number>(MOCKUP_SCENES[0].defaultTilt);
+  const [backSkew, setBackSkew] = useState<number>(0);
+  const [backBlendMode, setBackBlendMode] = useState<GlobalCompositeOperation>("source-over");
+
   const [showBadge, setShowBadge] = useState<boolean>(true);
 
-  // Image references
+  // Image references for Single View Canvas
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const mockupContainerRef = useRef<HTMLDivElement | null>(null);
   const backgroundPhotoRef = useRef<HTMLImageElement | null>(null);
-  const designImageRef = useRef<HTMLImageElement | null>(null);
+  const frontImageRef = useRef<HTMLImageElement | null>(null);
+  const backImageRef = useRef<HTMLImageElement | null>(null);
+
+  // Dual View Modal State & Canvas references
+  const [showDualModal, setShowDualModal] = useState<boolean>(false);
+  const [isCapturingDual, setIsCapturingDual] = useState<boolean>(false);
+  const dualCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const dualBgImgRef = useRef<HTMLImageElement | null>(null);
 
   // UI state
   const [isCapturing, setIsCapturing] = useState(false);
@@ -76,6 +97,40 @@ export default function DTFMockupStudio() {
 
   const customFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Active side getters & setters
+  const activeDesign = currentView === 'front' ? frontDesign : backDesign;
+  const activePos = currentView === 'front' ? frontPos : backPos;
+  const activeScale = currentView === 'front' ? frontScale : backScale;
+  const activeRotation = currentView === 'front' ? frontRotation : backRotation;
+  const activeTilt = currentView === 'front' ? frontTilt : backTilt;
+  const activeSkew = currentView === 'front' ? frontSkew : backSkew;
+  const activeBlendMode = currentView === 'front' ? frontBlendMode : backBlendMode;
+
+  const setActivePos = (val: { x: number; y: number }) => {
+    if (currentView === 'front') setFrontPos(val);
+    else setBackPos(val);
+  };
+  const setActiveScale = (val: number) => {
+    if (currentView === 'front') setFrontScale(val);
+    else setBackScale(val);
+  };
+  const setActiveRotation = (val: number) => {
+    if (currentView === 'front') setFrontRotation(val);
+    else setBackRotation(val);
+  };
+  const setActiveTilt = (val: number) => {
+    if (currentView === 'front') setFrontTilt(val);
+    else setBackTilt(val);
+  };
+  const setActiveSkew = (val: number) => {
+    if (currentView === 'front') setFrontSkew(val);
+    else setBackSkew(val);
+  };
+  const setActiveBlendMode = (val: GlobalCompositeOperation) => {
+    if (currentView === 'front') setFrontBlendMode(val);
+    else setBackBlendMode(val);
+  };
+
   const showToast = useCallback((msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -88,7 +143,6 @@ export default function DTFMockupStudio() {
     if (typeof window === "undefined") return;
     if (mockupContainerRef.current) {
       const rect = mockupContainerRef.current.getBoundingClientRect();
-      // If mockup is not positioned right in view (user scrolled down to gallery)
       if (rect.top < 60 || rect.top > 160) {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
         const targetY = Math.max(0, scrollTop + rect.top - 84);
@@ -117,10 +171,9 @@ export default function DTFMockupStudio() {
       const cols: DesignCollection[] = data.collections || [];
       setCollections(cols);
 
-      // Smart reconciliation of selectedDesign:
-      setSelectedDesign((prev) => {
+      // Smart reconciliation of frontDesign:
+      setFrontDesign((prev) => {
         if (!prev) {
-          // If no design was selected, select the first available design
           if (cols.length > 0 && cols[0].designs.length > 0) {
             const firstCol = cols[0];
             const firstDesign = firstCol.designs[0];
@@ -135,13 +188,11 @@ export default function DTFMockupStudio() {
           return null;
         }
 
-        // If the user uploaded a custom file from their own device, don't remove it
         if (prev.id.startsWith("custom-")) {
           return prev;
         }
 
-        // Check if currently selected design still exists in the newly loaded collections
-        let foundMatch: { id: string; title: string; imageUrl: string; collectionName?: string } | null = null;
+        let foundMatch: AppliedDesign | null = null;
         for (const col of cols) {
           const match = col.designs.find((d) => d.id === prev.id);
           if (match) {
@@ -155,21 +206,34 @@ export default function DTFMockupStudio() {
           }
         }
 
-        if (foundMatch) {
-          return foundMatch;
-        }
+        if (foundMatch) return foundMatch;
 
-        // If it was DELETED by an admin:
-        showToast("Un diseño fue retirado del catálogo. Se actualizó el simulador.");
-        // Pick first available design from any collection
+        // If design was deleted by admin
         for (const col of cols) {
           if (col.designs.length > 0) {
             const firstDesign = col.designs[0];
-            setActiveFolderId(col.id);
             return {
               id: firstDesign.id,
               title: firstDesign.title,
               imageUrl: firstDesign.imageUrl,
+              collectionName: col.name,
+            };
+          }
+        }
+        return null;
+      });
+
+      // Smart reconciliation of backDesign:
+      setBackDesign((prev) => {
+        if (!prev) return null;
+        if (prev.id.startsWith("custom-")) return prev;
+        for (const col of cols) {
+          const match = col.designs.find((d) => d.id === prev.id);
+          if (match) {
+            return {
+              id: match.id,
+              title: match.title,
+              imageUrl: match.imageUrl,
               collectionName: col.name,
             };
           }
@@ -195,14 +259,12 @@ export default function DTFMockupStudio() {
         setLoadingCollections(false);
       }
     }
-  }, [showToast]);
+  }, []);
 
   // Initial load + Real-time cross-tab sync & background polling
   useEffect(() => {
-    // 1. Initial load
     loadCollections(false);
 
-    // 2. BroadcastChannel for instant cross-tab sync
     let bc: BroadcastChannel | null = null;
     try {
       bc = new BroadcastChannel("diamy_collections_sync");
@@ -211,11 +273,8 @@ export default function DTFMockupStudio() {
           loadCollections(true);
         }
       };
-    } catch {
-      // BroadcastChannel not supported in this environment
-    }
+    } catch { }
 
-    // 3. Storage event listener (fallback for cross-tab sync across windows/browsers)
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "diamy_collections_sync") {
         loadCollections(true);
@@ -223,7 +282,6 @@ export default function DTFMockupStudio() {
     };
     window.addEventListener("storage", handleStorage);
 
-    // 4. Window focus & visibility change (auto-refresh when user clicks back into this tab)
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
         loadCollections(true);
@@ -232,7 +290,6 @@ export default function DTFMockupStudio() {
     window.addEventListener("focus", handleVisibility);
     document.addEventListener("visibilitychange", handleVisibility);
 
-    // 5. Silent heartbeat interval (every 10 seconds)
     const interval = setInterval(() => {
       loadCollections(true);
     }, 10000);
@@ -271,37 +328,43 @@ export default function DTFMockupStudio() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 1. Draw Real Scene Photo Background
+    // 1. Draw Real Scene Photo Background (Front or Back view)
     const bgImg = backgroundPhotoRef.current;
     if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
       ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
     }
 
-    // 2. Draw 3D Perspective Design
-    const dImg = designImageRef.current;
+    // 2. Draw 3D Perspective Design for active side
+    const dImg = currentView === 'front' ? frontImageRef.current : backImageRef.current;
+    const pos = activePos;
+    const scale = activeScale;
+    const rot = activeRotation;
+    const tilt = activeTilt;
+    const skew = activeSkew;
+    const blendMode = activeBlendMode;
+
     if (dImg && dImg.complete && dImg.naturalWidth > 0) {
       ctx.save();
-      ctx.translate(designPos.x, designPos.y);
-      ctx.rotate((designRotation * Math.PI) / 180);
+      ctx.translate(pos.x, pos.y);
+      ctx.rotate((rot * Math.PI) / 180);
 
-      if (designSkew !== 0) {
-        const skewRad = (designSkew * Math.PI) / 180;
+      if (skew !== 0) {
+        const skewRad = (skew * Math.PI) / 180;
         ctx.transform(1, 0, Math.tan(skewRad), 1, 0, 0);
       }
 
-      const totalW = dImg.width * currentScene.baseScaleFactor * designScale;
-      const totalH = dImg.height * currentScene.baseScaleFactor * designScale;
+      const totalW = dImg.width * currentScene.baseScaleFactor * scale;
+      const totalH = dImg.height * currentScene.baseScaleFactor * scale;
 
-      ctx.globalCompositeOperation = designBlendMode;
+      ctx.globalCompositeOperation = blendMode;
 
-      if (designTilt === 0) {
+      if (tilt === 0) {
         ctx.drawImage(dImg, -totalW / 2, -totalH / 2, totalW, totalH);
       } else {
-        // Perspective mesh slicing into 40 horizontal slices
         const slices = 40;
         const sliceSrcH = dImg.height / slices;
         const sliceDestH = totalH / slices;
-        const tiltFactor = designTilt / 100.0;
+        const tiltFactor = tilt / 100.0;
 
         for (let i = 0; i < slices; i++) {
           const t = (i + 0.5) / slices;
@@ -328,19 +391,20 @@ export default function DTFMockupStudio() {
       ctx.restore();
     }
 
-    // 3. Draw Luxury Color & Model Badge
+    // 3. Draw Luxury Color, Model & View Badge
     if (showBadge) {
       ctx.save();
       ctx.globalCompositeOperation = "source-over";
 
       const colorTitle = currentColor.name_es.toUpperCase();
       const modelTag = currentModel.tag.toUpperCase();
-      const fullText = `${colorTitle}  •  ${modelTag}`;
+      const viewTitle = currentView === 'front' ? 'VISTA FRONTAL (PECHO)' : 'VISTA TRASERA (ESPALDA)';
+      const fullText = `${colorTitle}  •  ${modelTag}  •  ${viewTitle}`;
 
-      const baseFontSize = currentScene.id === "scene_wood" ? 18 : 15;
-      const dotRadius = currentScene.id === "scene_wood" ? 11 : 9;
+      const baseFontSize = currentScene.id === "scene_wood" ? 17 : 14;
+      const dotRadius = currentScene.id === "scene_wood" ? 10 : 8;
       const padX = 22;
-      const padY = 14;
+      const padY = 13;
 
       ctx.font = `800 ${baseFontSize}px "Outfit", sans-serif`;
       const textMetrics = ctx.measureText(fullText);
@@ -393,46 +457,58 @@ export default function DTFMockupStudio() {
     currentScene,
     currentColor,
     currentModel,
-    designPos,
-    designScale,
-    designRotation,
-    designTilt,
-    designSkew,
-    designBlendMode,
+    currentView,
+    activePos,
+    activeScale,
+    activeRotation,
+    activeTilt,
+    activeSkew,
+    activeBlendMode,
     showBadge,
   ]);
 
-  // Load background image whenever scene or color changes
+  // Load single background image whenever scene, color, or view changes
   useEffect(() => {
-    const bgPath = getMockupSceneImagePath(currentScene.id, currentColor.name_en);
+    const bgPath = getMockupSceneImagePath(currentScene.id, currentColor.name_en, currentView);
     const img = new Image();
     img.src = bgPath;
     img.onload = () => {
       backgroundPhotoRef.current = img;
       renderCanvas();
     };
-  }, [currentScene.id, currentColor.name_en, renderCanvas]);
+  }, [currentScene.id, currentColor.name_en, currentView, renderCanvas]);
 
-  // Load design image whenever selectedDesign changes
+  // Load Front Design image
   useEffect(() => {
-    if (!selectedDesign?.imageUrl) {
-      designImageRef.current = null;
+    if (!frontDesign?.imageUrl) {
+      frontImageRef.current = null;
       renderCanvas();
       return;
     }
-
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.src = selectedDesign.imageUrl;
+    img.src = frontDesign.imageUrl;
     img.onload = () => {
-      designImageRef.current = img;
-      // Auto-center and reset tilt/scale to scene optimal
-      setDesignPos({ ...currentScene.defaultPos });
-      setDesignTilt(currentScene.defaultTilt);
-      setDesignSkew(currentScene.defaultSkew);
+      frontImageRef.current = img;
       renderCanvas();
     };
-  }, [selectedDesign, currentScene, renderCanvas]);
+  }, [frontDesign, renderCanvas]);
+
+  // Load Back Design image
+  useEffect(() => {
+    if (!backDesign?.imageUrl) {
+      backImageRef.current = null;
+      renderCanvas();
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = backDesign.imageUrl;
+    img.onload = () => {
+      backImageRef.current = img;
+      renderCanvas();
+    };
+  }, [backDesign, renderCanvas]);
 
   // Redraw when transforms change
   useEffect(() => {
@@ -442,9 +518,9 @@ export default function DTFMockupStudio() {
   // Switch Scene
   const handleSelectScene = (scene: MockupSceneConfig) => {
     setCurrentScene(scene);
-    setDesignPos({ ...scene.defaultPos });
-    setDesignTilt(scene.defaultTilt);
-    setDesignSkew(scene.defaultSkew);
+    setActivePos({ ...scene.defaultPos });
+    setActiveTilt(scene.defaultTilt);
+    setActiveSkew(scene.defaultSkew);
     showToast(`Escena cambiada: ${scene.name}`);
   };
 
@@ -459,24 +535,70 @@ export default function DTFMockupStudio() {
     setCurrentColor(col);
   };
 
-  // Apply a design from collections
+  // Switch View between Front and Back
+  const handleToggleView = (view: 'front' | 'back') => {
+    setCurrentView(view);
+    if (view === 'back') {
+      showToast("Cambiado a Vista Trasera (Espalda)");
+    } else {
+      showToast("Cambiado a Vista Frontal (Pecho)");
+    }
+  };
+
+  // Apply a design from collections to active view
   const handleApplyDesign = (design: DesignAsset, colName: string) => {
-    setSelectedDesign({
+    const applied: AppliedDesign = {
       id: design.id,
       title: design.title,
       imageUrl: design.imageUrl,
       collectionName: colName,
-    });
-    setDesignPos({ ...currentScene.defaultPos });
-    setDesignScale(1.0);
-    setDesignRotation(0);
-    showToast(`¡"${design.title}" aplicado al mockup!`);
+    };
 
-    // Auto smooth scroll to mockup on both PC and mobile
+    if (currentView === 'front') {
+      setFrontDesign(applied);
+      setFrontPos({ ...currentScene.defaultPos });
+      setFrontScale(1.0);
+      setFrontRotation(0);
+      showToast(`¡"${design.title}" aplicado al frente!`);
+    } else {
+      setBackDesign(applied);
+      setBackPos({ ...currentScene.defaultPos });
+      setBackScale(1.0);
+      setBackRotation(0);
+      showToast(`¡"${design.title}" aplicado a la espalda!`);
+    }
+
     scrollToMockup();
   };
 
-  // Upload custom design from user's phone or computer
+  // Copy design from front to back
+  const handleCopyFrontToBack = () => {
+    if (!frontDesign) {
+      showToast("Primero selecciona un diseño en la vista frontal");
+      return;
+    }
+    setBackDesign({ ...frontDesign });
+    setBackPos({ ...frontPos });
+    setBackScale(frontScale);
+    setBackRotation(frontRotation);
+    setBackTilt(frontTilt);
+    setBackSkew(frontSkew);
+    setBackBlendMode(frontBlendMode);
+    showToast("¡Diseño frontal copiado a la espalda!");
+  };
+
+  // Remove design from current side
+  const handleRemoveActiveDesign = () => {
+    if (currentView === 'front') {
+      setFrontDesign(null);
+      showToast("Diseño frontal retirado");
+    } else {
+      setBackDesign(null);
+      showToast("Diseño trasero retirado");
+    }
+  };
+
+  // Upload custom design from user device
   const handleCustomUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -485,18 +607,27 @@ export default function DTFMockupStudio() {
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       const title = file.name.replace(/\.[^.]+$/, "").slice(0, 30);
-      setSelectedDesign({
+      const custom: AppliedDesign = {
         id: `custom-${Date.now()}`,
         title: `Mi Diseño (${title})`,
         imageUrl: dataUrl,
         collectionName: "Subido por ti",
-      });
-      setDesignPos({ ...currentScene.defaultPos });
-      setDesignScale(1.0);
-      setDesignRotation(0);
-      showToast("¡Tu diseño se cargó y ajustó al centro de la playera!");
+      };
 
-      // Auto smooth scroll to mockup on both PC and mobile
+      if (currentView === 'front') {
+        setFrontDesign(custom);
+        setFrontPos({ ...currentScene.defaultPos });
+        setFrontScale(1.0);
+        setFrontRotation(0);
+        showToast("¡Tu diseño se cargó en el frente de la playera!");
+      } else {
+        setBackDesign(custom);
+        setBackPos({ ...currentScene.defaultPos });
+        setBackScale(1.0);
+        setBackRotation(0);
+        showToast("¡Tu diseño se cargó en la espalda de la playera!");
+      }
+
       scrollToMockup();
     };
     reader.readAsDataURL(file);
@@ -504,18 +635,18 @@ export default function DTFMockupStudio() {
 
   // Center design button
   const handleCenterDesign = () => {
-    setDesignPos({ ...currentScene.defaultPos });
-    showToast("Diseño centrado en el pecho");
+    setActivePos({ ...currentScene.defaultPos });
+    showToast(currentView === 'front' ? "Diseño centrado al pecho" : "Diseño centrado a la espalda");
   };
 
-  // Reset transforms
+  // Reset transforms for active side
   const handleResetTransforms = () => {
-    setDesignPos({ ...currentScene.defaultPos });
-    setDesignScale(1.0);
-    setDesignRotation(0);
-    setDesignTilt(currentScene.defaultTilt);
-    setDesignSkew(currentScene.defaultSkew);
-    setDesignBlendMode("source-over");
+    setActivePos({ ...currentScene.defaultPos });
+    setActiveScale(1.0);
+    setActiveRotation(0);
+    setActiveTilt(currentScene.defaultTilt);
+    setActiveSkew(currentScene.defaultSkew);
+    setActiveBlendMode("source-over");
     showToast("Ajustes restablecidos");
   };
 
@@ -536,8 +667,8 @@ export default function DTFMockupStudio() {
     const coords = getCanvasCoords(e.clientX, e.clientY);
     setIsDragging(true);
     dragStartRef.current = {
-      x: coords.x - designPos.x,
-      y: coords.y - designPos.y,
+      x: coords.x - activePos.x,
+      y: coords.y - activePos.y,
     };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
@@ -545,7 +676,7 @@ export default function DTFMockupStudio() {
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!isDragging) return;
     const coords = getCanvasCoords(e.clientX, e.clientY);
-    setDesignPos({
+    setActivePos({
       x: Math.round(coords.x - dragStartRef.current.x),
       y: Math.round(coords.y - dragStartRef.current.y),
     });
@@ -555,29 +686,29 @@ export default function DTFMockupStudio() {
     setIsDragging(false);
     try {
       (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-    } catch {
-      // Ignore if pointer capture already lost
-    }
+    } catch { }
   };
 
-  // Capture canvas & Download HD Image
+  // Capture canvas & Download HD Image (Single view)
   const handleDownloadHD = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const dataUrl = canvas.toDataURL("image/png");
     const link = document.createElement("a");
-    const filename = `Diamy-Mockup-${currentColor.name_es}-${currentModelKey}-${selectedDesign ? selectedDesign.title : "Playera"}.png`.replace(
+    const viewName = currentView === 'front' ? "Frente" : "Espalda";
+    const designTitle = activeDesign ? activeDesign.title : "Lisa";
+    const filename = `Diamy-Mockup-${viewName}-${currentColor.name_es}-${currentModelKey}-${designTitle}.png`.replace(
       /\s+/g,
       "_"
     );
     link.download = filename;
     link.href = dataUrl;
     link.click();
-    showToast("¡Mockup HD descargado en tu dispositivo!");
+    showToast(`¡Mockup HD (${viewName}) descargado en tu dispositivo!`);
   };
 
-  // Capture & Share to WhatsApp with image hosting, clipboard copy & native share
+  // Capture & Share to WhatsApp (Single view)
   const handleShareWhatsApp = async () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -587,12 +718,11 @@ export default function DTFMockupStudio() {
 
     try {
       const dataUrl = canvas.toDataURL("image/png");
-      const filename = `Diamy-Mockup-${currentColor.name_es}-${currentModelKey}.png`.replace(/\s+/g, "_");
+      const viewName = currentView === 'front' ? "Frente" : "Espalda";
+      const filename = `Diamy-Mockup-${viewName}-${currentColor.name_es}-${currentModelKey}.png`.replace(/\s+/g, "_");
 
-      // 1. Convert canvas to Blob for Clipboard & Web Share
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
 
-      // 2. Upload snapshot to server to get public hosted image URL for WhatsApp link preview
       let hostedImageUrl = "";
       try {
         const uploadRes = await fetch("/api/mockup/share", {
@@ -600,7 +730,7 @@ export default function DTFMockupStudio() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             image: dataUrl,
-            title: selectedDesign ? selectedDesign.title : "Playera",
+            title: activeDesign ? activeDesign.title : `Playera-${viewName}`,
             color: currentColor.name_es,
           }),
         });
@@ -612,12 +742,18 @@ export default function DTFMockupStudio() {
         console.warn("No se pudo alojar la imagen temporalmente:", uploadErr);
       }
 
-      // 3. Build WhatsApp message text (using clean universal characters to avoid '??' encoding glitches)
       const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "523211144447";
-      const designName = selectedDesign ? selectedDesign.title : "Mi diseño personalizado";
-      const colName = selectedDesign?.collectionName ? `(${selectedDesign.collectionName})` : "";
+      const designName = activeDesign ? activeDesign.title : "Sin estampado en esta cara";
+      const colName = activeDesign?.collectionName ? `(${activeDesign.collectionName})` : "";
 
-      let message = `¡Hola Diamy Laser Cut! 👋\n\nAcabo de crear mi mockup personalizado en su simulador web:\n\n• Prenda: Playera ${currentModel.name} (${currentModel.tag})\n• Color: ${currentColor.name_es} (${currentColor.name_en})\n• Estampado: ${designName} ${colName}\n• Escena: ${currentScene.name}\n`;
+      let otherSideInfo = "";
+      if (currentView === 'front' && backDesign) {
+        otherSideInfo = `\n• Estampado Trasero (Espalda): ${backDesign.title} ${backDesign.collectionName ? `(${backDesign.collectionName})` : ''}`;
+      } else if (currentView === 'back' && frontDesign) {
+        otherSideInfo = `\n• Estampado Frontal (Pecho): ${frontDesign.title} ${frontDesign.collectionName ? `(${frontDesign.collectionName})` : ''}`;
+      }
+
+      let message = `¡Hola Diamy Laser Cut! 👋\n\nAcabo de crear mi mockup personalizado en su simulador web:\n\n• Prenda: Playera ${currentModel.name} (${currentModel.tag})\n• Color: ${currentColor.name_es} (${currentColor.name_en})\n• Vista Principal: ${currentView === 'front' ? 'Frente (Pecho)' : 'Trasera (Espalda)'}\n• Estampado: ${designName} ${colName}${otherSideInfo}\n• Escena: ${currentScene.name}\n`;
 
       if (hostedImageUrl) {
         message += `\n📸 Ver Mockup HD: ${hostedImageUrl}\n`;
@@ -625,7 +761,7 @@ export default function DTFMockupStudio() {
 
       message += `\n¿Me podrían cotizar esta prenda con estampado DTF para entrega en Cuernavaca/Morelos y darme tiempo de entrega? ¡Gracias!`;
 
-      // 4. On Mobile: Try Web Share API (which directly attaches the PNG image file into WhatsApp!)
+      // Mobile: Web Share API
       if (blob && typeof navigator !== "undefined" && navigator.canShare) {
         const shareFile = new File([blob], filename, { type: "image/png" });
         if (navigator.canShare({ files: [shareFile] })) {
@@ -639,7 +775,6 @@ export default function DTFMockupStudio() {
             showToast("¡Mockup compartido exitosamente!");
             return;
           } catch (shareErr) {
-            // If user dismissed share sheet, continue to fallback
             if ((shareErr as Error).name !== "AbortError") {
               console.warn("Web Share falló, usando enlace directo:", shareErr);
             }
@@ -647,7 +782,7 @@ export default function DTFMockupStudio() {
         }
       }
 
-      // 5. On Desktop: Copy image to Clipboard so user can simply paste (Ctrl+V) in WhatsApp Web
+      // Desktop: Copy to Clipboard
       if (blob && typeof navigator !== "undefined" && navigator.clipboard && typeof ClipboardItem !== "undefined") {
         try {
           await navigator.clipboard.write([
@@ -659,13 +794,13 @@ export default function DTFMockupStudio() {
         }
       }
 
-      // 6. Also trigger local download as backup
+      // Local download fallback
       const downloadLink = document.createElement("a");
       downloadLink.download = filename;
       downloadLink.href = dataUrl;
       downloadLink.click();
 
-      // 7. Open WhatsApp chat with prefilled message
+      // Open WhatsApp
       const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
       setTimeout(() => {
         window.open(waUrl, "_blank");
@@ -675,6 +810,344 @@ export default function DTFMockupStudio() {
       console.error("Error al compartir en WhatsApp:", err);
       setIsCapturing(false);
       showToast("Error al generar la captura para WhatsApp");
+    }
+  };
+
+  // -------------------------------------------------------------
+  // DUAL MOCKUP CANVAS RENDERING (Frente y Espalda en una Sola Mesa)
+  // -------------------------------------------------------------
+  const renderDualCanvas = useCallback(() => {
+    const canvas = dualCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // 1. Draw Dual Table Background (Both shirts on one wood table)
+    const bgImg = dualBgImgRef.current;
+    if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+      ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    }
+
+    const dualScaleFactor = 0.72;
+
+    const drawSideDesign = (
+      img: HTMLImageElement | null,
+      centerX: number,
+      centerY: number,
+      pos: { x: number; y: number },
+      scale: number,
+      rotation: number,
+      tilt: number,
+      skew: number,
+      blendMode: GlobalCompositeOperation
+    ) => {
+      if (!img || !img.complete || img.naturalWidth === 0) return;
+
+      const offsetX = (pos.x - 512) * dualScaleFactor;
+      const offsetY = (pos.y - 560) * dualScaleFactor;
+      const targetX = centerX + offsetX;
+      const targetY = centerY + offsetY;
+
+      ctx.save();
+      ctx.translate(targetX, targetY);
+      ctx.rotate((rotation * Math.PI) / 180);
+
+      if (skew !== 0) {
+        const skewRad = (skew * Math.PI) / 180;
+        ctx.transform(1, 0, Math.tan(skewRad), 1, 0, 0);
+      }
+
+      const totalW = img.width * 0.45 * scale * dualScaleFactor;
+      const totalH = img.height * 0.45 * scale * dualScaleFactor;
+
+      ctx.globalCompositeOperation = blendMode;
+
+      if (tilt === 0) {
+        ctx.drawImage(img, -totalW / 2, -totalH / 2, totalW, totalH);
+      } else {
+        const slices = 40;
+        const sliceSrcH = img.height / slices;
+        const sliceDestH = totalH / slices;
+        const tiltFactor = tilt / 100.0;
+
+        for (let i = 0; i < slices; i++) {
+          const t = (i + 0.5) / slices;
+          const scaleSliceW = 1.0 + (t - 0.5) * (tiltFactor * 2.0);
+          const currentW = totalW * scaleSliceW;
+
+          const sy = i * sliceSrcH;
+          const dy = -totalH / 2 + i * sliceDestH;
+
+          ctx.drawImage(
+            img,
+            0,
+            sy,
+            img.width,
+            sliceSrcH,
+            -currentW / 2,
+            dy,
+            currentW,
+            sliceDestH + 0.5
+          );
+        }
+      }
+
+      ctx.restore();
+    };
+
+    // 2. Draw Left Shirt Design (Front)
+    drawSideDesign(
+      frontImageRef.current,
+      428,
+      423,
+      frontPos,
+      frontScale,
+      frontRotation,
+      frontTilt,
+      frontSkew,
+      frontBlendMode
+    );
+
+    // 3. Draw Right Shirt Design (Back)
+    drawSideDesign(
+      backImageRef.current,
+      958,
+      423,
+      backPos,
+      backScale,
+      backRotation,
+      backTilt,
+      backSkew,
+      backBlendMode
+    );
+
+    // 4. Draw Overhead Badges over both shirts
+    ctx.save();
+    ctx.globalCompositeOperation = "source-over";
+
+    const drawHeaderPill = (text: string, icon: string, cx: number, cy: number) => {
+      ctx.font = '800 13px "Outfit", sans-serif';
+      const fullText = `${icon}  ${text}`;
+      const textMetrics = ctx.measureText(fullText);
+      const pw = textMetrics.width + 36;
+      const ph = 32;
+
+      ctx.shadowColor = "rgba(0,0,0,0.55)";
+      ctx.shadowBlur = 12;
+      ctx.shadowOffsetY = 4;
+
+      ctx.fillStyle = "rgba(14, 18, 25, 0.92)";
+      ctx.beginPath();
+      ctx.roundRect(cx - pw / 2, cy - ph / 2, pw, ph, ph / 2);
+      ctx.fill();
+
+      ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+
+      ctx.shadowColor = "transparent";
+
+      ctx.fillStyle = "#ffffff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(fullText, cx, cy);
+    };
+
+    drawHeaderPill("VISTA FRONTAL", "👔", 428, 55);
+    drawHeaderPill("VISTA TRASERA", "🔄", 958, 55);
+
+    // 5. Draw Bottom Luxury Badge
+    const colorTitle = currentColor.name_es.toUpperCase();
+    const modelTag = currentModel.tag.toUpperCase();
+    const badgeText = `${colorTitle}  •  ${modelTag}  •  FRENTE Y ESPALDA  •  DIAMY LASER CUT`;
+
+    ctx.font = '800 15px "Outfit", sans-serif';
+    const bMetrics = ctx.measureText(badgeText);
+    const dotR = 8;
+    const bPadX = 22;
+    const bPadY = 11;
+    const bWidth = bMetrics.width + dotR * 2 + bPadX * 2.5;
+    const bHeight = 15 + bPadY * 2.2;
+    const bX = (canvas.width - bWidth) / 2;
+    const bY = canvas.height - bHeight - 18;
+
+    ctx.shadowColor = "rgba(0,0,0,0.65)";
+    ctx.shadowBlur = 16;
+    ctx.shadowOffsetY = 6;
+
+    ctx.fillStyle = "rgba(12, 16, 22, 0.94)";
+    ctx.beginPath();
+    ctx.roundRect(bX, bY, bWidth, bHeight, bHeight / 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(212, 175, 55, 0.5)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.shadowColor = "transparent";
+
+    // Color dot
+    const dotX = bX + bPadX + dotR;
+    const dotY = bY + bHeight / 2;
+    ctx.fillStyle = currentColor.hex;
+    ctx.beginPath();
+    ctx.arc(dotX, dotY, dotR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Text
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(badgeText, dotX + dotR + 10, dotY);
+
+    ctx.restore();
+  }, [
+    currentColor,
+    currentModel,
+    frontPos,
+    frontScale,
+    frontRotation,
+    frontTilt,
+    frontSkew,
+    frontBlendMode,
+    backPos,
+    backScale,
+    backRotation,
+    backTilt,
+    backSkew,
+    backBlendMode,
+  ]);
+
+  // Load dual table background whenever modal opens or color changes
+  useEffect(() => {
+    if (!showDualModal) return;
+    const dualBgPath = getDualMockupSceneImagePath(currentColor.name_en);
+    const img = new Image();
+    img.src = dualBgPath;
+    img.onload = () => {
+      dualBgImgRef.current = img;
+      renderDualCanvas();
+    };
+  }, [showDualModal, currentColor.name_en, renderDualCanvas]);
+
+  // Redraw dual canvas when transforms change while modal is open
+  useEffect(() => {
+    if (showDualModal) {
+      renderDualCanvas();
+    }
+  }, [showDualModal, renderDualCanvas]);
+
+  // Download Dual Mockup HD
+  const handleDownloadDualHD = () => {
+    const canvas = dualCanvasRef.current;
+    if (!canvas) return;
+
+    const dataUrl = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    const filename = `Diamy-Mockup-Dual-Frente-Espalda-${currentColor.name_es}-${currentModelKey}.png`.replace(/\s+/g, "_");
+    link.download = filename;
+    link.href = dataUrl;
+    link.click();
+    showToast("¡Mockup Dual Frente & Espalda descargado en HD!");
+  };
+
+  // Share Dual Mockup to WhatsApp
+  const handleShareDualWhatsApp = async () => {
+    const canvas = dualCanvasRef.current;
+    if (!canvas) return;
+
+    setIsCapturingDual(true);
+    showToast("Preparando captura del mockup dual...");
+
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      const filename = `Diamy-Mockup-Dual-${currentColor.name_es}-${currentModelKey}.png`.replace(/\s+/g, "_");
+
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+
+      let hostedImageUrl = "";
+      try {
+        const uploadRes = await fetch("/api/mockup/share", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            image: dataUrl,
+            title: `Dual-${frontDesign ? frontDesign.title : "Frente"}-${backDesign ? backDesign.title : "Espalda"}`,
+            color: currentColor.name_es,
+          }),
+        });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          hostedImageUrl = uploadData.fullUrl || "";
+        }
+      } catch (uploadErr) {
+        console.warn("No se pudo alojar la imagen dual:", uploadErr);
+      }
+
+      const waNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "523211144447";
+      const frontName = frontDesign ? `${frontDesign.title} ${frontDesign.collectionName ? `(${frontDesign.collectionName})` : ''}` : "Sin estampado frontal";
+      const backName = backDesign ? `${backDesign.title} ${backDesign.collectionName ? `(${backDesign.collectionName})` : ''}` : "Sin estampado trasero";
+
+      let message = `¡Hola Diamy Laser Cut! 👋\n\nAcabo de crear mi mockup personalizado con AMBAS VISTAS (Frente y Espalda) en su simulador:\n\n• Prenda: Playera ${currentModel.name} (${currentModel.tag})\n• Color: ${currentColor.name_es} (${currentColor.name_en})\n• Estampado Frente: ${frontName}\n• Estampado Espalda: ${backName}\n• Presentación: Ambas vistas en una sola mesa de madera\n`;
+
+      if (hostedImageUrl) {
+        message += `\n📸 Ver Mockup Dual HD: ${hostedImageUrl}\n`;
+      }
+
+      message += `\n¿Me podrían cotizar esta playera con estampado DTF doble cara para entrega en Cuernavaca/Morelos y darme tiempo de entrega? ¡Gracias!`;
+
+      // Mobile Web Share
+      if (blob && typeof navigator !== "undefined" && navigator.canShare) {
+        const shareFile = new File([blob], filename, { type: "image/png" });
+        if (navigator.canShare({ files: [shareFile] })) {
+          try {
+            await navigator.share({
+              files: [shareFile],
+              title: "Mockup Dual Playera Diamy",
+              text: message,
+            });
+            setIsCapturingDual(false);
+            showToast("¡Mockup dual compartido exitosamente!");
+            return;
+          } catch (shareErr) {
+            if ((shareErr as Error).name !== "AbortError") {
+              console.warn("Web share dual falló:", shareErr);
+            }
+          }
+        }
+      }
+
+      // Desktop Clipboard Copy
+      if (blob && typeof navigator !== "undefined" && navigator.clipboard && typeof ClipboardItem !== "undefined") {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          showToast("¡Imagen dual copiada al portapapeles! Puedes pegarla con Ctrl + V en WhatsApp");
+        } catch (clipErr) {
+          console.warn("No se pudo copiar al portapapeles:", clipErr);
+        }
+      }
+
+      // Local download fallback
+      const downloadLink = document.createElement("a");
+      downloadLink.download = filename;
+      downloadLink.href = dataUrl;
+      downloadLink.click();
+
+      // Open WhatsApp
+      const waUrl = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
+      setTimeout(() => {
+        window.open(waUrl, "_blank");
+        setIsCapturingDual(false);
+      }, 500);
+    } catch (err) {
+      console.error("Error al compartir mockup dual en WhatsApp:", err);
+      setIsCapturingDual(false);
+      showToast("Error al generar captura dual para WhatsApp");
     }
   };
 
@@ -731,8 +1204,8 @@ export default function DTFMockupStudio() {
         <div className="lg:col-span-7 xl:col-span-8 space-y-4">
           {/* Mockup Canvas Container with Glassmorphism Frame */}
           <div className="relative group bg-[#0e1218] rounded-3xl border border-white/10 p-3 sm:p-5 shadow-2xl overflow-hidden backdrop-blur-xl">
-            {/* Top Toolbar Badges */}
-            <div className="flex items-center justify-between gap-2 mb-3 px-2">
+            {/* Top Toolbar Badges and View Toggle Switcher */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3 px-2">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span className="text-xs font-bold text-white/90 tracking-wide uppercase font-serif">
@@ -741,19 +1214,59 @@ export default function DTFMockupStudio() {
                 <span className="hidden sm:inline text-xs text-white/40">· Arrastra para mover</span>
               </div>
 
+              {/* VIEW SWITCHER CONTROLS: Frente vs Espalda + Checkbox */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Checkbox "Vista Trasera" as requested */}
+                <label className="inline-flex items-center gap-2 cursor-pointer select-none bg-white/5 hover:bg-white/10 px-3 py-1 rounded-xl border border-white/15 transition group">
+                  <input
+                    type="checkbox"
+                    checked={currentView === 'back'}
+                    onChange={(e) => handleToggleView(e.target.checked ? 'back' : 'front')}
+                    className="w-4 h-4 rounded text-[#d4af37] accent-[#d4af37] cursor-pointer"
+                  />
+                  <span className={`text-xs font-bold transition ${currentView === 'back' ? 'text-[#d4af37]' : 'text-white/80'}`}>
+                    Vista Trasera
+                  </span>
+                </label>
+
+                {/* Segmented Toggle Buttons for Quick Access */}
+                <div className="flex items-center rounded-xl bg-black/50 p-1 border border-white/10">
+                  <button
+                    onClick={() => handleToggleView('front')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      currentView === 'front'
+                        ? 'bg-[#d4af37] text-[#0c0e12] shadow-md shadow-[#d4af37]/20 font-black'
+                        : 'text-white/70 hover:text-white'
+                    }`}
+                  >
+                    <span>👔</span> Frente
+                  </button>
+                  <button
+                    onClick={() => handleToggleView('back')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                      currentView === 'back'
+                        ? 'bg-[#d4af37] text-[#0c0e12] shadow-md shadow-[#d4af37]/20 font-black'
+                        : 'text-white/70 hover:text-white'
+                    }`}
+                  >
+                    <span>🔄</span> Espalda
+                  </button>
+                </div>
+              </div>
+
               {/* Quick Actions overlay */}
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={handleCenterDesign}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold flex items-center gap-1 border border-white/10 transition"
-                  title="Centrar diseño al pecho"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold flex items-center gap-1 border border-white/10 transition cursor-pointer"
+                  title="Centrar diseño en la playera"
                 >
                   <span className="material-symbol" style={{ fontSize: "14px" }}>filter_center_focus</span>
                   <span className="hidden sm:inline">Centrar</span>
                 </button>
                 <button
                   onClick={handleResetTransforms}
-                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold flex items-center gap-1 border border-white/10 transition"
+                  className="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white/80 hover:text-white text-xs font-semibold flex items-center gap-1 border border-white/10 transition cursor-pointer"
                   title="Restablecer tamaño y posición"
                 >
                   <span className="material-symbol" style={{ fontSize: "14px" }}>restart_alt</span>
@@ -761,7 +1274,7 @@ export default function DTFMockupStudio() {
                 </button>
                 <button
                   onClick={() => setShowBadge(!showBadge)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition ${showBadge
+                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1 border transition cursor-pointer ${showBadge
                       ? "bg-[#d4af37]/20 border-[#d4af37]/50 text-[#d4af37]"
                       : "bg-white/5 border-white/10 text-white/60"
                     }`}
@@ -771,6 +1284,50 @@ export default function DTFMockupStudio() {
                   <span className="hidden sm:inline">Etiqueta</span>
                 </button>
               </div>
+            </div>
+
+            {/* Current Active View Banner Indicator */}
+            <div className="mb-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-base">{currentView === 'front' ? '👔' : '🔄'}</span>
+                <span className="text-white/70">
+                  Editando:{" "}
+                  <strong className="text-white">
+                    {currentView === 'front' ? 'Vista Frontal (Pecho)' : 'Vista Trasera (Espalda)'}
+                  </strong>
+                </span>
+                {activeDesign ? (
+                  <span className="px-2 py-0.5 rounded-md bg-[#d4af37]/15 border border-[#d4af37]/30 text-[#d4af37] text-[11px] font-semibold truncate max-w-[200px]">
+                    {activeDesign.title}
+                  </span>
+                ) : (
+                  <span className="text-white/40 italic text-[11px]">
+                    (Sin estampado - selecciona uno de la galería abajo)
+                  </span>
+                )}
+              </div>
+
+              {/* Helpful shortcut if editing back with no design */}
+              {currentView === 'back' && !backDesign && frontDesign && (
+                <button
+                  onClick={handleCopyFrontToBack}
+                  className="text-[11px] font-bold text-[#d4af37] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbol" style={{ fontSize: "14px" }}>content_copy</span>
+                  Copiar diseño del frente
+                </button>
+              )}
+
+              {activeDesign && (
+                <button
+                  onClick={handleRemoveActiveDesign}
+                  className="text-[11px] text-red-400/80 hover:text-red-400 hover:underline flex items-center gap-1 cursor-pointer"
+                  title="Quitar estampado de este lado"
+                >
+                  <span className="material-symbol" style={{ fontSize: "14px" }}>close</span>
+                  Quitar
+                </button>
+              )}
             </div>
 
             {/* Canvas Box */}
@@ -789,7 +1346,7 @@ export default function DTFMockupStudio() {
               {/* Floating Fine-Tuning Drawer Trigger Button */}
               <button
                 onClick={() => setShowControlsDrawer(!showControlsDrawer)}
-                className="absolute bottom-4 right-4 z-10 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black text-white/90 border border-white/20 text-xs font-bold backdrop-blur-md shadow-lg flex items-center gap-1.5 transition"
+                className="absolute bottom-4 right-4 z-10 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black text-white/90 border border-white/20 text-xs font-bold backdrop-blur-md shadow-lg flex items-center gap-1.5 transition cursor-pointer"
               >
                 <span className="material-symbol" style={{ fontSize: "16px" }}>tune</span>
                 {showControlsDrawer ? "Ocultar Controles" : "Ajustar Tamaño y Ángulo"}
@@ -805,7 +1362,7 @@ export default function DTFMockupStudio() {
                     <div className="flex justify-between text-xs">
                       <span className="text-white/70 font-semibold">Tamaño del Estampado</span>
                       <span className="text-[#d4af37] font-mono font-bold">
-                        {Math.round(designScale * 100)}%
+                        {Math.round(activeScale * 100)}%
                       </span>
                     </div>
                     <input
@@ -813,8 +1370,8 @@ export default function DTFMockupStudio() {
                       min="0.3"
                       max="2.0"
                       step="0.05"
-                      value={designScale}
-                      onChange={(e) => setDesignScale(parseFloat(e.target.value))}
+                      value={activeScale}
+                      onChange={(e) => setActiveScale(parseFloat(e.target.value))}
                       className="w-full accent-[#d4af37] cursor-pointer"
                     />
                   </div>
@@ -823,15 +1380,15 @@ export default function DTFMockupStudio() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-white/70 font-semibold">Rotación</span>
-                      <span className="text-[#d4af37] font-mono font-bold">{designRotation}°</span>
+                      <span className="text-[#d4af37] font-mono font-bold">{activeRotation}°</span>
                     </div>
                     <input
                       type="range"
                       min="-180"
                       max="180"
                       step="5"
-                      value={designRotation}
-                      onChange={(e) => setDesignRotation(parseInt(e.target.value))}
+                      value={activeRotation}
+                      onChange={(e) => setActiveRotation(parseInt(e.target.value))}
                       className="w-full accent-[#d4af37] cursor-pointer"
                     />
                   </div>
@@ -840,15 +1397,15 @@ export default function DTFMockupStudio() {
                   <div className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-white/70 font-semibold">Inclinación 3D (Perspectiva)</span>
-                      <span className="text-[#d4af37] font-mono font-bold">{designTilt}%</span>
+                      <span className="text-[#d4af37] font-mono font-bold">{activeTilt}%</span>
                     </div>
                     <input
                       type="range"
                       min="-15"
                       max="25"
                       step="1"
-                      value={designTilt}
-                      onChange={(e) => setDesignTilt(parseInt(e.target.value))}
+                      value={activeTilt}
+                      onChange={(e) => setActiveTilt(parseInt(e.target.value))}
                       className="w-full accent-[#d4af37] cursor-pointer"
                     />
                   </div>
@@ -857,8 +1414,8 @@ export default function DTFMockupStudio() {
                   <div className="space-y-1">
                     <label className="text-xs text-white/70 font-semibold block">Efecto de Impresión</label>
                     <select
-                      value={designBlendMode}
-                      onChange={(e) => setDesignBlendMode(e.target.value as GlobalCompositeOperation)}
+                      value={activeBlendMode}
+                      onChange={(e) => setActiveBlendMode(e.target.value as GlobalCompositeOperation)}
                       className="w-full bg-[#141820] text-xs text-white border border-white/20 rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#d4af37]"
                     >
                       <option value="source-over">DTF Textil Estándar (Opaco Nítido)</option>
@@ -870,42 +1427,139 @@ export default function DTFMockupStudio() {
               </div>
             )}
 
-            {/* ACTION BUTTONS (Screenshot & WhatsApp Sharing) */}
-            <div className="mt-4 pt-3 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {/* WhatsApp Share Button */}
+            {/* ACTION BUTTONS (Doble Vista Modal, WhatsApp & Download HD) */}
+            <div className="mt-4 pt-3 border-t border-white/10 space-y-3">
+              {/* PRIMARY PROMINENT FEATURE: Mostrar las Dos Vistas */}
               <button
-                onClick={handleShareWhatsApp}
-                disabled={isCapturing}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-bold text-sm shadow-xl hover:shadow-25d366/30 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 group"
+                onClick={() => setShowDualModal(true)}
+                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-[#d4af37] via-[#f5d77f] to-[#d4af37] text-[#0c0e12] font-black text-sm sm:text-base shadow-xl hover:shadow-[#d4af37]/30 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 border border-[#d4af37] cursor-pointer group"
               >
-                <span className="material-symbol text-xl group-hover:rotate-12 transition-transform">
-                  chat
+                <span className="material-symbol text-2xl group-hover:scale-110 transition-transform">
+                  style
                 </span>
-                {isCapturing ? "Generando captura..." : "📸 Compartir en WhatsApp"}
+                <span>👁️ Mostrar las Dos Vistas (Mesa Completa)</span>
               </button>
 
-              {/* Download HD Button */}
-              <button
-                onClick={handleDownloadHD}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#b8860b] text-[#0c0e12] font-black text-sm shadow-lg hover:shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2"
-              >
-                <span className="material-symbol text-xl">download</span>
-                💾 Descargar Mockup HD
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* WhatsApp Share Button */}
+                <button
+                  onClick={handleShareWhatsApp}
+                  disabled={isCapturing}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-bold text-sm shadow-xl hover:shadow-25d366/30 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 group cursor-pointer"
+                >
+                  <span className="material-symbol text-xl group-hover:rotate-12 transition-transform">
+                    chat
+                  </span>
+                  {isCapturing ? "Generando captura..." : `📸 Compartir ${currentView === 'front' ? 'Frente' : 'Espalda'} en WhatsApp`}
+                </button>
+
+                {/* Download HD Button */}
+                <button
+                  onClick={handleDownloadHD}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-sm border border-white/15 shadow-lg hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbol text-xl">download</span>
+                  💾 Descargar Vista HD
+                </button>
+              </div>
 
               {/* Informative Help Hint */}
-              <div className="sm:col-span-2 p-3 rounded-xl bg-white/5 border border-white/10 text-center">
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10 text-center">
                 <p className="text-[11px] text-white/70 leading-relaxed">
-                  💡 <span className="text-[#d4af37] font-semibold">¿Cómo se envía la imagen?</span> El mensaje incluye el <span className="underline">enlace directo en HD</span> y además la foto se copia a tu portapapeles. En WhatsApp Web solo presiona <kbd className="px-1.5 py-0.5 rounded bg-white/10 font-mono text-[10px] text-white">Ctrl + V</kbd> para pegarla al instante. En celular, se comparte adjunta directamente.
+                  💡 <span className="text-[#d4af37] font-semibold">Tip Pro:</span> Puedes poner un estampado diferente al <strong className="text-white">Frente</strong> y a la <strong className="text-white">Espalda</strong>. Luego presiona <strong className="text-[#d4af37]">&quot;Mostrar las Dos Vistas&quot;</strong> para ver ambas playeras juntas en la misma mesa y compartirlas.
                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Studio Selectors (Scenes, Models, Colors) */}
+        {/* RIGHT COLUMN: Studio Selectors (Scenes, Models, Colors, Dual Status) */}
         <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-          {/* 1. SCENE SELECTOR */}
+          {/* 1. DUAL APPLIED DESIGNS STATUS CARD */}
+          <div className="bg-[#121620] rounded-2xl border border-white/10 p-5 space-y-3 shadow-lg">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-white flex items-center gap-2 font-serif tracking-wide">
+                <span>✨</span> Resumen de Caras
+              </h3>
+              <button
+                onClick={() => setShowDualModal(true)}
+                className="text-[11px] text-[#d4af37] font-bold hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Ver ambas</span>
+                <span className="material-symbol" style={{ fontSize: "14px" }}>open_in_new</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Front Card */}
+              <div
+                onClick={() => handleToggleView('front')}
+                className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  currentView === 'front'
+                    ? 'bg-[#d4af37]/10 border-[#d4af37] shadow-md shadow-[#d4af37]/15 ring-1 ring-[#d4af37]'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-white flex items-center gap-1">
+                    <span>👔</span> Frente
+                  </span>
+                  {currentView === 'front' && (
+                    <span className="w-2 h-2 rounded-full bg-[#d4af37] animate-ping" />
+                  )}
+                </div>
+
+                {frontDesign ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center p-0.5 overflow-hidden flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={frontDesign.imageUrl} alt={frontDesign.title} className="max-w-full max-h-full object-contain" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-white/90 truncate">
+                      {frontDesign.title}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-white/40 italic">Sin diseño</span>
+                )}
+              </div>
+
+              {/* Back Card */}
+              <div
+                onClick={() => handleToggleView('back')}
+                className={`p-3 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  currentView === 'back'
+                    ? 'bg-[#d4af37]/10 border-[#d4af37] shadow-md shadow-[#d4af37]/15 ring-1 ring-[#d4af37]'
+                    : 'bg-white/5 border-white/10 hover:bg-white/10'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-white flex items-center gap-1">
+                    <span>🔄</span> Espalda
+                  </span>
+                  {currentView === 'back' && (
+                    <span className="w-2 h-2 rounded-full bg-[#d4af37] animate-ping" />
+                  )}
+                </div>
+
+                {backDesign ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-black/40 border border-white/10 flex items-center justify-center p-0.5 overflow-hidden flex-shrink-0">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={backDesign.imageUrl} alt={backDesign.title} className="max-w-full max-h-full object-contain" />
+                    </div>
+                    <span className="text-[11px] font-semibold text-white/90 truncate">
+                      {backDesign.title}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[11px] text-white/40 italic">Sin diseño</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 2. SCENE SELECTOR */}
           <div className="bg-[#121620] rounded-2xl border border-white/10 p-5 space-y-3 shadow-lg">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-2 font-serif tracking-wide">
@@ -921,7 +1575,7 @@ export default function DTFMockupStudio() {
                   <button
                     key={scene.id}
                     onClick={() => handleSelectScene(scene)}
-                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden flex flex-col justify-between ${isSelected
+                    className={`p-3 rounded-xl border text-left transition relative overflow-hidden flex flex-col justify-between cursor-pointer ${isSelected
                         ? "bg-[#d4af37]/10 border-[#d4af37] shadow-lg shadow-[#d4af37]/10 ring-1 ring-[#d4af37]"
                         : "bg-white/5 border-white/10 hover:bg-white/10 text-white/70"
                       }`}
@@ -945,7 +1599,7 @@ export default function DTFMockupStudio() {
             </div>
           </div>
 
-          {/* 2. MODEL SELECTOR */}
+          {/* 3. MODEL SELECTOR */}
           <div className="bg-[#121620] rounded-2xl border border-white/10 p-5 space-y-3 shadow-lg">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-white flex items-center gap-2 font-serif tracking-wide">
@@ -964,7 +1618,7 @@ export default function DTFMockupStudio() {
                   <button
                     key={key}
                     onClick={() => handleSelectModel(key)}
-                    className={`py-2 px-3 rounded-xl border text-center transition ${isSelected
+                    className={`py-2 px-3 rounded-xl border text-center transition cursor-pointer ${isSelected
                         ? "bg-[#d4af37] text-[#0c0e12] font-black border-[#d4af37] shadow-md shadow-[#d4af37]/20"
                         : "bg-white/5 border-white/10 text-white/80 hover:bg-white/10 font-semibold"
                       } text-xs`}
@@ -977,7 +1631,7 @@ export default function DTFMockupStudio() {
             <p className="text-[11px] text-white/50">{currentModel.description}</p>
           </div>
 
-          {/* 3. COLOR SWATCHES SELECTOR */}
+          {/* 4. COLOR SWATCHES SELECTOR */}
           <div className="bg-[#121620] rounded-2xl border border-white/10 p-5 space-y-4 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -1022,7 +1676,7 @@ export default function DTFMockupStudio() {
                     key={color.name_en}
                     onClick={() => handleSelectColor(color)}
                     title={`${color.name_es} (${color.name_en})`}
-                    className={`w-9 h-9 rounded-xl transition-all duration-150 relative flex items-center justify-center ${isSelected
+                    className={`w-9 h-9 rounded-xl transition-all duration-150 relative flex items-center justify-center cursor-pointer ${isSelected
                         ? "scale-110 shadow-lg ring-2 ring-[#d4af37] ring-offset-2 ring-offset-[#121620] z-10"
                         : "hover:scale-105 opacity-90 hover:opacity-100"
                       }`}
@@ -1047,43 +1701,6 @@ export default function DTFMockupStudio() {
               })}
             </div>
           </div>
-
-          {/* 4. CURRENT APPLIED DESIGN INFO */}
-          {selectedDesign && (
-            <div className="bg-[#121620] rounded-2xl border border-white/10 p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-xl border border-white/20 p-1 flex items-center justify-center overflow-hidden"
-                  style={{
-                    backgroundColor: "#1c2028",
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={selectedDesign.imageUrl}
-                    alt={selectedDesign.title}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-white block line-clamp-1">
-                    {selectedDesign.title}
-                  </span>
-                  <span className="text-[10px] text-[#d4af37] block">
-                    {selectedDesign.collectionName || "Catálogo DTF"}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={handleCenterDesign}
-                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-xs flex items-center gap-1 transition"
-                title="Centrar en la playera"
-              >
-                <span className="material-symbol" style={{ fontSize: "16px" }}>filter_center_focus</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -1099,7 +1716,11 @@ export default function DTFMockupStudio() {
                   Explorador de Colecciones y Estampados
                 </h2>
                 <p className="text-xs sm:text-sm text-white/60 mt-0.5">
-                  Elige una carpeta temática para ver sus diseños o sube tu propio archivo PNG transparente.
+                  Elige un diseño para aplicarlo a la{" "}
+                  <strong className="text-[#d4af37]">
+                    {currentView === 'front' ? 'Vista Frontal (Pecho)' : 'Vista Trasera (Espalda)'}
+                  </strong>{" "}
+                  o sube tu propio archivo PNG transparente.
                 </p>
               </div>
             </div>
@@ -1120,7 +1741,7 @@ export default function DTFMockupStudio() {
               className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-[#d4af37]/20 to-[#d4af37]/10 border border-[#d4af37]/50 text-[#d4af37] font-bold text-xs sm:text-sm shadow-lg hover:bg-[#d4af37]/30 cursor-pointer transition"
             >
               <span className="material-symbol" style={{ fontSize: "18px" }}>upload</span>
-              Subir Mi Propio Diseño PNG
+              Subir Mi Propio Diseño PNG ({currentView === 'front' ? 'Frente' : 'Espalda'})
             </label>
           </div>
         </div>
@@ -1255,7 +1876,7 @@ export default function DTFMockupStudio() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                     {paginatedDesigns.map((design) => {
-                      const isSelected = selectedDesign?.id === design.id;
+                      const isSelected = activeDesign?.id === design.id;
                       return (
                         <div
                           key={design.id}
@@ -1289,7 +1910,7 @@ export default function DTFMockupStudio() {
                             />
 
                             {isSelected && (
-                              <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#d4af37] text-[#0c0e12] flex items-center justify-center shadow">
+                              <span className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#d4af37] text-[#0c0e12] flex items-center justify-center shadow font-bold text-xs">
                                 <span className="material-symbol" style={{ fontSize: "16px" }}>check</span>
                               </span>
                             )}
@@ -1302,7 +1923,7 @@ export default function DTFMockupStudio() {
                             </h4>
                             <span className="text-[10px] text-white/40 mt-1 flex items-center gap-1 group-hover:text-[#d4af37]/80">
                               <span className="material-symbol" style={{ fontSize: "12px" }}>touch_app</span>
-                              Tocar para probar
+                              Aplicar a {currentView === 'front' ? 'Frente' : 'Espalda'}
                             </span>
                           </div>
                         </div>
@@ -1382,6 +2003,97 @@ export default function DTFMockupStudio() {
           )
         )}
       </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL: MOCKUP DUAL (FRENTE Y ESPALDA EN UNA SOLA MESA)        */}
+      {/* ------------------------------------------------------------- */}
+      {showDualModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in duration-200">
+          <div className="relative max-w-5xl w-full bg-[#0d1017] rounded-3xl border border-[#d4af37]/40 shadow-2xl p-4 sm:p-6 space-y-4 my-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl">✨</span>
+                <div>
+                  <h3 className="font-serif font-black text-lg sm:text-xl text-white tracking-tight">
+                    Mockup Dual — <span className="text-[#d4af37]">Frente y Espalda en una Sola Mesa</span>
+                  </h3>
+                  <p className="text-xs text-white/60">
+                    Playera {currentModel.name} ({currentModel.tag}) en color {currentColor.name_es} · Fotografía de alta fidelidad
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowDualModal(false)}
+                className="w-9 h-9 rounded-xl bg-white/5 hover:bg-white/15 text-white/70 hover:text-white flex items-center justify-center border border-white/10 transition cursor-pointer"
+                title="Cerrar ventana"
+              >
+                <span className="material-symbol" style={{ fontSize: "20px" }}>close</span>
+              </button>
+            </div>
+
+            {/* Modal Dual Canvas Container */}
+            <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden shadow-2xl bg-black border border-white/10">
+              <canvas
+                ref={dualCanvasRef}
+                width={1376}
+                height={768}
+                className="w-full h-full object-contain block select-none"
+              />
+            </div>
+
+            {/* Design Status Info Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-3">
+                <span className="text-lg">👔</span>
+                <div>
+                  <span className="text-xs text-white/50 block">Estampado Frontal (Pecho)</span>
+                  <span className="text-xs font-bold text-white block truncate">
+                    {frontDesign ? frontDesign.title : "Playera lisa (Sin estampado)"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 sm:border-l sm:border-white/10 sm:pl-4">
+                <span className="text-lg">🔄</span>
+                <div>
+                  <span className="text-xs text-white/50 block">Estampado Trasero (Espalda)</span>
+                  <span className="text-xs font-bold text-white block truncate">
+                    {backDesign ? backDesign.title : "Playera lisa (Sin estampado)"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+              {/* WhatsApp Dual Share */}
+              <button
+                onClick={handleShareDualWhatsApp}
+                disabled={isCapturingDual}
+                className="sm:col-span-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-bold text-sm shadow-xl hover:shadow-25d366/30 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 group cursor-pointer"
+              >
+                <span className="material-symbol text-xl group-hover:rotate-12 transition-transform">
+                  chat
+                </span>
+                <span>
+                  {isCapturingDual ? "Generando captura dual..." : "📸 Compartir Ambas Vistas en WhatsApp"}
+                </span>
+              </button>
+
+              {/* Download Dual HD */}
+              <button
+                onClick={handleDownloadDualHD}
+                className="py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#d4af37] to-[#b8860b] text-[#0c0e12] font-black text-sm shadow-lg hover:shadow-[#d4af37]/20 hover:scale-[1.01] active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span className="material-symbol text-xl">download</span>
+                <span>💾 Descargar HD</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

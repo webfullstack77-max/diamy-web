@@ -133,9 +133,23 @@ export const PLAYERYTEES_MODELS: Record<'410c' | '410d' | '410n', TShirtModel> =
 };
 
 /**
- * Returns the path to the static scene background image for a given scene and color.
+ * Returns the path to the static scene background image for a given scene, color and view (front or back).
  */
-export function getMockupSceneImagePath(sceneId: 'scene_wood' | 'scene_workshop', colorEn: string): string {
+export function getMockupSceneImagePath(
+  sceneId: 'scene_wood' | 'scene_workshop',
+  colorEn: string,
+  view: 'front' | 'back' = 'front'
+): string {
   const safeName = colorEn.replace(/[^a-zA-Z0-9_-]/g, '_');
-  return `/mockups/${sceneId}/${safeName}.jpg`;
+  const subDir = view === 'back' ? `${sceneId}_back` : sceneId;
+  return `/mockups/${subDir}/${safeName}.jpg`;
 }
+
+/**
+ * Returns the path to the dual mockup scene (two shirts on one table).
+ */
+export function getDualMockupSceneImagePath(colorEn: string): string {
+  const safeName = colorEn.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return `/mockups/scene_wood_dual/${safeName}.jpg`;
+}
+
