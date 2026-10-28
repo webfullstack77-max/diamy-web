@@ -180,16 +180,20 @@ export default function ShoppingListTable({
                     </span>
                   </span>
                   <span className="text-[10px] text-on-surface-muted">
-                    ({totalPieces} de 10 piezas mínimas)
+                    ({totalPieces} de {items.some((it) => it.brand === "bones") ? 12 : 10} piezas mínimas)
                   </span>
                 </div>
                 <p className="text-[11px] text-on-surface-muted">
                   {pricingTier === "mayoreo"
-                    ? "¡Excelente! Tu pedido califica para la tarifa de mayoreo de Punto Textil (10+ piezas)."
+                    ? `¡Excelente! Tu pedido califica para mayoreo en Punto Textil (${
+                        items.some((it) => it.brand === "bones") ? "12+ piezas para Bones" : "10+ piezas"
+                      }).`
                     : `Llevas ${totalPieces} piezas. Te faltan ${Math.max(
                         0,
-                        10 - totalPieces
-                      )} pieza(s) para activar precios de Mayoreo.`}
+                        (items.some((it) => it.brand === "bones") ? 12 : 10) - totalPieces
+                      )} pieza(s) para activar precios de Mayoreo (${
+                        items.some((it) => it.brand === "bones") ? "12+ pzas en Bones" : "10+ pzas"
+                      }).`}
                 </p>
               </div>
             </div>
@@ -200,18 +204,18 @@ export default function ShoppingListTable({
               <button
                 type="button"
                 onClick={() => onSetTierMode("auto")}
-                className={`px-2 py-0.5 rounded-md font-semibold transition ${
+                className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer ${
                   tierMode === "auto"
                     ? "bg-primary text-on-primary"
                     : "bg-surface-container text-on-surface-muted hover:bg-surface-container-high"
                 }`}
               >
-                Auto (10+)
+                Auto ({items.some((it) => it.brand === "bones") ? "12+" : "10+"})
               </button>
               <button
                 type="button"
                 onClick={() => onSetTierMode("force_mayoreo")}
-                className={`px-2 py-0.5 rounded-md font-semibold transition ${
+                className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer ${
                   tierMode === "force_mayoreo"
                     ? "bg-emerald-600 text-white"
                     : "bg-surface-container text-on-surface-muted hover:bg-surface-container-high"
@@ -222,7 +226,7 @@ export default function ShoppingListTable({
               <button
                 type="button"
                 onClick={() => onSetTierMode("force_menudeo")}
-                className={`px-2 py-0.5 rounded-md font-semibold transition ${
+                className={`px-2 py-0.5 rounded-md font-semibold transition cursor-pointer ${
                   tierMode === "force_menudeo"
                     ? "bg-amber-600 text-white"
                     : "bg-surface-container text-on-surface-muted hover:bg-surface-container-high"
@@ -236,12 +240,17 @@ export default function ShoppingListTable({
           {/* Barra de Progreso de Mayoreo */}
           {tierMode === "auto" && (
             <div className="mt-2.5 w-full bg-outline-variant/40 rounded-full h-1.5 overflow-hidden">
-              <div
-                className={`h-full transition-all duration-300 ${
-                  totalPieces >= 10 ? "bg-emerald-500" : "bg-primary"
-                }`}
-                style={{ width: `${Math.min(100, (totalPieces / 10) * 100)}%` }}
-              />
+              {(() => {
+                const target = items.some((it) => it.brand === "bones") ? 12 : 10;
+                return (
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      totalPieces >= target ? "bg-emerald-500" : "bg-primary"
+                    }`}
+                    style={{ width: `${Math.min(100, (totalPieces / target) * 100)}%` }}
+                  />
+                );
+              })()}
             </div>
           )}
         </div>
@@ -289,10 +298,21 @@ export default function ShoppingListTable({
                             style={{ backgroundColor: it.color.hex }}
                           />
                           <div>
-                            <span className="font-extrabold text-on-surface">
-                              [{it.styleCode}]
-                            </span>{" "}
-                            <span className="font-medium text-on-surface">
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <span
+                                className={`text-[9px] font-black uppercase px-1 py-0.2 rounded leading-tight ${
+                                  it.brand === "bones"
+                                    ? "bg-stone-800 text-stone-100 dark:bg-stone-200 dark:text-stone-900"
+                                    : "bg-primary/10 text-primary"
+                                }`}
+                              >
+                                {it.brand === "bones" ? "Bones" : "PT"}
+                              </span>
+                              <span className="font-extrabold text-on-surface">
+                                [{it.styleCode}]
+                              </span>
+                            </div>
+                            <span className="font-medium text-on-surface text-xs block leading-tight mt-0.5">
                               {it.modelName}
                             </span>
                             <span className="block text-[10px] text-on-surface-muted">

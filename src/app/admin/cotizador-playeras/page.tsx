@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from "react";
 import {
   PuntoTextilModel,
-  PUNTO_TEXTIL_MODELS,
+  ALL_CATALOG_MODELS,
+  BONES_MODELS,
+  CatalogBrand,
   calculateUnitPrice,
 } from "@/data/punto-textil-catalog";
 import { PuntoTextilOrderItem, PuntoTextilOrder } from "@/lib/punto-textil-orders-store";
@@ -14,8 +16,9 @@ import OrderHistoryView from "@/components/admin/cotizador/OrderHistoryView";
 
 export default function CotizadorPlayerasAdminPage() {
   const [activeTab, setActiveTab] = useState<"cotizador" | "historial">("cotizador");
+  const [selectedBrand, setSelectedBrand] = useState<CatalogBrand | "todas">("bones");
   const [selectedModel, setSelectedModel] = useState<PuntoTextilModel>(
-    PUNTO_TEXTIL_MODELS[0] || ({} as PuntoTextilModel)
+    BONES_MODELS[0] || ALL_CATALOG_MODELS[0] || ({} as PuntoTextilModel)
   );
 
   const [cartItems, setCartItems] = useState<PuntoTextilOrderItem[]>([]);
@@ -66,13 +69,17 @@ export default function CotizadorPlayerasAdminPage() {
   // Total pieces in order
   const totalPieces = cartItems.reduce((acc, it) => acc + it.totalPieces, 0);
 
+  // Dynamic threshold: Bones requires 12 pieces for mayoreo; Playerytees requires 10
+  const hasBonesInCart = cartItems.some((it) => it.brand === "bones");
+  const mayoreoThreshold = hasBonesInCart ? 12 : 10;
+
   // Determine effective pricing tier
   const pricingTier: "menudeo" | "mayoreo" =
     tierMode === "force_mayoreo"
       ? "mayoreo"
       : tierMode === "force_menudeo"
       ? "menudeo"
-      : totalPieces >= 10
+      : totalPieces >= mayoreoThreshold
       ? "mayoreo"
       : "menudeo";
 
@@ -81,7 +88,7 @@ export default function CotizadorPlayerasAdminPage() {
     setCartItems((prevItems) => {
       let changed = false;
       const updated = prevItems.map((item) => {
-        const model = PUNTO_TEXTIL_MODELS.find((m) => m.id === item.modelId);
+        const model = ALL_CATALOG_MODELS.find((m) => m.id === item.modelId);
         if (!model) return item;
 
         const newUnitPrices: Record<string, number> = {};
@@ -123,7 +130,7 @@ export default function CotizadorPlayerasAdminPage() {
         });
 
         const mergedPieces = Object.values(mergedSizes).reduce((a, b) => a + b, 0);
-        const model = PUNTO_TEXTIL_MODELS.find((m) => m.id === existing.modelId);
+        const model = ALL_CATALOG_MODELS.find((m) => m.id === existing.modelId);
         let mergedLineTotal = 0;
         const newUnitPrices: Record<string, number> = {};
 
@@ -176,18 +183,21 @@ export default function CotizadorPlayerasAdminPage() {
       <div className="bg-surface rounded-3xl border border-outline-variant p-6 lg:p-8 shadow-xs relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                Punto Textil · Playerytees 2026
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-stone-900 text-stone-100 dark:bg-stone-100 dark:text-stone-900 border border-stone-700">
+                🦴 Playeras Bones 2026
               </span>
-              <span className="text-xs text-on-surface-muted">Precios IVA incluido</span>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                👕 Playerytees
+              </span>
+              <span className="text-xs text-on-surface-muted">Distribuidora Punto Textil · Precios IVA Incluido</span>
             </div>
             <h1 className="text-2xl lg:text-3xl font-extrabold text-on-surface tracking-tight font-serif">
               Cotizador & Pedidos de Playeras
             </h1>
             <p className="text-xs lg:text-sm text-on-surface-muted mt-1 max-w-2xl">
-              Arma pedidos para tu proveedor Punto Textil, calcula costos de mayoreo y menudeo con las tarifas
-              oficiales y exporta órdenes de compra en PDF listas para producción o WhatsApp.
+              Calcula costos exactos de menudeo y mayoreo para <strong>Bones (Combed Ring Spun)</strong> y <strong>Playerytees</strong>,
+              genera listas con matriz de tallas y colores, y descarga órdenes de compra oficiales en PDF o para WhatsApp.
             </p>
           </div>
 
@@ -236,6 +246,8 @@ export default function CotizadorPlayerasAdminPage() {
           <ModelCatalogSection
             selectedModel={selectedModel}
             onSelectModel={(model) => setSelectedModel(model)}
+            selectedBrand={selectedBrand}
+            onSelectBrand={setSelectedBrand}
           />
 
           {/* Grid de 2 Columnas: Matriz de Captura (Izq) y Lista de Compras (Der) */}

@@ -74,6 +74,7 @@ export default function QuickSizeMatrix({ model, pricingTier, onAddItem }: Props
 
     const newItem: PuntoTextilOrderItem = {
       id: `item_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      brand: model.brand || "playerytees",
       modelId: model.id,
       styleCode: model.styleCode,
       modelName: model.name,
@@ -97,13 +98,26 @@ export default function QuickSizeMatrix({ model, pricingTier, onAddItem }: Props
     setQuantities(resetQty);
   };
 
+  const isBones = model.brand === "bones";
+
   return (
     <div className="bg-surface rounded-2xl border border-outline-variant p-4 lg:p-5 shadow-xs">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-outline-variant mb-4">
         <div>
-          <span className="text-[10px] font-black tracking-wider uppercase text-primary px-2 py-0.5 bg-primary/10 rounded-md">
-            {model.styleCode} · {model.gender.toUpperCase()}
-          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span
+              className={`text-[10px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md ${
+                isBones
+                  ? "bg-stone-800 text-stone-100 dark:bg-stone-200 dark:text-stone-900"
+                  : "bg-primary/10 text-primary"
+              }`}
+            >
+              {isBones ? "🦴 Bones" : "👕 Playerytees"}
+            </span>
+            <span className="text-[10px] font-black tracking-wider uppercase text-primary px-2 py-0.5 bg-primary/10 rounded-md">
+              {model.styleCode} · {model.gender.toUpperCase()}
+            </span>
+          </div>
           <h2 className="text-base font-bold text-on-surface mt-1">{model.name}</h2>
           <p className="text-xs text-on-surface-muted mt-0.5">
             {model.composition} · {model.weight} · {model.cutType}

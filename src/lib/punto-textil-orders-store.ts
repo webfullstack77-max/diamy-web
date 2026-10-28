@@ -3,6 +3,7 @@ import path from "path";
 
 export interface PuntoTextilOrderItem {
   id: string;
+  brand?: 'playerytees' | 'bones';
   modelId: string;
   styleCode: string;
   modelName: string;

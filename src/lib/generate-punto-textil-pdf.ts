@@ -76,10 +76,18 @@ export function generatePuntoTextilPdf(order: PuntoTextilOrder): jsPDF {
   doc.setTextColor(15, 23, 42);
   doc.text(PUNTO_TEXTIL_SUPPLIER_INFO.companyName, margin + 4, yPos + 12);
 
+  const brandsInOrder = Array.from(
+    new Set(order.items.map((it) => (it.brand === "bones" ? "Bones" : "Playerytees")))
+  );
+  const brandText =
+    brandsInOrder.length > 1
+      ? "Playerytees & Bones"
+      : brandsInOrder[0] || "Playerytees & Bones";
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
-  doc.text(`Marca: ${PUNTO_TEXTIL_SUPPLIER_INFO.brand} (Catálogo 2026)`, margin + 4, yPos + 17);
+  doc.text(`Marca: ${brandText} (Punto Textil 2026)`, margin + 4, yPos + 17);
   doc.text(`Sitio: ${PUNTO_TEXTIL_SUPPLIER_INFO.website}`, margin + 4, yPos + 22);
 
   // Client Box (Right)
@@ -101,7 +109,7 @@ export function generatePuntoTextilPdf(order: PuntoTextilOrder): jsPDF {
   doc.setFontSize(8);
   doc.setTextColor(71, 85, 105);
   doc.text("Área de Producción & Estampado Textil", rightBoxX + 4, yPos + 17);
-  doc.text(`Precios: Lista IVA Incluido (Febrero 2026)`, rightBoxX + 4, yPos + 22);
+  doc.text(`Precios: Lista IVA Incluido (Vigencia 2026)`, rightBoxX + 4, yPos + 22);
 
   yPos += 31;
 
@@ -120,9 +128,11 @@ export function generatePuntoTextilPdf(order: PuntoTextilOrder): jsPDF {
         ? unitPricesArray.reduce((a, b) => a + b, 0) / unitPricesArray.length
         : 0;
 
+    const brandPrefix = item.brand === "bones" ? "Bones" : "PT";
+
     return [
       String(idx + 1),
-      item.styleCode,
+      `[${brandPrefix}]\n${item.styleCode}`,
       `${item.modelName}\n(${item.gender.toUpperCase()} - ${item.cutType})`,
       item.color.name,
       sizeDetails,
@@ -309,7 +319,15 @@ export function downloadPuntoTextilPdf(order: PuntoTextilOrder) {
  */
 export function formatOrderForWhatsApp(order: PuntoTextilOrder): string {
   const dateStr = new Date(order.createdAt).toLocaleDateString("es-MX");
-  let text = `👕 *PEDIDO DE PRENDAS - PUNTO TEXTIL*\n`;
+  const brandsInOrder = Array.from(
+    new Set(order.items.map((it) => (it.brand === "bones" ? "Bones" : "Playerytees")))
+  );
+  const brandTitle =
+    brandsInOrder.length > 1
+      ? "PUNTO TEXTIL (PLAYERYTEES & BONES)"
+      : `PUNTO TEXTIL (${(brandsInOrder[0] || "TEXTIL").toUpperCase()})`;
+
+  let text = `👕 *PEDIDO DE PRENDAS - ${brandTitle}*\n`;
   text += `📄 *Folio:* ${order.folio}\n`;
   text += `📅 *Fecha:* ${dateStr}\n`;
   text += `🏷️ *Tarifa:* ${order.pricingTier.toUpperCase()} (${order.totalPieces} prendas)\n`;
@@ -322,7 +340,9 @@ export function formatOrderForWhatsApp(order: PuntoTextilOrder): string {
       .map(([s, q]) => `${s}: ${q}`)
       .join(", ");
 
-    text += `\n${idx + 1}. *[${item.styleCode}]* ${item.modelName}\n`;
+    const brandTag = item.brand === "bones" ? "🦴 Bones" : "👕 Playerytees";
+
+    text += `\n${idx + 1}. *[${brandTag} · ${item.styleCode}]* ${item.modelName}\n`;
     text += `   • Color: *${item.color.name}*\n`;
     text += `   • Tallas: ${sizesStr}\n`;
     text += `   • Subtotal fila: ${item.totalPieces} pzas = $${item.lineTotal.toFixed(2)} MXN\n`;

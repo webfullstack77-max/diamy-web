@@ -30,13 +30,16 @@ export interface ModelPricing {
     white: SizePriceTier;
     colores: SizePriceTier;
   };
+  specialColors?: Record<string, SizePriceTier>;
 }
 
 export type CatalogCategory = 'playeras' | 'polos' | 'ejecutivo' | 'outdoor';
-export type CatalogGender = 'caballero' | 'dama' | 'kids' | 'unisex';
+export type CatalogGender = 'caballero' | 'dama' | 'kids' | 'unisex' | 'bebe';
+export type CatalogBrand = 'playerytees' | 'bones';
 
 export interface PuntoTextilModel {
   id: string;
+  brand?: CatalogBrand;
   styleCode: string;
   name: string;
   category: CatalogCategory;
@@ -4665,8 +4668,23 @@ export function calculateUnitPrice(
   size: string,
   pricingTier: 'menudeo' | 'mayoreo'
 ): number {
-  const isWhite = colorName.trim().toLowerCase() === 'white' || colorName.trim().toLowerCase() === 'white oxford';
+  const colorClean = (colorName || '').trim();
+  const colorLower = colorClean.toLowerCase();
+  const isWhite =
+    colorLower === 'white' ||
+    colorLower === 'white oxford' ||
+    colorLower === 'blanco' ||
+    colorLower === 'blanco triblend';
   const sizeNormalized = size.toUpperCase().trim();
+
+  // Color con precio especial específico (ej. Antique Graphite en Bones 3712U)
+  if (model.pricing.specialColors) {
+    for (const [key, tier] of Object.entries(model.pricing.specialColors)) {
+      if (key.toLowerCase() === colorLower) {
+        return tier[pricingTier];
+      }
+    }
+  }
 
   // Tallas 4XL / 3XL-4XL
   if (['4XL', '3XL-4XL'].includes(sizeNormalized) && model.pricing.plus4XL) {
@@ -4692,7 +4710,17 @@ export function calculateUnitPrice(
     return tier[pricingTier];
   }
 
-  // Tallas estándar (XS, S, M, L, XL, 2XS)
+  // Tallas estándar (XS, S, M, L, XL, 2XS, tallas pañalero 3M, 6M, 9M, 12M, 18M, 24M)
   const standardTier = isWhite ? model.pricing.standard.white : model.pricing.standard.colores;
   return standardTier[pricingTier];
 }
+
+import { BONES_MODELS } from "./bones-catalog";
+export { BONES_MODELS };
+
+// Catálogo unificado que reúne todas las prendas (Playerytees + Bones)
+export const ALL_CATALOG_MODELS: PuntoTextilModel[] = [
+  ...PUNTO_TEXTIL_MODELS.map((m) => ({ ...m, brand: (m.brand || 'playerytees') as CatalogBrand })),
+  ...BONES_MODELS,
+];
+
